@@ -6,7 +6,7 @@ on:
       version:
         description: "Speed Camera Warning version"
         required: true
-        default: "0.9.0"
+        default: "0.9.1"
       refresh_data:
         description: "Force refresh camera and OSM data"
         required: false
@@ -32,7 +32,7 @@ jobs:
   build-release:
     runs-on: ubuntu-latest
     env:
-      APP_VERSION: ${{ inputs.version || '0.9.0' }}
+      APP_VERSION: ${{ inputs.version || '0.9.1' }}
       APP_ID: aurelm_speed_camera_warning
       VOICE_VERSION: 0.1.9
     steps:
@@ -217,15 +217,27 @@ jobs:
           node bmw-speed-camera-warning/tests/voice-queue.test.js
           node bmw-speed-camera-warning/tests/road-guidance.test.js
           node bmw-speed-camera-warning/tests/mapcam-integration.test.js
-          node bmw-speed-camera-warning/tests/app-startup.test.js
+          node --max-old-space-size=64 bmw-speed-camera-warning/tests/app-startup.test.js
+          node --max-old-space-size=64 bmw-speed-camera-warning/tests/disk-camera-store.test.js
+          node bmw-speed-camera-warning/tests/camera-catalog.test.js
           python3 -m unittest discover -s bmw-speed-camera-warning/tests -p "test_mapcam*.py"
           python3 -m py_compile bmw-speed-camera-warning/tools/import_road_zones.py
           test -f upstream/apps/${APP_ID}/city-map.json
-          cd upstream
-          python3 kit/tools/build.py "${APP_ID}"
-          mkdir -p ../release
-          cp "dist/${APP_ID}@${APP_VERSION}.tgz" ../release/
-          cp "dist/${APP_ID}@${APP_VERSION}.mgu" ../release/
+          python3 - <<'PY'
+          import json, os
+          p='bmw-speed-camera-warning/apps/aurelm_speed_camera_warning/app.json'
+          d=json.load(open(p,encoding='utf-8'));d['version']=os.environ['APP_VERSION']
+          json.dump(d,open(p,'w',encoding='utf-8'),ensure_ascii=False,indent=2)
+          PY
+          python3 bmw-speed-camera-warning/tools/build_local.py --out release --cache .build-cache
+          python3 - <<'PY'
+          import os, tarfile, tempfile, subprocess
+          with tempfile.TemporaryDirectory() as d:
+              with tarfile.open(f"release/{os.environ['APP_ID']}@{os.environ['APP_VERSION']}.tgz") as t:
+                  t.extractall(d,filter='data')
+              subprocess.run(['node','--max-old-space-size=64','bmw-speed-camera-warning/tests/app-startup.test.js',d+'/package/javascript/app.js'],check=True)
+              subprocess.run(['node','--max-old-space-size=64','bmw-speed-camera-warning/tests/disk-camera-store.test.js',d+'/package/javascript'],check=True)
+          PY
 
       - name: Validate MGU Store release layout
         run: |
@@ -240,6 +252,9 @@ jobs:
               pkg=json.load(archive.extractfile(member))
               if pkg.get('mguInternet') is not True: raise SystemExit('mguInternet missing from built package.json')
               names=archive.getnames()
+              for f in ('camera-manifest-v1.json','camera-index-v1.json','camera-records-v1.jsonl','disk-camera-store.js'):
+                  if 'package/javascript/'+f not in names: raise SystemExit('Missing catalog file: '+f)
+              if 'package/javascript/camera-db.json' in names: raise SystemExit('Legacy large JSON must not ship')
               if not any(n.endswith('/uplink.js') for n in names): raise SystemExit('uplink.js missing from built app')
           print('Verified mguInternet=true and uplink.js are present in the install package')
           PY
