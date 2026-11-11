@@ -1,0 +1,79 @@
+name: Import verified BMWCamInfo 0.9.0
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-verified-bmwcaminfo
+  cancel-in-progress: false
+
+jobs:
+  import:
+    if: github.repository == 'skalitov-bit/bmwcaminfo' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify unchanged application before importing
+        run: |
+          git diff --exit-code ae643a4a9052a79cf3169696be2df3fa8db4d15f HEAD -- bmw-speed-camera-warning README.md
+      - name: Download exact prepared source archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download 'aurelm_speed_camera_warning@0.9.0' --repo "$GITHUB_REPOSITORY" --pattern 'BMWCamInfo_0.9.0_Source.zip' --dir "$RUNNER_TEMP/bmw-source"
+          echo "6ef4be427a541f3aaa9c20d21b20bc60f492ee849c58b69cdfbdb294ecdd415a  $RUNNER_TEMP/bmw-source/BMWCamInfo_0.9.0_Source.zip" | sha256sum --check --strict
+      - name: Import application and documentation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path, PurePosixPath
+          import os, zipfile
+          root=Path.cwd().resolve()
+          source=Path(os.environ['RUNNER_TEMP'])/'bmw-source/BMWCamInfo_0.9.0_Source.zip'
+          with zipfile.ZipFile(source) as archive:
+              assert archive.testzip() is None
+              for entry in archive.infolist():
+                  p=PurePosixPath(entry.filename)
+                  if p.is_absolute() or '..' in p.parts or '\\' in entry.filename:
+                      raise ValueError('Unsafe archive path')
+                  if entry.is_dir():
+                      continue
+                  if not (entry.filename.startswith('bmw-speed-camera-warning/') or entry.filename in ('README.md','TEST-RESULTS.txt')):
+                      continue
+                  if (entry.external_attr >> 16) & 0o170000 == 0o120000:
+                      raise ValueError('Unexpected symlink')
+                  dest=root.joinpath(*p.parts)
+                  if not dest.resolve().is_relative_to(root):
+                      raise ValueError('Path escapes checkout')
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  dest.write_bytes(archive.read(entry))
+          PY
+      - name: Validate imported application
+        env:
+          PYTHON: python3
+        run: |
+          set -euo pipefail
+          node bmw-speed-camera-warning/tests/mapcam-warnings.test.js
+          node bmw-speed-camera-warning/tests/mapcam-integration.test.js
+          node bmw-speed-camera-warning/tests/app-startup.test.js
+          node bmw-speed-camera-warning/tests/voice-queue.test.js
+          node bmw-speed-camera-warning/tests/road-guidance.test.js
+          node bmw-speed-camera-warning/tests/readout-config.test.js
+          python3 -m unittest discover -s bmw-speed-camera-warning/tests -p 'test_mapcam*.py'
+      - name: Commit verified source and database
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add bmw-speed-camera-warning README.md TEST-RESULTS.txt
+          git commit -m 'Add BMWCamInfo 0.9.0 with MapCam warning engine and Russia database'
+          git push origin HEAD:main
+          echo "Published source commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"

@@ -6,7 +6,7 @@ on:
       version:
         description: "Speed Camera Warning version"
         required: true
-        default: "0.7.57"
+        default: "0.9.0"
       refresh_data:
         description: "Force refresh camera and OSM data"
         required: false
@@ -18,6 +18,7 @@ on:
     branches: [main]
     paths:
       - "bmw-speed-camera-warning/**"
+      - "BMW MapCam.zip"
       - ".github/workflows/speed-camera-release.yml"
 
 permissions:
@@ -31,7 +32,7 @@ jobs:
   build-release:
     runs-on: ubuntu-latest
     env:
-      APP_VERSION: ${{ inputs.version || '0.7.57' }}
+      APP_VERSION: ${{ inputs.version || '0.9.0' }}
       APP_ID: aurelm_speed_camera_warning
       VOICE_VERSION: 0.1.9
     steps:
@@ -70,23 +71,12 @@ jobs:
           git checkout HEAD -- bmw-speed-camera-warning/data/camera-db.json
           git checkout HEAD -- bmw-speed-camera-warning/apps/aurelm_speed_camera_warning/camera-db.json
 
-      - name: Import regional camera sources
-        if: inputs.refresh_data == true || github.event_name == 'schedule' || github.event_name == 'push'
+      - name: Import verified MapCam Russia export
         run: |
-          python3 bmw-speed-camera-warning/tools/import_camera_sources.py
+          python3 bmw-speed-camera-warning/tools/import_mapcam.py "BMW MapCam.zip"
           # Imported databases are consumed directly by this build.
           # Do not push generated data from the runner: concurrent builds can race
           # and create rebase conflicts in camera-db.json.
-
-      - name: Install OSM PBF parser
-        if: steps.data_cache.outputs.cache-hit != 'true' || inputs.refresh_data == true || github.event_name == 'schedule' || github.event_name == 'push'
-        run: python3 -m pip install --break-system-packages osmium
-
-      - name: Import offline camera road geometry
-        if: steps.data_cache.outputs.cache-hit != 'true' || inputs.refresh_data == true || github.event_name == 'schedule'
-        run: |
-          python3 bmw-speed-camera-warning/tools/import_road_zones.py
-          # Generated geometry is included in the release without committing from CI.
 
       - name: Import offline Yoshkar-Ola street geometry
         if: steps.data_cache.outputs.cache-hit != 'true' || inputs.refresh_data == true || github.event_name == 'schedule'
@@ -223,9 +213,13 @@ jobs:
           node --check bmw-speed-camera-warning/native/bmwcaminfo-voice/voice.js
           test -s release/bmwcaminfo-voice@${VOICE_VERSION}.tgz
           node bmw-speed-camera-warning/tests/readout-config.test.js
+          node bmw-speed-camera-warning/tests/mapcam-warnings.test.js
+          node bmw-speed-camera-warning/tests/voice-queue.test.js
           node bmw-speed-camera-warning/tests/road-guidance.test.js
+          node bmw-speed-camera-warning/tests/mapcam-integration.test.js
+          node bmw-speed-camera-warning/tests/app-startup.test.js
+          python3 -m unittest discover -s bmw-speed-camera-warning/tests -p "test_mapcam*.py"
           python3 -m py_compile bmw-speed-camera-warning/tools/import_road_zones.py
-          test -s upstream/apps/${APP_ID}/road-zones.json
           test -f upstream/apps/${APP_ID}/city-map.json
           cd upstream
           python3 kit/tools/build.py "${APP_ID}"
@@ -286,5 +280,5 @@ jobs:
               "release/${APP_ID}@${APP_VERSION}.mgu" \
               --repo "$GITHUB_REPOSITORY" \
               --title "BMW Speed Camera Warning ${APP_VERSION}" \
-              --notes "Standalone offline BMW MGU ID7 speed camera database; road-geometry-matched camera-ahead warnings only; GPS accuracy must be <=15 m; no nearby fallback, no OSM road speed limits, camera-record speed limits only. No OSM road speed-limit detection. Voice warnings use BMW MediaPlayer; the app includes a manual voice test button."
+              --notes "BMW MGU ID7 camera warnings using MapCam sectors, directions and control paths across Russia. GPS accuracy must be <15 m. Includes section distance, observed average speed and configurable warnings. See INTEGRATION_RU.txt for compatibility limits. Voice warnings use BMW MediaPlayer; the app includes a manual voice test button."
           fi
