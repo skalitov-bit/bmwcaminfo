@@ -4,7 +4,7 @@ const assert=require('assert'),fs=require('fs'),path=require('path'),vm=require(
 const {createRequire}=require('module');
 const file=process.argv[2]||path.join(__dirname,'../apps/aurelm_speed_camera_warning/main.js');
 const appRequire=createRequire(path.resolve(file));
-const {CameraStore:RealStore}=appRequire('./camera-store');
+const {CameraStore:RealStore}=appRequire('./disk-camera-store');
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'bmw-startup-'));
 const warnings=[],texts=[],buttons={};let images=0,startPromise,gpsHandler,changeHandler,loopHandler,expectedCameras;
 const cv=new Proxy({}, {get:(_,key)=>(...args)=>{if(key==='text')texts.push(String(args[0]));return cv;}});
@@ -13,20 +13,21 @@ const ctx={dataDir:tmp,canvas:()=>cv,onTap:()=>{},loop:(name,ms,fn)=>{loopHandle
     log:{info:()=>{},warn:s=>warnings.push(String(s))},
     settings:{get:k=>settings[k],set:(k,v)=>{settings[k]=v;},onChange:fn=>{changeHandler=fn;}},
     ui:{image:()=>{images++;},onClick:(k,fn)=>{buttons[k]=fn;},onVisible:()=>{}}};
-class CameraStore extends RealStore {constructor(o){super(Object.assign({},o,{download:async()=>{throw new Error('OFFLINE_TEST');}}));expectedCameras=this.current.cities.russia.length;}}
+let activeStore;
+class CameraStore extends RealStore {constructor(o){super(o);activeStore=this;}async loadLocal(){const r=await super.loadLocal();expectedCameras=this.current.cities.russia.length;return r;}refresh(){this.pending=(async()=>{const old=this.current;this.current=await appRequire('./camera-catalog').openCatalog(path.dirname(path.resolve(file)));old.close();return {updated:true,database:this.current,source:this.source};})();return this.pending;}}
 class GPS {on(k,fn){gpsHandler=fn;}start(){}}
 class Voice {cancel(){}camera(){return Promise.resolve(true);}test(){return Promise.resolve(true);}}
 class Cluster {setMode(){}show(){}clear(){}sync(){}}
 const replacements={
     './kit/mgu':{run:o=>{startPromise=o.start(ctx);}},
     './uplink':{init:()=>{},describe:()=> 'test',checkInternet:()=>Promise.resolve(false)},
-    './camera-store':{CameraStore},'./gps':{BmwGps:GPS},
+    './disk-camera-store':{CameraStore},'./gps':{BmwGps:GPS},
     './voice-alert':{CameraVoiceAlerts:Voice},'./cluster-output':{CameraClusterOutput:Cluster}
 };
 vm.runInNewContext(fs.readFileSync(file,'utf8'),{require:n=>replacements[n]||appRequire(n),
     __dirname:path.dirname(path.resolve(file)),console,Buffer,process,setTimeout:fn=>setTimeout(fn,0),setInterval:()=>0}, {filename:file});
 async function run(){
-    await startPromise;await new Promise(resolve=>setTimeout(resolve,30));
+    await startPromise;await activeStore.pending;await new Promise(resolve=>setTimeout(resolve,30));
     assert(images>0,'Initial app screen must render: '+warnings.join('\n'));
     assert(expectedCameras>=50000&&texts.some(t=>t.includes(String(expectedCameras))),'Nationwide database count must be visible');
     assert(texts.some(t=>t.includes('предупреждения по всей России')),'Warning coverage must be visible');
@@ -49,4 +50,4 @@ async function run(){
     assert(!warnings.some(w=>/UI_RENDER_FAILED|render:|ReferenceError|TypeError/.test(w)),warnings.join('\n'));
     console.log('App startup/render smoke test passed; images:',images,'RSS MiB:',Math.round(process.memoryUsage().rss/1048576));
 }
-run().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>fs.rmSync(tmp,{recursive:true,force:true}));
+run().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{if(activeStore)activeStore.close();fs.rmSync(tmp,{recursive:true,force:true});});

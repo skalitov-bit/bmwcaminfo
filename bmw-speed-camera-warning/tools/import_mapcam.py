@@ -177,6 +177,8 @@ def convert(archive_path, root=ROOT):
         temp.replace(dest)
     print(json.dumps({'revision': revision, 'updatedAt': payload['updatedAt'], 'counts': payload['sourceCounts'],
                       'bytes': len(encoded.encode()), 'sqliteSha256': sqlite_hash}, ensure_ascii=False))
+    from pack_camera_catalog import pack
+    pack(root)
     return payload
 
 if __name__ == '__main__':

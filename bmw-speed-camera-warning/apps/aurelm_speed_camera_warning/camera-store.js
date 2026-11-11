@@ -28,6 +28,66 @@ function ensureDirectory(dir) {
     }
 }
 
+function validateCamera(camera, datasetId) {
+    const mapcam=datasetId.indexOf('mapcam-rus-')===0;
+    if (!camera || typeof camera.id !== 'string' || !/^[a-z0-9-]{2,80}$/.test(camera.id) ||
+        typeof camera.name !== 'string' || !camera.name.trim() || camera.name.length > 180) {
+        throw new Error('CAMERA_DB_CAMERA_INVALID');
+    }
+    if (mapcam && (camera.source !== 'MapCam.info' ||
+        !Number.isInteger(camera.mapcamId) || camera.id !== 'mapcam-' + camera.mapcamId ||
+        [0,1,2,3].indexOf(camera.mapcamDirectionType) < 0 ||
+        !Array.isArray(camera.mapcamTravel) || camera.mapcamTravel.length > 2 ||
+        camera.mapcamTravel.some(h => !Number.isFinite(h) || h < 0 || h >= 360))) {
+        throw new Error('CAMERA_DB_MAPCAM_INVALID');
+    }
+    const lat = camera.lat === null || camera.lat === undefined ? null : camera.lat;
+    const lon = camera.lon === null || camera.lon === undefined ? null : camera.lon;
+    if (mapcam && (lat === null || lon === null)) throw new Error('CAMERA_DB_MAPCAM_COORDINATES_MISSING');
+    if ((lat === null) !== (lon === null) ||
+        (lat !== null && (typeof lat !== 'number' || !isFinite(lat) || lat < -90 || lat > 90 ||
+            typeof lon !== 'number' || !isFinite(lon) || lon < -180 || lon > 180))) {
+        throw new Error('CAMERA_DB_COORDINATES_INVALID');
+    }
+    const limit = camera.limit === null || camera.limit === undefined ? null : camera.limit;
+    if (limit !== null && (typeof limit !== 'number' || !isFinite(limit) || limit < 5 || limit > 250)) {
+        throw new Error('CAMERA_DB_LIMIT_INVALID');
+    }
+    if(datasetId==='mapcam-rus-v2'){
+        if(!Number.isInteger(camera.mapcamAngleDeg)||camera.mapcamAngleDeg<0||camera.mapcamAngleDeg>255||
+           !Number.isInteger(camera.mapcamTypeCode)||camera.mapcamTypeCode<1||camera.mapcamTypeCode>255||
+           (camera.mapcamApproachHeadingDeg!==null&&(!Number.isFinite(camera.mapcamApproachHeadingDeg)||camera.mapcamApproachHeadingDeg<0||camera.mapcamApproachHeadingDeg>=360))||
+           !Number.isInteger(camera.mapcamWarningDistanceM)||camera.mapcamWarningDistanceM<0||camera.mapcamWarningDistanceM>2047||
+           !Array.isArray(camera.mapcamPath)||camera.mapcamPath.length>2050||
+           camera.mapcamPath.some(p=>!Array.isArray(p)||p.length!==2||!p.every(Number.isFinite)||Math.abs(p[0])>90||Math.abs(p[1])>180)||
+           (camera.mapcamPath.length&& (Math.abs(camera.mapcamPath[0][0]-lat)>0.00001||Math.abs(camera.mapcamPath[0][1]-lon)>0.00001))||
+           (camera.mapcamControlDirection!==null&&[0,1,2,3].indexOf(camera.mapcamControlDirection)<0)||
+           (camera.mapcamHours!==null&&(!Array.isArray(camera.mapcamHours)||camera.mapcamHours.length!==2||camera.mapcamHours.some(h=>!Number.isInteger(h)||h<0||h>31)))){
+            throw new Error('CAMERA_DB_WARNING_FIELDS_INVALID');
+        }
+    }
+    return { id: camera.id, name: camera.name.trim(),
+        mapcamId: camera.mapcamId, mapcamType: camera.mapcamType,
+        mapcamDirectionType: camera.mapcamDirectionType,
+        mapcamApproachHeadingDeg: camera.mapcamApproachHeadingDeg,
+        mapcamTravel: camera.mapcamTravel ? camera.mapcamTravel.slice() : [],
+        mapcamWarningDistanceM: camera.mapcamWarningDistanceM,
+        mapcamTypeCode: camera.mapcamTypeCode, mapcamAngleDeg: camera.mapcamAngleDeg,
+        mapcamPath: camera.mapcamPath||[], mapcamControlDirection: camera.mapcamControlDirection,
+        mapcamHours: camera.mapcamHours,
+        type: typeof camera.type === 'string' ? camera.type.slice(0, 100) : 'Камера',
+        limit, lat, lon,
+        source: typeof camera.source === 'string' ? camera.source.slice(0, 80) : 'unknown',
+        sourceLabel: typeof camera.sourceLabel === 'string' ? camera.sourceLabel.slice(0, 100) : '',
+        sourceUrl: typeof camera.sourceUrl === 'string' && /^https:\/\//.test(camera.sourceUrl) ? camera.sourceUrl.slice(0, 300) : '',
+        osmId: typeof camera.osmId === 'string' ? camera.osmId.slice(0, 40) : '',
+        direction: typeof camera.direction === 'string' ? camera.direction.slice(0, 80) : '',
+        description: typeof camera.description === 'string' ? camera.description.slice(0, 500) : '',
+        category: typeof camera.category === 'string' ? camera.category.slice(0, 30) : '',
+        overpassSnapshot: camera.overpassSnapshot === true,
+        note: typeof camera.note === 'string' ? camera.note.slice(0, 300) : '' };
+}
+
 function validateDatabase(value) {
     if (!value || value.schemaVersion !== 1 || !Number.isInteger(value.revision) || value.revision < 1 ||
         !value.cities || typeof value.cities !== 'object' || Array.isArray(value.cities)) {
@@ -45,64 +105,10 @@ function validateDatabase(value) {
         total += value.cities[city].length;
         if (total > 200000) throw new Error('CAMERA_DB_TOO_MANY_RECORDS');
         cities[city] = value.cities[city].map((camera) => {
-            if (!camera || typeof camera.id !== 'string' || !/^[a-z0-9-]{2,80}$/.test(camera.id) ||
-                typeof camera.name !== 'string' || !camera.name.trim() || camera.name.length > 180) {
-                throw new Error('CAMERA_DB_CAMERA_INVALID');
-            }
-            if (ids[camera.id]) throw new Error('CAMERA_DB_DUPLICATE_ID');
-            ids[camera.id] = true;
-            if (mapcam && (camera.source !== 'MapCam.info' ||
-                !Number.isInteger(camera.mapcamId) || camera.id !== 'mapcam-' + camera.mapcamId ||
-                [0,1,2,3].indexOf(camera.mapcamDirectionType) < 0 ||
-                !Array.isArray(camera.mapcamTravel) || camera.mapcamTravel.length > 2 ||
-                camera.mapcamTravel.some(h => !Number.isFinite(h) || h < 0 || h >= 360))) {
-                throw new Error('CAMERA_DB_MAPCAM_INVALID');
-            }
-            const lat = camera.lat === null || camera.lat === undefined ? null : camera.lat;
-            const lon = camera.lon === null || camera.lon === undefined ? null : camera.lon;
-            if (mapcam && (lat === null || lon === null)) throw new Error('CAMERA_DB_MAPCAM_COORDINATES_MISSING');
-            if ((lat === null) !== (lon === null) ||
-                (lat !== null && (typeof lat !== 'number' || !isFinite(lat) || lat < -90 || lat > 90 ||
-                    typeof lon !== 'number' || !isFinite(lon) || lon < -180 || lon > 180))) {
-                throw new Error('CAMERA_DB_COORDINATES_INVALID');
-            }
-            const limit = camera.limit === null || camera.limit === undefined ? null : camera.limit;
-            if (limit !== null && (typeof limit !== 'number' || !isFinite(limit) || limit < 5 || limit > 250)) {
-                throw new Error('CAMERA_DB_LIMIT_INVALID');
-            }
-            if(datasetId==='mapcam-rus-v2'){
-                if(!Number.isInteger(camera.mapcamAngleDeg)||camera.mapcamAngleDeg<0||camera.mapcamAngleDeg>255||
-                   !Number.isInteger(camera.mapcamTypeCode)||camera.mapcamTypeCode<1||camera.mapcamTypeCode>255||
-                   (camera.mapcamApproachHeadingDeg!==null&&(!Number.isFinite(camera.mapcamApproachHeadingDeg)||camera.mapcamApproachHeadingDeg<0||camera.mapcamApproachHeadingDeg>=360))||
-                   !Number.isInteger(camera.mapcamWarningDistanceM)||camera.mapcamWarningDistanceM<0||camera.mapcamWarningDistanceM>2047||
-                   !Array.isArray(camera.mapcamPath)||camera.mapcamPath.length>2050||
-                   camera.mapcamPath.some(p=>!Array.isArray(p)||p.length!==2||!p.every(Number.isFinite)||Math.abs(p[0])>90||Math.abs(p[1])>180)||
-                   (camera.mapcamPath.length&& (Math.abs(camera.mapcamPath[0][0]-lat)>0.00001||Math.abs(camera.mapcamPath[0][1]-lon)>0.00001))||
-                   (camera.mapcamControlDirection!==null&&[0,1,2,3].indexOf(camera.mapcamControlDirection)<0)||
-                   (camera.mapcamHours!==null&&(!Array.isArray(camera.mapcamHours)||camera.mapcamHours.length!==2||camera.mapcamHours.some(h=>!Number.isInteger(h)||h<0||h>31)))){
-                    throw new Error('CAMERA_DB_WARNING_FIELDS_INVALID');
-                }
-            }
-            return { id: camera.id, name: camera.name.trim(),
-                mapcamId: camera.mapcamId, mapcamType: camera.mapcamType,
-                mapcamDirectionType: camera.mapcamDirectionType,
-                mapcamApproachHeadingDeg: camera.mapcamApproachHeadingDeg,
-                mapcamTravel: camera.mapcamTravel ? camera.mapcamTravel.slice() : [],
-                mapcamWarningDistanceM: camera.mapcamWarningDistanceM,
-                mapcamTypeCode: camera.mapcamTypeCode, mapcamAngleDeg: camera.mapcamAngleDeg,
-                mapcamPath: camera.mapcamPath||[], mapcamControlDirection: camera.mapcamControlDirection,
-                mapcamHours: camera.mapcamHours,
-                type: typeof camera.type === 'string' ? camera.type.slice(0, 100) : 'Камера',
-                limit, lat, lon,
-                source: typeof camera.source === 'string' ? camera.source.slice(0, 80) : 'unknown',
-                sourceLabel: typeof camera.sourceLabel === 'string' ? camera.sourceLabel.slice(0, 100) : '',
-                sourceUrl: typeof camera.sourceUrl === 'string' && /^https:\/\//.test(camera.sourceUrl) ? camera.sourceUrl.slice(0, 300) : '',
-                osmId: typeof camera.osmId === 'string' ? camera.osmId.slice(0, 40) : '',
-                direction: typeof camera.direction === 'string' ? camera.direction.slice(0, 80) : '',
-                description: typeof camera.description === 'string' ? camera.description.slice(0, 500) : '',
-                category: typeof camera.category === 'string' ? camera.category.slice(0, 30) : '',
-                overpassSnapshot: camera.overpassSnapshot === true,
-                note: typeof camera.note === 'string' ? camera.note.slice(0, 300) : '' };
+            const clean = validateCamera(camera, datasetId);
+            if (ids[clean.id]) throw new Error('CAMERA_DB_DUPLICATE_ID');
+            ids[clean.id] = true;
+            return clean;
         });
     });
     if (mapcam && (!cities.russia || cities.russia.length < 50000)) {
@@ -247,4 +253,4 @@ class CameraStore {
         }
     }
 }
-module.exports = { CameraStore, validateDatabase, DATABASE_URL };
+module.exports = { CameraStore, validateDatabase, validateCamera, ensureDirectory, DATABASE_URL };

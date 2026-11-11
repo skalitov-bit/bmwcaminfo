@@ -1,4 +1,4 @@
-BMWCamInfo 0.9.0 — оболочка BMW и совместимость с данными MapCam
+BMWCamInfo 0.9.1 — оболочка BMW и совместимость с данными MapCam
 
 РЕЗУЛЬТАТ
 Сохранены карта, вкладки, локальные камеры и выбор KOMBI/HUD.
@@ -75,13 +75,19 @@ MapCam в этой доработке не заявляется.
 
 УСТАНОВКА И ОБНОВЛЕНИЕ
 TGZ — пакет MGU Store; MGU — формат установочного инструмента проекта.
-Устанавливайте 0.9.0 тем же способом, что прежний BMWCamInfo.
+Устанавливайте 0.9.1 тем же способом, что прежний BMWCamInfo.
 Windows EXE Updater остаётся отдельным загрузчиком базы, его EXE не изменён.
 Для отката сохранён комплект 0.8.0. Локальный user-cameras.json не удаляется.
-Кнопка обновления обращается к JSON в форке skalitov-bit/bmwcaminfo.
-Релиз 0.9.0 использует mapcam-rus-v2. Старая удалённая база mapcam-rus-v1
-будет отклонена с сохранением встроенной mapcam-rus-v2.
-Для новой выгрузки сейчас импортируйте её и пересоберите пакет.
+Кнопка обновления сначала получает небольшой camera-manifest-v1.json из
+форка skalitov-bit/bmwcaminfo. При той же ревизии полный файл не скачивается.
+Новая база загружается потоком на диск, проверяются размеры и SHA256.
+Переключение на неё выполняется только после проверки; при ошибке остаётся
+рабочая база. Старый camera-db-cache.json версии 0.9.0 не загружается и не
+удаляется. Встроенная база имеет ту же ревизию 11.11.2026 14:25:39 UTC.
+Для следующей выгрузки выполните импорт и опубликуйте вместе три файла из
+bmw-speed-camera-warning/data/: camera-manifest-v1.json,
+camera-index-v1.json и camera-records-v1.jsonl. Импортёр создаёт их автоматически.
+База с неверным хешем, неполным набором файлов или меньшей ревизией отклоняется.
 
 ПОВТОРНАЯ СБОРКА ИЗ КОРНЯ ИСХОДНИКОВ
 1. Выгрузите базу Windows Updater, упакуйте current.json и releases в ZIP.
@@ -94,12 +100,25 @@ Windows EXE Updater остаётся отдельным загрузчиком �
 ТЕСТЫ
 node bmw-speed-camera-warning/tests/mapcam-warnings.test.js
 node bmw-speed-camera-warning/tests/mapcam-integration.test.js
-node bmw-speed-camera-warning/tests/app-startup.test.js
+node --max-old-space-size=64 bmw-speed-camera-warning/tests/app-startup.test.js
+node --max-old-space-size=64 bmw-speed-camera-warning/tests/disk-camera-store.test.js
+node bmw-speed-camera-warning/tests/camera-catalog.test.js
 node bmw-speed-camera-warning/tests/voice-queue.test.js
 node bmw-speed-camera-warning/tests/road-guidance.test.js
 node bmw-speed-camera-warning/tests/readout-config.test.js
 python -m unittest discover -s bmw-speed-camera-warning/tests -p "test_mapcam*.py"
 На Windows задайте PYTHON с путём python.exe для readout-config.test.js.
 
-Лимиты пакета: память 512 МиБ, диск 256 МиБ. Локальный тест запуска оболочки
-с реальной базой занимал около 327 МиБ RSS на Windows Node; это не замер MGU.
+ИСПРАВЛЕНИЕ ВЫЛЕТА 0.9.1
+Монолитный JSON больше не загружается приложением и не входит в установку.
+На диске сохранены все 84 594 камеры, направления и геометрия участков.
+В память загружается индекс (файл около 1,8 МиБ) и записи поблизости.
+Кеш прочитанных записей ограничен 512 записями и 2 МиБ исходных данных.
+Тесты загрузки/обновления проходят с ограничением old-space JavaScript 64 МиБ.
+Пиковая память процесса в тестах на ПК примерно 100–140 МиБ; точные значения
+и среда указаны в TEST-RESULTS.txt. Память реального SDK/рендерера автомобиля
+этим измерением не охвачена. Успешная работа на MGU после исправления пока
+не подтверждена, требуется проверка владельцем.
+Лимиты пакета не увеличены: память 512 МиБ, диск 256 МиБ.
+Журнал aurelm_speed_camera_warning.log теперь содержит этапы CAMERA_DB,
+расход памяти RSS и heap. Пароль и данные учётной записи для этого не нужны.

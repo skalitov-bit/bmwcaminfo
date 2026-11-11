@@ -1,4 +1,8 @@
-> bmw-speed-camera-warning\tests\mapcam-warnings.test.js
+BMWCamInfo 0.9.1 checks on Windows x64, Node v24.22.1. No on-car test.
+HTTP streaming tests use a local fixture server, not a successful MapCam/GitHub response.
+Full-JSON comparison tests run only on the build host; their RSS is not application RSS.
+
+> node WORKSPACE\work\bmwcaminfo\bmw-speed-camera-warning\tests\mapcam-warnings.test.js
 PASS First fix silent, configured database distance and speed limit
 PASS Base distance and override independent of legacy 500/700 rule
 PASS Wrong direction, sideways camera and narrow sector rejected
@@ -15,30 +19,86 @@ PASS Optional hours with midnight and unknown fields
 MapCam scenarios passed: 13
 Exit: 0
 
-> bmw-speed-camera-warning\tests\mapcam-integration.test.js
-1000 nearby searches (ms): 817
-Actual MapCam point approach: mapcam-6976
-Actual MapCam section approach: mapcam-959188
-MapCam integration tests passed; RSS MiB: 560
-Exit: 0
-
-> bmw-speed-camera-warning\tests\app-startup.test.js
-App startup/render smoke test passed; images: 6 RSS MiB: 327
-Exit: 0
-
-> bmw-speed-camera-warning\tests\voice-queue.test.js
+> node WORKSPACE\work\bmwcaminfo\bmw-speed-camera-warning\tests\voice-queue.test.js
 Voice expiry/cancellation/queue tests passed
 Exit: 0
 
-> bmw-speed-camera-warning\tests\road-guidance.test.js
+> node WORKSPACE\work\bmwcaminfo\bmw-speed-camera-warning\tests\road-guidance.test.js
 Road-matched camera guidance tests passed
 Exit: 0
 
-> bmw-speed-camera-warning\tests\readout-config.test.js
-Speed Camera Warning 0.9.0 tests passed
+> node WORKSPACE\work\bmwcaminfo\bmw-speed-camera-warning\tests\readout-config.test.js
+Speed Camera Warning 0.9.1 tests passed
 Exit: 0
 
-> -m unittest discover -s bmw-speed-camera-warning\tests -p test_mapcam*.py
+> node WORKSPACE\work\bmwcaminfo\bmw-speed-camera-warning\tests\mapcam-integration.test.js
+1000 nearby searches (ms): 821
+Actual MapCam point approach: mapcam-6976
+Actual MapCam section approach: mapcam-959188
+MapCam integration tests passed; RSS MiB: 561
+Exit: 0
+
+> node WORKSPACE\work\bmwcaminfo\bmw-speed-camera-warning\tests\camera-catalog.test.js
+PASS 84594 records and regional views identical; 126 spatial comparisons; real section warning; bounded cache
+Exit: 0
+
+> node --max-old-space-size=64 WORKSPACE\work\bmwcaminfo\bmw-speed-camera-warning\tests\app-startup.test.js
+App startup/render smoke test passed; images: 7 RSS MiB: 113
+Exit: 0
+
+> node --max-old-space-size=64 WORKSPACE\work\bmwcaminfo\bmw-speed-camera-warning\tests\disk-camera-store.test.js
+CAMERA_DB ready bundle rssMiB=69 heapMiB=19 RSS MiB=68.99
+cold + nearby map RSS MiB=95.53
+CAMERA_DB manifest rssMiB=96 heapMiB=31 RSS MiB=95.54
+CAMERA_DB manifest rssMiB=96 heapMiB=31 RSS MiB=96.37
+CAMERA_DB index downloaded rssMiB=100 heapMiB=16 RSS MiB=100.47
+CAMERA_DB records downloaded rssMiB=72 heapMiB=14 RSS MiB=71.60
+CAMERA_DB activated rssMiB=93 heapMiB=27 RSS MiB=92.89
+first successful streamed update RSS MiB=79.58
+CAMERA_DB ready cache rssMiB=76 heapMiB=19 RSS MiB=76.11
+CAMERA_DB manifest rssMiB=76 heapMiB=19 RSS MiB=76.11
+CAMERA_DB manifest rssMiB=77 heapMiB=15 RSS MiB=76.51
+CAMERA_DB update failed rssMiB=77 heapMiB=15 RSS MiB=76.54
+PASS preserve active database on offline: CAMERA_DB_HTTP_503
+CAMERA_DB manifest rssMiB=85 heapMiB=26 RSS MiB=85.41
+CAMERA_DB index downloaded rssMiB=93 heapMiB=18 RSS MiB=92.61
+CAMERA_DB update failed rssMiB=93 heapMiB=18 RSS MiB=92.75
+PASS preserve active database on truncated: CAMERA_DB_DOWNLOAD_ABORTED
+CAMERA_DB manifest rssMiB=96 heapMiB=29 RSS MiB=95.73
+CAMERA_DB index downloaded rssMiB=92 heapMiB=14 RSS MiB=91.66
+CAMERA_DB records downloaded rssMiB=73 heapMiB=15 RSS MiB=73.13
+CAMERA_DB update failed rssMiB=87 heapMiB=15 RSS MiB=86.88
+PASS preserve active database on hash: CAMERA_CATALOG_HASH
+CAMERA_DB manifest rssMiB=75 heapMiB=19 RSS MiB=74.75
+CAMERA_DB update failed rssMiB=75 heapMiB=18 RSS MiB=74.93
+PASS preserve active database on oversize: CAMERA_DB_TOO_LARGE
+CAMERA_DB manifest rssMiB=79 heapMiB=21 RSS MiB=78.90
+CAMERA_DB index downloaded rssMiB=79 heapMiB=21 RSS MiB=79.11
+CAMERA_DB records downloaded rssMiB=77 heapMiB=15 RSS MiB=77.08
+CAMERA_DB update failed rssMiB=78 heapMiB=14 RSS MiB=78.25
+PASS preserve active database on bad-index: CAMERA_CATALOG_INVALID
+CAMERA_DB manifest rssMiB=79 heapMiB=18 RSS MiB=79.18
+CAMERA_DB update failed rssMiB=79 heapMiB=19 RSS MiB=79.33
+CAMERA_DB manifest rssMiB=79 heapMiB=19 RSS MiB=79.33
+CAMERA_DB update failed rssMiB=79 heapMiB=19 RSS MiB=79.35
+CAMERA_DB manifest rssMiB=79 heapMiB=19 RSS MiB=79.35
+CAMERA_DB index downloaded rssMiB=83 heapMiB=18 RSS MiB=82.97
+CAMERA_DB records downloaded rssMiB=81 heapMiB=14 RSS MiB=81.37
+CAMERA_DB update failed rssMiB=106 heapMiB=27 RSS MiB=105.65
+CAMERA_DB manifest rssMiB=106 heapMiB=27 RSS MiB=105.66
+CAMERA_DB index downloaded rssMiB=86 heapMiB=22 RSS MiB=86.41
+CAMERA_DB records downloaded rssMiB=78 heapMiB=15 RSS MiB=77.58
+CAMERA_DB activated rssMiB=105 heapMiB=27 RSS MiB=104.73
+second successful update after failed activation RSS MiB=104.73
+CAMERA_DB ready bundle rssMiB=100 heapMiB=19 RSS MiB=100.16
+CAMERA_DB ready bundle rssMiB=89 heapMiB=19 RSS MiB=89.40
+complete RSS MiB=99.20
+PASS disk store: cold/warm/unchanged/update/rollback/hash/partial/atomic recovery; Node v24.22.1 x64; peak observed RSS MiB=129.07
+(node:24524) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Exit: 0
+
+> C:\Users\Sergei\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m unittest discover -s WORKSPACE\work\bmwcaminfo\bmw-speed-camera-warning\tests -p test_mapcam*.py
 ........
 ----------------------------------------------------------------------
 Ran 8 tests in 0.001s
@@ -46,7 +106,60 @@ Ran 8 tests in 0.001s
 OK
 Exit: 0
 
-Installed TGZ extraction: byte-for-byte source/data checks passed.
-App startup/render smoke test passed; images: 6 RSS MiB: 327
+TGZ source/data byte comparison passed; legacy monolithic JSON absent; memory/disk limits unchanged.
+
+> node --max-old-space-size=64 WORKSPACE\work\bmwcaminfo\bmw-speed-camera-warning\tests\app-startup.test.js WORKSPACE\work\package-0.9.1-verify\package\javascript\app.js
+App startup/render smoke test passed; images: 7 RSS MiB: 114
 Exit: 0
-Final test maintenance: startup and nationwide integration checks now follow the imported record count rather than a fixed snapshot. Both rerun successfully; actual point mapcam-6976 and section mapcam-959188 passed. Archive rebuilt with the final test sources.
+
+> node --max-old-space-size=64 WORKSPACE\work\bmwcaminfo\bmw-speed-camera-warning\tests\disk-camera-store.test.js WORKSPACE\work\package-0.9.1-verify\package\javascript
+CAMERA_DB ready bundle rssMiB=69 heapMiB=19 RSS MiB=69.17
+cold + nearby map RSS MiB=94.94
+CAMERA_DB manifest rssMiB=95 heapMiB=30 RSS MiB=94.96
+CAMERA_DB manifest rssMiB=96 heapMiB=30 RSS MiB=95.95
+CAMERA_DB index downloaded rssMiB=100 heapMiB=16 RSS MiB=99.71
+CAMERA_DB records downloaded rssMiB=73 heapMiB=14 RSS MiB=72.51
+CAMERA_DB activated rssMiB=93 heapMiB=27 RSS MiB=93.50
+first successful streamed update RSS MiB=79.37
+CAMERA_DB ready cache rssMiB=75 heapMiB=19 RSS MiB=75.46
+CAMERA_DB manifest rssMiB=76 heapMiB=19 RSS MiB=75.53
+CAMERA_DB manifest rssMiB=78 heapMiB=15 RSS MiB=77.61
+CAMERA_DB update failed rssMiB=73 heapMiB=13 RSS MiB=73.34
+PASS preserve active database on offline: CAMERA_DB_HTTP_503
+CAMERA_DB manifest rssMiB=76 heapMiB=18 RSS MiB=76.20
+CAMERA_DB index downloaded rssMiB=82 heapMiB=19 RSS MiB=81.97
+CAMERA_DB update failed rssMiB=82 heapMiB=19 RSS MiB=82.18
+PASS preserve active database on truncated: CAMERA_DB_DOWNLOAD_ABORTED
+CAMERA_DB manifest rssMiB=84 heapMiB=25 RSS MiB=84.04
+CAMERA_DB index downloaded rssMiB=88 heapMiB=14 RSS MiB=88.13
+CAMERA_DB records downloaded rssMiB=115 heapMiB=16 RSS MiB=115.22
+CAMERA_DB update failed rssMiB=79 heapMiB=14 RSS MiB=79.45
+PASS preserve active database on hash: CAMERA_CATALOG_HASH
+CAMERA_DB manifest rssMiB=80 heapMiB=18 RSS MiB=80.07
+CAMERA_DB update failed rssMiB=80 heapMiB=18 RSS MiB=80.23
+PASS preserve active database on oversize: CAMERA_DB_TOO_LARGE
+CAMERA_DB manifest rssMiB=81 heapMiB=22 RSS MiB=81.40
+CAMERA_DB index downloaded rssMiB=82 heapMiB=22 RSS MiB=81.64
+CAMERA_DB records downloaded rssMiB=78 heapMiB=14 RSS MiB=78.36
+CAMERA_DB update failed rssMiB=92 heapMiB=15 RSS MiB=91.74
+PASS preserve active database on bad-index: CAMERA_CATALOG_INVALID
+CAMERA_DB manifest rssMiB=76 heapMiB=17 RSS MiB=76.24
+CAMERA_DB update failed rssMiB=76 heapMiB=18 RSS MiB=76.42
+CAMERA_DB manifest rssMiB=76 heapMiB=18 RSS MiB=76.42
+CAMERA_DB update failed rssMiB=76 heapMiB=18 RSS MiB=76.47
+CAMERA_DB manifest rssMiB=76 heapMiB=18 RSS MiB=76.47
+CAMERA_DB index downloaded rssMiB=81 heapMiB=18 RSS MiB=80.90
+CAMERA_DB records downloaded rssMiB=101 heapMiB=14 RSS MiB=100.52
+CAMERA_DB update failed rssMiB=109 heapMiB=27 RSS MiB=108.76
+CAMERA_DB manifest rssMiB=109 heapMiB=27 RSS MiB=108.77
+CAMERA_DB index downloaded rssMiB=108 heapMiB=22 RSS MiB=107.93
+CAMERA_DB records downloaded rssMiB=84 heapMiB=14 RSS MiB=84.42
+CAMERA_DB activated rssMiB=106 heapMiB=27 RSS MiB=105.67
+second successful update after failed activation RSS MiB=105.67
+CAMERA_DB ready bundle rssMiB=93 heapMiB=19 RSS MiB=93.27
+CAMERA_DB ready bundle rssMiB=89 heapMiB=19 RSS MiB=88.89
+complete RSS MiB=98.73
+PASS disk store: cold/warm/unchanged/update/rollback/hash/partial/atomic recovery; Node v24.22.1 x64; peak observed RSS MiB=128.95
+(node:23876) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Exit: 0

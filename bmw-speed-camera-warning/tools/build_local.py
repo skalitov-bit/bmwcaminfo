@@ -22,7 +22,7 @@ def build(out, cache):
     for item in inputs['inputs']:
         p=cache/item['name']
         if not p.exists():
-            req=urllib.request.Request(item['url'],headers={'User-Agent':'BMWCamInfo-local-build/0.9.0'})
+            req=urllib.request.Request(item['url'],headers={'User-Agent':'BMWCamInfo-local-build/0.9.1'})
             raw=urllib.request.urlopen(req,timeout=60).read()
             if hashlib.sha256(raw).hexdigest()!=item['sha256']:raise ValueError('Download hash mismatch: '+item['name'])
             p.write_bytes(raw)
@@ -31,6 +31,8 @@ def build(out, cache):
     builder=importlib.util.module_from_spec(spec)
     sys.path.insert(0,str(cache))
     spec.loader.exec_module(builder)
+    from pack_camera_catalog import pack
+    pack(ROOT)
     app=json.loads((APP/'app.json').read_text(encoding='utf-8'))
     db=json.loads((APP/'camera-db.json').read_text(encoding='utf-8'))
     if db.get('datasetId')!='mapcam-rus-v2' or db.get('warningSchemaVersion')!=1:
@@ -51,8 +53,9 @@ def build(out, cache):
     meta=json.loads(blobs['meta.json']);meta['version']=app['version'];put_json('meta.json',meta)
     lock=json.loads(blobs['source/npm-shrinkwrap.json']);lock['version']=app['version'];put_json('source/npm-shrinkwrap.json',lock)
     for p in APP.iterdir():
-        if p.is_file() and p.suffix in ('.js','.json') and p.name!='app.json':
+        if p.is_file() and p.suffix in ('.js','.json','.jsonl') and p.name not in ('app.json','camera-db.json'):
             blobs['source/javascript/'+('app.js' if p.name=='main.js' else p.name)]=p.read_bytes()
+    blobs.pop('source/javascript/camera-db.json',None)
     rt={k:app.get(k) for k in ('id','title','version','screens','settings','config','startWidget')}
     rt['stateIds']=state_ids;put_json('source/javascript/kit/app-spec.json',rt)
     for name in list(blobs):
