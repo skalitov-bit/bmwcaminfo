@@ -53,10 +53,10 @@ def build(out, cache):
             if m.isfile():blobs[m.name]=t.extractfile(m).read();modes[m.name]=m.mode
     def put_json(name,value):blobs[name]=json.dumps(value,ensure_ascii=False,indent=1).encode('utf-8')
     pkg=json.loads(blobs['source/package.json'])
-    pkg.update(version=app['version'],description=app['description'])
+    pkg.update(version=app['version'],description=app['description'],productName=app['title'])
     pkg['oapAppSettings'].update(maxDiskUsage=app['maxDiskUsage'],memoryThresholdKB=app['memoryKB'])
     put_json('source/package.json',pkg)
-    meta=json.loads(blobs['meta.json']);meta['version']=app['version'];put_json('meta.json',meta)
+    meta=json.loads(blobs['meta.json']);meta.update(version=app['version'],title=app['title']);put_json('meta.json',meta)
     lock=json.loads(blobs['source/npm-shrinkwrap.json']);lock['version']=app['version'];put_json('source/npm-shrinkwrap.json',lock)
     legacy_files={'camera-db.json','camera-records-v1.jsonl','camera-index-v1.json','camera-manifest-v1.json'}
     if hybrid:
@@ -65,6 +65,13 @@ def build(out, cache):
         if p.is_file() and p.suffix in ('.js','.json','.jsonl','.bin') and p.name not in ('app.json','camera-db.json') and not (hybrid and p.name in legacy_files):
             blobs['source/javascript/'+('app.js' if p.name=='main.js' else p.name)]=p.read_bytes()
     blobs.pop('source/javascript/camera-db.json',None)
+    # Replace the template launcher icon with this application's own artwork.
+    icon_path=APP/'icon.png'
+    if icon_path.exists():
+        icon_name=app['id']+'_icon.png'
+        icon_data=icon_path.read_bytes()
+        for location in ('rhmiData/resources/', 'source/rhmiData/variantGroups/Common/images/'):
+            blobs[location+icon_name]=icon_data
     rt={k:app.get(k) for k in ('id','title','version','screens','settings','config','startWidget')}
     rt['stateIds']=state_ids;put_json('source/javascript/kit/app-spec.json',rt)
     for name in list(blobs):

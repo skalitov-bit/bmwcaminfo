@@ -6,7 +6,7 @@ async function run(){
  const c=await openCatalog(path.join(__dirname,'../apps/aurelm_speed_camera_warning'));
  const opened=process.memoryUsage();assert.strictEqual(c.readBlocks,0);
  const cities=[{lat:55.75,lon:37.62},{lat:56.63,lon:47.928},{lat:43.12,lon:131.9}];
- for(let i=0;i<150;i++){const rows=c.near(cities[i%3],i%10===0?25000:2100,500);assert(rows.length<=500);assert(c.cacheRecords<=1024&&c.cacheBytes<=131072&&c.cache.size<=8);}
+ for(let i=0;i<150;i++){c.nearWarnings(cities[i%3]);const rows=c.near(cities[i%3],25000,500);assert(rows.length<=500);assert(c.cacheRecords<=1024&&c.cacheBytes<=131072&&c.cache.size<=8);assert(c.warningCache.cacheRecords<=2048&&c.warningCache.cacheBytes<=262144&&c.warningCache.cache.size<=16);}
  const final=process.memoryUsage();console.log(JSON.stringify({openedHeapMiB:opened.heapUsed/1048576,finalHeapMiB:final.heapUsed/1048576,finalRssMiB:final.rss/1048576,cacheRecords:c.cacheRecords,cacheRawBytes:c.cacheBytes,decodedBlocks:c.readBlocks,oldSpaceLimitMiB:64},null,2));c.close();
 }
 run().catch(e=>{console.error(e);process.exitCode=1;});

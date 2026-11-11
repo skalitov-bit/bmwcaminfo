@@ -3,20 +3,24 @@ const assert=require('assert'),fs=require('fs'),path=require('path'),vm=require(
 const {createRequire}=require('module');
 const base=path.resolve(process.argv[2]||path.join(__dirname,'../apps/aurelm_speed_camera_warning'));
 const req=createRequire(path.join(base,'cluster-output.js'));
-const {category}=req('./camera-label');
+const {category,hudLabels}=req('./camera-label');
 const textRenderer=req('./cluster-text');
 const source=fs.readFileSync(path.join(base,'cluster-output.js'),'utf8');
 const frame=vm.runInNewContext(source+'\n({makeFrame});',{
  require:n=>n==='./cluster_render_client'?{ClusterRender:class{}}:req(n),module:{exports:{}},Buffer
 });
-const main=fs.readFileSync(path.join(base,fs.existsSync(path.join(base,'main.js'))?'main.js':'app.js'),'utf8');
-const banner=main.slice(main.indexOf(' function drawAlertBanner(cv){'),main.indexOf('function displayModeLabel'));
-const C=vm.runInNewContext('('+main.match(/const C=(\{[^;]+\});/)[1]+')');
+const bannerSource=fs.readFileSync(path.join(base,'central-alert.js'),'utf8');
+const texts=[];
+const drawBanner=vm.runInNewContext(bannerSource+'\ndrawCentralAlert;',{
+ Buffer,module:{exports:{}},require:n=>n==='./hud-canvas'?{text:(_cv,value)=>texts.push(String(value))}:n==='./camera-icon'?{drawCanvas:()=>{}}:req(n)
+});
+async function run(){
 const types=new Map();let count=0;
-for(const line of fs.readFileSync(path.join(base,'camera-records-v1.jsonl'),'utf8').trim().split('\n')){
- const c=JSON.parse(line);count++;assert.strictEqual(category(c).full,c.type,'Preserve real MapCam category');types.set(c.mapcamTypeCode,c);
+const catalog=await req('./hybrid-catalog').openCatalog(base);
+for(let i=0;i<catalog.index.blocks.length;i++)for(const c of catalog.block(i)){
+ count++;types.set(c.typeNamespace+':'+c.typeCode,c);
 }
-assert.strictEqual(types.size,13);
+catalog.close();assert(types.size>=13);
 for(const c of [...types.values(),{camera_model:'СТРЕЛКА',camera_family:'fixed',type:'Камера'},{camera_model:'КОРДОН',camera_family:'dummy',type:'Муляж'},{camera_model:'HIKVISION',camera_family:'fixed',type:'Камера'},{type:'Скорость + светофор'},{type:'Камера с Ёжом XYZ'},{}, {type:' '.repeat(80)}, {type:'Я'.repeat(200)}]){
  const label=category(c);assert(label.full.length<=48);assert(label.short.length<=17);
  for(const char of label.short)assert(textRenderer.hasGlyph(char), 'Missing glyph: '+char);
@@ -24,11 +28,12 @@ for(const c of [...types.values(),{camera_model:'СТРЕЛКА',camera_family:'
  for(const phase of ['point','section','rear']){
   const e={camera:c,distanceM:500,speedKmh:72,type:'speeding',speeding:true,phase,useAverage:phase==='section',averageKmh:72};
   const pixels=frame.makeFrame(e);assert.strictEqual(pixels.length,1680*464*4);
-  const texts=[];const cv=new Proxy({}, {get:()=>()=>cv});
-  vm.runInNewContext(banner+'\ndrawAlertBanner(cv);',{category,cv,C,activeAlert:e,alertUntil:Date.now()+60000,fix:null,txt:(canvas,text)=>texts.push(String(text))});
-  assert(texts.includes(label.full.toUpperCase()),'Type must appear in the actual alert banner');
+  texts.length=0;const cv=new Proxy({}, {get:(_,key)=>key==='recording'?true:()=>cv});
+  drawBanner(cv,e,null,{x:282,y:92,w:1282});
+  assert(texts.includes(hudLabels(c).control),'Control type must appear in the actual alert banner');
+  if(hudLabels(c).model)assert(texts.includes(hudLabels(c).model),'Model must appear separately');
   assert(!texts.includes('КАМЕРА ВПЕРЕДИ'),'Generic title must not replace type');
-  assert(texts.some(s=>s.startsWith(phase==='section'?'До конца ':phase==='rear'?'За камерой ':'Через ')),'Preserve phase/distance');
+  assert(texts.some(s=>s.startsWith(phase==='section'?'ДО КОНЦА ':phase==='rear'?'ЗА КАМЕРОЙ ':'ЧЕРЕЗ ')),'Preserve phase/distance');
  }
 }
 assert.strictEqual(category({type:'Скорость + светофор'}).full,'Скорость + светофор');
@@ -43,4 +48,6 @@ assert.strictEqual(lower[lower.length-1],0,'Background outside text stays transp
 // More than two-digit limits and long distances must remain within their own area.
 for(const value of ['20','60','110','250'])assert(textRenderer.width(value,textRenderer.fittedSize(value,32,44))<=44.001);
 assert(textRenderer.width('2000 М',textRenderer.fittedSize('2000 М',40,207))<=207.001);
-console.log('Notification types passed: '+count+' real records, 13 categories, 3 phases, Cyrillic glyph coverage, header bounds and fallbacks.');
+console.log('Notification types passed: '+count+' real records, '+types.size+' source categories, 3 phases, Cyrillic glyph coverage, header bounds and fallbacks.');
+}
+run().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,8 +1,8 @@
 {
   "id": "aurelm_speed_camera_warning",
-  "title": "Speed Camera Warning",
+  "title": "SpeedCAM",
   "description": "Гибрид MapCam + еСтрелка по России: компактная база, названия комплексов и предупреждения KOMBI/HUD.",
-  "version": "0.9.11",
+  "version": "0.9.28",
   "vendor": "Andrug05",
   "loggingId": "SCAM",
   "iconGlyph": "camera",
@@ -10,7 +10,7 @@
     {
       "name": "MAIN",
       "kind": "canvas",
-      "title": "Камеры",
+      "title": "SpeedCAM",
       "buttons": [
         [
           "BTN_CAM_PREV",

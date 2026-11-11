@@ -25,8 +25,8 @@ function drawCentralAlert(cv,event,fallbackSpeed,bounds){
  const label=(value,l,t,size,color,maxWidth,align)=>native?require('./hud-canvas').text(original,value,(bounds?bounds.x:x)+l*k,(bounds?bounds.y:y)+t*k,size*k,color,{maxWidth:maxWidth*k,align}):text.draw(glyphs.d,gw,gh,1,value,l*k,t*k,size*k,color,{maxWidth:maxWidth*k,align});
  cv.roundRect(x,y,w,h,18,'#080b10');
  cv.strokeRoundRect(x,y,w,h,18,2,speeding?'#d32c36':'#ffcd4a');
- cv.roundRect(x+18,y+18,150,106,14,'#10151c');
- cameraIcon.drawCanvas(original,(bounds?bounds.x:x)+58*k,(bounds?bounds.y:y)+42*k,70*k,58*k,[234,242,248]);
+ cv.roundRect(x+18,y+17,150,140,14,'#10151c');
+ cameraIcon.drawCanvas(original,(bounds?bounds.x:x)+23*k,(bounds?bounds.y:y)+29*k,140*k,116*k,[234,242,248]);
  const titles=hudLabels(c);
  label(titles.control,194,13,30,WHITE,510);
  if(titles.model)label(titles.model,194,48,26,MUTED,510);
@@ -47,9 +47,10 @@ function drawCentralAlert(cv,event,fallbackSpeed,bounds){
  }
  if(speeding){
   cv.roundRect(x+1100,y+17,330,108,14,'#35121a');
-  label('ПРЕВЫШЕНИЕ',1120,28,26,RED,290);
+  const excessTitleY=17+(108-text.capHeight(26)-12-text.capHeight(46))/2;
+  label('ПРЕВЫШЕНИЕ',1265,excessTitleY,26,RED,290,'center');
   const excess=speed!==null&&limit!==null?'+'+Math.max(0,speed-limit)+' КМ/Ч':'НЕТ ДАННЫХ';
-  label(excess,1120,71,46,RED,290);
+  label(excess,1265,excessTitleY+text.capHeight(26)+12,46,RED,290,'center');
  }else{
   label(e.useAverage?'СРЕДНЯЯ':'СКОРОСТЬ',1120,28,26,MUTED,290);
   label(speed!==null?speed+' КМ/Ч':'НЕТ ДАННЫХ',1120,71,44,WHITE,290);

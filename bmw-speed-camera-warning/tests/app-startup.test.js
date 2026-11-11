@@ -6,8 +6,9 @@ const file=process.argv[2]||path.join(__dirname,'../apps/aurelm_speed_camera_war
 const appRequire=createRequire(path.resolve(file));
 const {CameraStore:RealStore}=appRequire('./disk-camera-store');
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'bmw-startup-'));
-const warnings=[],texts=[],buttons={};let images=0,startPromise,gpsHandler,changeHandler,loopHandler,expectedCameras,tapHandler,lastCanvas;
+const warnings=[],texts=[],buttons={};let images=0,startPromise,gpsHandler,changeHandler,loopHandler,expectedCameras,tapHandler,lastCanvas,visibleHandler,pageTargets=[];
 const cv=new Proxy({}, {get:(_,key)=>(...args)=>{if(key==='text')texts.push(String(args[0]));return cv;}});
+const nativeButtonState={};
 const settings={city:'russia',camera_display:'off'};
 const previewDir=process.env.BMW_PREVIEW_DIR;
 const Canvas=previewDir?appRequire('./kit/canvas').Canvas:null;
@@ -16,15 +17,17 @@ if(previewDir)fs.mkdirSync(previewDir,{recursive:true});
 const ctx={dataDir:tmp,canvas:()=>native?new native.Recorder(1600,520):previewDir?new Canvas(1600,520):cv,onTap:fn=>{tapHandler=fn;},loop:(name,ms,fn)=>{loopHandler=fn;},
     log:{info:()=>{},warn:s=>warnings.push(String(s))},
     settings:{get:k=>settings[k],set:(k,v)=>{settings[k]=v;},onChange:fn=>{changeHandler=fn;}},
-    ui:{image:(id,image)=>{images++;lastCanvas=native?native.play(image.words(),new Canvas(1600,520)):image;},onClick:(k,fn)=>{buttons[k]=fn;},onVisible:()=>{}}};
-let activeStore;
+    ui:{visible:(id,on)=>{nativeButtonState[id]=on;},enabled:()=>{},image:(id,image)=>{images++;pageTargets=image.targets||[];lastCanvas=native?native.play(image.words(),new Canvas(1600,520)):image;},onClick:(k,fn)=>{buttons[k]=fn;},isVisible:()=>true,onVisible:fn=>{visibleHandler=fn;}}};
+let activeStore,pulseTime=0,voiceTests=0,voiceWarnings=0,clusterWarnings=0,centralWarnings=0;
 class CameraStore extends RealStore {constructor(o){super(o);activeStore=this;}async loadLocal(){const r=await super.loadLocal();expectedCameras=this.current.cities.russia.length;return r;}refresh(){this.pending=(async()=>{const old=this.current;this.current=await this.codec.openCatalog(path.dirname(path.resolve(file)));old.close();return {updated:true,database:this.current,source:this.source};})();return this.pending;}}
 class GPS {on(k,fn){gpsHandler=fn;}start(){}}
-class Voice {cancel(){}camera(){return Promise.resolve(true);}test(){return Promise.resolve(true);}}
-class Cluster {setMode(){}show(){}clear(){}sync(){}}
+class Voice {cancel(){}camera(){voiceWarnings++;return Promise.resolve(true);}test(){voiceTests++;return Promise.resolve(true);}}
+class Cluster {setMode(){}show(){clusterWarnings++;}clear(){}sync(){}}
 const replacements={
+    './central-alert':{drawCentralAlert:(...args)=>{centralWarnings++;return appRequire('./central-alert').drawCentralAlert(...args);}},
+    './ring-pulse':Object.assign({},appRequire('./ring-pulse'),{monotonicMs:()=>pulseTime}),
     './kit/mgu':{run:o=>{startPromise=o.start(ctx);}},
-    './screen-style':Object.assign({},appRequire('./screen-style'),{text:(cv,s,...args)=>{texts.push(String(s));return appRequire('./screen-style').text(cv,s,...args);}}),
+    './screen-style':Object.assign({},appRequire('./screen-style'),{heading:(cv,s,...args)=>{texts.push(String(s));return appRequire('./screen-style').heading(cv,s,...args);},text:(cv,s,...args)=>{texts.push(String(s));return appRequire('./screen-style').text(cv,s,...args);}}),
     './uplink':{init:()=>{},describe:()=> 'test',checkInternet:()=>Promise.resolve(false)},
     './disk-camera-store':{CameraStore},'./gps':{BmwGps:GPS},
     './voice-alert':{CameraVoiceAlerts:Voice},'./cluster-output':{CameraClusterOutput:Cluster}
@@ -37,7 +40,39 @@ async function run(){
     assert(expectedCameras>=50000&&texts.some(t=>t.includes(String(expectedCameras))),'Nationwide database count must be visible');
     const settle=()=>new Promise(resolve=>setTimeout(resolve,40));
     const save=name=>{if(previewDir)fs.writeFileSync(path.join(previewDir,name+'.png'),lastCanvas.png());};
+    const scale=()=>texts.filter(t=>t.startsWith('МАСШТАБ ')).slice(-1)[0];
+    assert.strictEqual(scale(),'МАСШТАБ 0.75×');
+    tapHandler(1068,352);await settle();assert.strictEqual(scale(),'МАСШТАБ 1×','Plus zooms in');
+    tapHandler(1068,424);await settle();assert.strictEqual(scale(),'МАСШТАБ 0.75×','Minus zooms out');
+    tapHandler(1068,388);await settle();assert.strictEqual(scale(),'МАСШТАБ 0.75×','Gap is not a button');
+    for(let i=0;i<10;i++)tapHandler(1068,424);await settle();assert.strictEqual(scale(),'МАСШТАБ 0.55×','Minus clamps at minimum');
+    for(let i=0;i<10;i++)tapHandler(1068,352);await settle();assert.strictEqual(scale(),'МАСШТАБ 2.5×','Plus clamps at maximum');
+    buttons.BTN_ZOOM();await settle();assert.strictEqual(scale(),'МАСШТАБ 0.55×','Controller keeps cyclic zoom');
+    tapHandler(1068,352);await settle();
+    tapHandler(100,263);await settle();tapHandler(1068,352);tapHandler(100,50);await settle();assert.strictEqual(scale(),'МАСШТАБ 0.75×','Other views cannot change map zoom');
+    const cameraCounter=()=>texts.filter(t=>/^\d+ \/ \d+$/.test(t)).slice(-1)[0];
+    const firstCounter=cameraCounter(),cameraCount=Number(firstCounter.split(' / ')[1]);
+    tapHandler(1309,246);await settle();assert.strictEqual(cameraCounter(),firstCounter,'Previous clamps at first camera');
+    tapHandler(1530,246);await settle();assert.strictEqual(cameraCounter(),'2 / '+cameraCount,'Right arrow selects next camera');
+    tapHandler(1309,246);await settle();assert.strictEqual(cameraCounter(),firstCounter,'Left arrow selects previous camera');
+    tapHandler(1419,246);await settle();assert.strictEqual(cameraCounter(),firstCounter,'Counter between arrows is not a button');
+    for(let i=0;i<cameraCount+2;i++)tapHandler(1530,246);
+    await settle();assert.strictEqual(cameraCounter(),cameraCount+' / '+cameraCount,'Next clamps at last camera');
+    buttons.BTN_CAM_PREV();await settle();assert.strictEqual(cameraCounter(),(cameraCount-1)+' / '+cameraCount,'Controller shares camera selection');
+    for(let i=0;i<cameraCount;i++)tapHandler(1309,246);
+    await settle();
+    tapHandler(100,263);await settle();tapHandler(1530,246);tapHandler(100,50);await settle();
+    assert.strictEqual(cameraCounter(),firstCounter,'Other pages cannot select map cameras');
     save('01-map');
+    if(previewDir){
+      const beforePulse=Buffer.from(lastCanvas.d),reads=activeStore.current.readBlocks;
+      pulseTime=700;loopHandler();await settle();save('07-map-pulse');
+      assert.notDeepStrictEqual(lastCanvas.d,beforePulse,'Selected map marker must animate');
+      const afterPulse=Buffer.from(lastCanvas.d);
+      for(let y=0;y<520;y++)for(let x=0;x<1600;x++)if(x<266||x>=1116||y<114||y>=472){const i=(y*1600+x)*4;assert(afterPulse.subarray(i,i+4).equals(beforePulse.subarray(i,i+4)),'Pulse must stay inside the map');}
+      assert.strictEqual(activeStore.current.readBlocks,reads,'Pulse frames must not reread database blocks');
+      pulseTime=0;loopHandler();await settle();
+    }
     if(previewDir){
       const alertCanvas=new Canvas(1600,520);alertCanvas.d.set(lastCanvas.d);
       const alertSurface=native?new native.Recorder(1600,520):alertCanvas;
@@ -46,7 +81,7 @@ async function run(){
       for(let row=0;row<520;row++)assert.deepStrictEqual(alertCanvas.d.subarray(row*1600*4,(row*1600+266)*4),lastCanvas.d.subarray(row*1600*4,(row*1600+266)*4),'Warning must not cover sidebar');
       fs.writeFileSync(path.join(previewDir,'06-warning-example.png'),alertCanvas.png());
     }
-    for(const [y,title,fileName] of [[170,'ОЖИДАНИЕ GPS','02-add'],[280,'ПОКА НЕТ СОХРАНЁННЫХ КАМЕР','03-my-cameras'],[394,'ВЫБЕРИТЕ ДИСПЛЕЙ','04-settings']]){
+    for(const [y,title,fileName] of [[263,'ОЖИДАНИЕ GPS','02-add'],[361,'ПОКА НЕТ СОХРАНЁННЫХ КАМЕР','03-my-cameras'],[459,'ВЫБЕРИТЕ ДИСПЛЕЙ','04-settings']]){
       texts.length=0;tapHandler(100,y);await settle();assert(texts.some(t=>t.includes(title)),'Sidebar opens '+title);save(fileName);
     }
     tapHandler(980,180);await settle();assert.strictEqual(settings.camera_display,'both','Display tile selects KOMBI + HUD');
@@ -56,10 +91,10 @@ async function run(){
     tapHandler(400,130);await settle();assert.strictEqual(settings.mapcam_voice,'speeding','Warning row remains clickable');
     settings.mapcam_voice='always';
     tapHandler(100,50);await settle();
-    texts.length=0;tapHandler(100,128);await settle();assert.strictEqual(texts.length,0,'Sidebar gap does not switch pages');
+    texts.length=0;tapHandler(100,116);await settle();assert.strictEqual(texts.length,0,'Sidebar gap does not switch pages');
     buttons.BTN_ZOOM(); // map zoom still works
     // Leave warning settings on the display page for subsequent controller checks.
-    tapHandler(100,394);buttons.BTN_ZOOM();tapHandler(100,50);await settle();
+    tapHandler(100,459);buttons.BTN_ZOOM();tapHandler(100,50);await settle();
     settings.city='yoshkar-ola';changeHandler('city');await new Promise(resolve=>setTimeout(resolve,30));
     settings.city='russia';changeHandler('city');
     // gpsChanged expects a state object; use the actual module's public shape.
@@ -67,17 +102,115 @@ async function run(){
     loopHandler();buttons.BTN_CAM_NEXT();await new Promise(resolve=>setTimeout(resolve,30));
     assert(!warnings.some(w=>/UI_RENDER_FAILED|render:|ReferenceError|TypeError/.test(w)),warnings.join('\n'));
     assert(images>=3,'Switching views and GPS update must still render');
-    buttons.BTN_CAMERA_MENU();buttons.BTN_CAMERA_MENU();buttons.BTN_CAMERA_MENU();
+    tapHandler(100,459);
     await new Promise(resolve=>setTimeout(resolve,30));
     buttons.BTN_ZOOM();await new Promise(resolve=>setTimeout(resolve,30));
-    assert(texts.some(t=>t.includes('ПРЕДУПРЕЖДЕНИЯ')));
-    buttons.BTN_REFRESH();assert.strictEqual(settings.mapcam_voice,'speeding');
-    buttons.BTN_CAM_NEXT();buttons.BTN_REFRESH();assert.strictEqual(settings.mapcam_excess,'10');
-    buttons.BTN_CAM_NEXT();buttons.BTN_REFRESH();assert.strictEqual(settings.mapcam_distance,'500');
+    assert(texts.some(t=>t.includes('УВЕДОМЛЕНИЯ')));
+    buttons.BTN_REFRESH();assert.strictEqual(settings.mapcam_voice,'always','Removed button 4 must not change settings');tapHandler(400,130);assert.strictEqual(settings.mapcam_voice,'speeding');
+    buttons.BTN_CAM_NEXT();tapHandler(400,218);assert.strictEqual(settings.mapcam_excess,'10');
+    buttons.BTN_CAM_NEXT();tapHandler(400,306);assert.strictEqual(settings.mapcam_distance,'500');
     gpsHandler({state:'lost',fix:null});loopHandler();
     await new Promise(resolve=>setTimeout(resolve,30));
     assert(!warnings.some(w=>/UI_RENDER_FAILED|render:|ReferenceError|TypeError/.test(w)),warnings.join('\n'));
-    if(native)for(const entry of native.atlasList){assert(entry.f.atlasW<=1024,'MGU atlas width limit');assert(entry.f.atlasH<=4096,'MGU atlas height limit');}
+    tapHandler(100,50);await settle();texts.length=0;
+    for(let i=0;i<9;i++)tapHandler(100,459);
+    await settle();assert(!texts.includes('ИНЖЕНЕРНОЕ МЕНЮ'),'Nine settings taps must not unlock engineering');
+    texts.length=0;tapHandler(100,459);await settle();assert(texts.includes('ИНЖЕНЕРНОЕ МЕНЮ'),'Tenth settings tap opens engineering');save('08-engineering');
+    const settingsBefore=JSON.stringify(settings),voiceBeforeEngineering=voiceTests;
+    buttons.BTN_CAM_NEXT();buttons.BTN_ZOOM();buttons.BTN_REFRESH();await settle();
+    assert.strictEqual(JSON.stringify(settings),settingsBefore,'Unused engineering keys must not change user settings');
+    tapHandler(500,397);await settle();assert.strictEqual(voiceTests,voiceBeforeEngineering+1,'Engineering test button uses the existing output test');
+    texts.length=0;tapHandler(1200,397);await settle();assert(!texts.includes('ИНЖЕНЕРНОЕ МЕНЮ'),'Back button exits engineering');
+    tapHandler(100,50);texts.length=0;
+    for(let i=0;i<9;i++)tapHandler(100,459);
+    await settle();assert(!texts.includes('ИНЖЕНЕРНОЕ МЕНЮ'),'Leaving resets unlock sequence');
+    await new Promise(resolve=>setTimeout(resolve,3100));texts.length=0;tapHandler(100,459);await settle();
+    assert(!texts.includes('ИНЖЕНЕРНОЕ МЕНЮ'),'A pause over three seconds resets unlock sequence');
+    texts.length=0;for(let i=0;i<9;i++)tapHandler(100,459);await settle();
+    assert(texts.includes('ИНЖЕНЕРНОЕ МЕНЮ'));texts.length=0;buttons.BTN_CAM_PREV();await settle();
+    assert(!texts.includes('ИНЖЕНЕРНОЕ МЕНЮ'),'Controller back exits engineering');
+    assert(!warnings.some(w=>/UI_RENDER_FAILED|render:|ReferenceError|TypeError/.test(w)),warnings.join('\n'));
+    texts.length=0;tapHandler(100,165);await settle();
+    assert(texts.includes('РАДАР')&&texts.includes('ОЖИДАНИЕ GPS'),'Radar waits for GPS instead of using a map default');save('09-radar-no-gps');
+    for(const [lat,lon] of [[55.75,37.62],[56.63,47.928]]){
+      const radarFix={lat,lon,headingDeg:0,accuracyM:5,speedKmh:81,timeMs:Date.now()};
+      const nearest=activeStore.current.nearWarnings(radarFix)[0];assert(nearest);
+      const d=appRequire('./camera-index').distanceToCamera(radarFix,nearest);
+      const expectedDistance=d<1000?Math.round(d)+' М':(d/1000).toFixed(1)+' КМ';
+      const label=appRequire('./camera-label').hudLabels(nearest);
+      texts.length=0;gpsHandler({fix:radarFix,state:'fix'});await settle();
+      assert(texts.includes(expectedDistance)&&texts.includes(label.control)&&texts.includes(label.model||'МОДЕЛЬ НЕ УКАЗАНА'),'Radar follows the nearest camera at the new GPS position');
+      const reads=activeStore.current.readBlocks;loopHandler();await settle();assert.strictEqual(activeStore.current.readBlocks,reads,'Radar redraw must reuse GPS selection');
+      if(lat===56.63)save('10-radar-camera');
+    }
+    texts.length=0;gpsHandler({fix:{lat:0,lon:0,accuracyM:5,speedKmh:0,timeMs:Date.now()},state:'fix'});await settle();
+    assert(texts.includes('РЯДОМ НЕТ КАМЕР'),'Radar handles an empty area');save('11-radar-empty');
+    texts.length=0;gpsHandler({fix:{lat:55.75,lon:37.62,accuracyM:5,speedKmh:0,timeMs:Date.now()-4000},state:'fix'});await settle();
+    assert(texts.includes('ОЖИДАНИЕ GPS'),'Radar rejects stale GPS');
+    texts.length=0;buttons.BTN_CAMERA_MENU();await settle();assert(texts.includes('ДОБАВИТЬ КАМЕРУ'),'Controller cycles past Radar to Add');
+    assert(!warnings.some(w=>/UI_RENDER_FAILED|render:|ReferenceError|TypeError/.test(w)),warnings.join('\n'));
+    const sample=activeStore.current.near({lat:55.75,lon:37.62},25000,500).find(c=>c.source==='еСтрелка'&&c.camera_family==='fixed'&&!c.averageControl&&c.mapcamDirectionType===1&&Number.isFinite(c.mapcamApproachHeadingDeg)&&c.mapcamWarningDistanceM>=300);
+    assert(sample,'Real directional camera required for central notification regression');
+    settings.mapcam_voice='always';settings.mapcam_distance='2000';changeHandler('mapcam_voice');
+    tapHandler(100,165);await settle();
+    const centralBefore=centralWarnings,voiceDispatchBefore=voiceWarnings,clusterBefore=clusterWarnings,now=Date.now();
+    const heading=sample.mapcamApproachHeadingDeg*Math.PI/180;
+    const approach=(d,t)=>({lat:sample.lat-Math.cos(heading)*d/111320,lon:sample.lon-Math.sin(heading)*d/(111320*Math.cos(sample.lat*Math.PI/180)),accuracyM:5,speedKmh:100,headingDeg:sample.mapcamApproachHeadingDeg,timeMs:t});
+    gpsHandler({fix:approach(220,now-1000),state:'fix'});gpsHandler({fix:approach(200,now),state:'fix'});await settle();
+    assert(voiceWarnings>voiceDispatchBefore&&clusterWarnings>clusterBefore,'Radar must retain voice and HUD/KOMBI warning dispatch');
+    assert.strictEqual(centralWarnings,centralBefore,'Visible Radar must suppress the central camera overlay');save('12-radar-active-warning');
+    tapHandler(100,50);await settle();assert(centralWarnings>centralBefore,'Returning to Map restores a still-active central warning');
+    visibleHandler('MAIN',false);const hiddenCount=centralWarnings;loopHandler();await settle();
+    assert.strictEqual(centralWarnings,hiddenCount,'Hidden app screen must not render a central banner');
+    visibleHandler('MAIN',true);await settle();assert(centralWarnings>hiddenCount,'Visibility restoration must not leave central warnings disabled');
+    const restoredCount=centralWarnings;tapHandler(100,165);await settle();assert.strictEqual(centralWarnings,restoredCount,'Switching back to Radar hides an existing banner');
+    assert(!warnings.some(w=>/UI_RENDER_FAILED|render:|ReferenceError|TypeError/.test(w)),warnings.join('\n'));
+    if(native){
+      gpsHandler({state:'lost',fix:null});tapHandler(100,50);await settle();
+      const {Display}=appRequire('./kit/display');
+      const controller=Object.create(Display.prototype);let knob=0;
+      Object.assign(controller,{pageTargets,ccuLast:null,focusKey:null,sheet:null,place:{scale:1,ox:0,oy:0,x:0,y:0,w:1600,h:520},log:{info:()=>{},error:e=>{throw e;}},_repaint:()=>{},_tabList:()=>({tabs:[],sel:-1,settings:-1}),buttons:()=>[]});
+      assert(appRequire('./controller-navigation').install(controller));
+      const input=(pb=0,df=0)=>controller._ccu({frontRotaryEncoderOperation:knob,frontRotaryEncoderPushButton:pb,frontRotaryEncoderDeflection:df});
+      const focus=key=>{controller.pageTargets=pageTargets;const ring=controller._ring(),target=ring.findIndex(p=>p.k==='tgt:'+key);assert(target>=0,'Joystick target '+key);let current=ring.findIndex(p=>p.k===controller.focusKey);if(current<0){knob++;input();current=0;}knob+=target-current;input();assert.strictEqual(controller.focusKey,'tgt:'+key);};
+      const press=async key=>{focus(key);input(1);input(0);await settle();};
+      input();
+      for(const id of ['MAP','RADAR','ADD','MY','SETTINGS'])assert(pageTargets.some(t=>t.key==='nav-'+id));
+      for(const id of ['BTN_CAM_PREV','BTN_CAM_NEXT','BTN_ZOOM','BTN_REFRESH'])assert(pageTargets.some(t=>t.key==='action-'+id));
+      for(const [id,title] of [['RADAR','РАДАР'],['ADD','ДОБАВИТЬ КАМЕРУ'],['MY','МОИ КАМЕРЫ'],['SETTINGS','НАСТРОЙКИ'],['MAP','КАРТА КАМЕР']]){texts.length=0;await press('nav-'+id);assert(texts.includes(title)||(id==='SETTINGS'&&texts.includes('УВЕДОМЛЕНИЯ')),'Knob + press opens '+id);}
+      const beforeCounter=cameraCounter();await press('action-BTN_CAM_NEXT');assert.notStrictEqual(cameraCounter(),beforeCounter);
+      await press('action-BTN_CAM_PREV');assert.strictEqual(cameraCounter(),beforeCounter);
+      const beforeScale=scale();await press('action-BTN_ZOOM');assert.notStrictEqual(scale(),beforeScale);
+      await press('action-BTN_REFRESH');await activeStore.pending;
+      assert(!pageTargets.some(t=>['action-BTN_VOICE_TEST','action-BTN_CAMERA_MENU'].includes(t.key)),'Map must have no focusable buttons 5 or 6');
+      assert.strictEqual(nativeButtonState.BTN_VOICE_TEST,false);assert.strictEqual(nativeButtonState.BTN_CAMERA_MENU,false);
+      const voiceCount=voiceTests;buttons.BTN_VOICE_TEST();buttons.BTN_CAMERA_MENU();await settle();
+      assert.strictEqual(voiceTests,voiceCount,'Hidden map test action must not run');assert(pageTargets.some(t=>t.key==='action-BTN_CAM_PREV'),'Hidden section action must not leave Map');
+      const navigationOrder=['nav-MAP','nav-RADAR','nav-ADD','nav-MY','nav-SETTINGS','action-BTN_CAM_PREV','action-BTN_CAM_NEXT','action-BTN_ZOOM','action-BTN_REFRESH'];
+      const selectionBeforeNavigation=cameraCounter();
+      focus(navigationOrder[0]);
+      for(const key of navigationOrder.slice(1)){knob++;input();assert.strictEqual(controller.focusKey,'tgt:'+key,'Clockwise order');}
+      for(const key of navigationOrder.slice(0,-1).reverse()){knob--;input();assert.strictEqual(controller.focusKey,'tgt:'+key,'Counterclockwise order');}
+      for(const key of navigationOrder.slice(1)){input(0,7);assert.strictEqual(controller.focusKey,'tgt:'+key,'Down tilt follows sidebar then numbered actions');input();}
+      for(const key of navigationOrder.slice(0,-1).reverse()){input(0,1);assert.strictEqual(controller.focusKey,'tgt:'+key,'Up tilt follows numbered actions then sidebar');input();}
+      assert.strictEqual(cameraCounter(),selectionBeforeNavigation,'Moving focus must not activate camera selection');
+      focus('nav-MAP');input(0,7);assert.strictEqual(controller.focusKey,'tgt:nav-RADAR','Tilt down moves among sidebar tiles');input();
+      focus('nav-SETTINGS');input(0,4);assert.strictEqual(controller.focusKey,'tgt:action-BTN_CAM_PREV','Tilt right reaches action row');input();
+      input(0,10);assert.strictEqual(controller.focusKey,'tgt:nav-SETTINGS','Tilt left returns to sidebar');input();
+      texts.length=0;for(let i=0;i<10;i++)await press('nav-SETTINGS');assert(texts.includes('ИНЖЕНЕРНОЕ МЕНЮ'),'Ten joystick presses also unlock engineering');
+      for(const id of ['BTN_CAM_PREV','BTN_CAM_NEXT','BTN_ZOOM','BTN_REFRESH','BTN_VOICE_TEST','BTN_CAMERA_MENU'])assert.strictEqual(nativeButtonState[id],false,'Engineering hides native numbered button '+id);
+      assert(!pageTargets.some(t=>t.key.startsWith('action-')),'Engineering has no numbered action targets');
+      focus('nav-SETTINGS');
+      for(const key of ['engineering-test','engineering-back']){knob++;input();assert.strictEqual(controller.focusKey,'tgt:'+key,'Engineering rotation order');}
+      for(const key of ['engineering-test','nav-SETTINGS']){knob--;input();assert.strictEqual(controller.focusKey,'tgt:'+key,'Engineering reverse rotation');}
+      for(const key of ['engineering-test','engineering-back']){input(0,7);assert.strictEqual(controller.focusKey,'tgt:'+key,'Engineering downward navigation');input();}
+      for(const key of ['engineering-test','nav-SETTINGS']){input(0,1);assert.strictEqual(controller.focusKey,'tgt:'+key,'Engineering upward navigation');input();}
+      const engineeringVoiceCount=voiceTests;
+      await press('engineering-test');assert.strictEqual(voiceTests,engineeringVoiceCount+1,'Joystick activates engineering output test');
+      texts.length=0;await press('engineering-back');assert(!texts.includes('ИНЖЕНЕРНОЕ МЕНЮ'),'Joystick back exits engineering');
+      assert.strictEqual(nativeButtonState.BTN_CAM_PREV,true,'Settings actions restore on leaving engineering');
+      for(const entry of native.atlasList){assert(entry.f.atlasW<=1024,'MGU atlas width limit');assert(entry.f.atlasH<=4096,'MGU atlas height limit');}
+    }
     console.log('App startup/render smoke test passed; images:',images,'RSS MiB:',Math.round(process.memoryUsage().rss/1048576));
 }
 run().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{if(activeStore)activeStore.close();fs.rmSync(tmp,{recursive:true,force:true});});

@@ -1,9 +1,9 @@
 'use strict';
 const font=require('./cluster-text');
 const colors={bg:'#080b10',panel:'#10151c',road:'#333b45',edge:'#56616d',text:'#f5f9fc',muted:'#a9becf',blue:'#f5f9fc',red:'#d32c36',green:'#f5f9fc',yellow:'#ffcd4a',grid:'#1b232d'};
-const tabs=[['MAP','КАРТА'],['ADD','ДОБАВИТЬ'],['MY','МОИ КАМЕРЫ'],['SETTINGS','НАСТРОЙКИ']];
-const nav={x:20,y:24,w:222,h:98,gap:16};
-const content={x:266,y:74,w:1314,h:382};
+const tabs=[['MAP','КАРТА'],['RADAR','РАДАР'],['ADD','ДОБАВИТЬ'],['MY','МОИ КАМЕРЫ'],['SETTINGS','НАСТРОЙКИ']];
+const nav={x:20,y:24,w:222,h:(518-24-12*(tabs.length-1))/tabs.length,gap:12};
+const content={x:266,y:74,w:1314,h:398};
 const cache=new Map();let cacheBytes=0;
 function text(cv,value,x,baseline,size,color,options){
  const o=options||{},s=String(value).toUpperCase().replace(/[·•]/g,'/').replace(/[—−–]/g,'-').replace(/×/g,'X').replace(/[«»]/g,'').replace(/,/g,' ');
@@ -30,8 +30,8 @@ function tabAt(x,y){
 function drawNav(cv,active){
  tabs.forEach(([id,label],i)=>{const y=nav.y+i*(nav.h+nav.gap),on=active===id;
   cv.roundRect(nav.x,y,nav.w,nav.h,8,on?'#251318':colors.panel);
-  if(on){cv.strokeRoundRect(nav.x,y,nav.w,nav.h,8,2,colors.red);cv.roundRect(nav.x+1,y+17,4,64,2,colors.red);}
-  text(cv,label,nav.x+20,y+58,25,on?colors.text:colors.muted,{maxWidth:nav.w-34});
+  if(on){cv.strokeRoundRect(nav.x,y,nav.w,nav.h,8,2,colors.red);cv.roundRect(nav.x+1,y+17,4,nav.h-34,2,colors.red);}
+  text(cv,label,nav.x+20,y+nav.h/2+font.capHeight(25)/2,25,on?colors.text:colors.muted,{maxWidth:nav.w-34});
  });
 }
 function heading(cv,title,detail){
