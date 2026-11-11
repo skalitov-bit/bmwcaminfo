@@ -39,11 +39,14 @@ const VF={
  'L':[[0,0,0,6,4,6]],
  'M':[[0,6,0,0,2,3,4,0,4,6]],
  'N':[[0,6,0,0,4,6,4,0]],
+ 'O':[[1,0,3,0,4,1,4,5,3,6,1,6,0,5,0,1,1,0]],
  'P':[[0,6,0,0,3,0,4,1,4,2,3,3,0,3]],
  'S':[[4,0,1,0,0,1,0,2,1,3,3,3,4,4,4,5,3,6,0,6]],
  'T':[[0,0,4,0],[2,0,2,6]],
  'D':[[0,0,2,0,4,1,4,5,2,6,0,6,0,0]],
  'R':[[0,6,0,0,3,0,4,1,4,2,3,3,0,3],[2,3,4,6]],
+ 'V':[[0,0,2,6,4,0]],
+ 'G':[[4,0,1,0,0,1,0,5,1,6,4,6,4,3,2,3]],
  '/':[[0,6,4,0]],
  ' ':[],
  ':':[[2,2,2,2.1],[2,5,2,5.1]],
@@ -105,12 +108,13 @@ function makeFrame(e){
  // camera glyph
  rect(px,34,46,42,25,white);rect(px,43,41,17,7,white);
  for(let y=0;y<15;y++)for(let x=0;x<15;x++){const dx=x-7,dy=y-7;if(dx*dx+dy*dy<=49)rect(px,55+x,51+y,1,1,rgba(7,15,24));}
- text(px,'КАМЕРА',108,18,3,white);
+ text(px,e.phase==='section'?'CONTROL':e.phase==='rear'?'REAR':'КАМЕРА',108,18,3,white);
  text(px,String(Math.max(0,Math.round(e.distanceM||0))+' M'),108,52,5,accent);
  const limit=Number(e.camera&&e.camera.limit);
  if(Number.isFinite(limit)&&limit>0){circle(px,357,59,32,rgba(211,44,54));circle(px,357,59,26,rgba(255,255,255));const label=String(limit);const scale=label.length<=2?4:label.length===3?3:2;const width=label.length*6*scale-scale;const tx=357-width/2;const ty=59-(7*scale)/2;text(px,label,tx,ty,scale,rgba(20,29,38));}
  else text(px,'LIMIT N/A',300,52,2,muted);
- if(red)text(px,'SPEED',108,94,2,rgba(255,112,120));
+ if(e.useAverage&&Number.isFinite(e.averageKmh))text(px,(e.partialSection?'PART AVG ':'AVG ')+Math.round(e.averageKmh),108,94,2,red?rgba(255,112,120):white);
+ else if(red)text(px,'SPEED',108,94,2,rgba(255,112,120));
  return px;
 }
 class CameraClusterOutput{
@@ -144,7 +148,7 @@ class CameraClusterOutput{
  }
  show(event){
   if(!event||!event.camera||!this.cr)return;
-  this.current={type:event.type,distanceM:event.distanceM,camera:event.camera,speedKmh:event.speedKmh};
+  this.current=Object.assign({},event);
   if(this.hideTimer)clearTimeout(this.hideTimer);
   if(this.missingTimer)clearTimeout(this.missingTimer);this.missingTimer=null;
   this._draw(this.current);
@@ -174,7 +178,11 @@ class CameraClusterOutput{
   }
   if(this.missingTimer){clearTimeout(this.missingTimer);this.missingTimer=null;this.log('CLUSTER_OUTPUT_SYNC_RETURNED camera='+this.current.camera.id);}
   const distance=Math.max(0,Math.round(state.distanceM));
-  if(Number.isFinite(distance)&&Math.abs(distance-this.current.distanceM)>=8){this.current.distanceM=distance;this._draw(this.current);}
+  const changed=Math.abs(distance-this.current.distanceM)>=8||this.current.phase!==state.phase||this.current.type!==(state.speeding?'speeding':'camera')||Math.round(this.current.averageKmh)!==Math.round(state.averageKmh);
+  Object.assign(this.current,{distanceM:distance,phase:state.phase,type:state.speeding?'speeding':'camera',averageKmh:state.averageKmh,useAverage:state.useAverage,partialSection:state.partialSection});
+  if(Number.isFinite(distance)&&changed)this._draw(this.current);
+  if(this.hideTimer)clearTimeout(this.hideTimer);
+  this.hideTimer=setTimeout(()=>this.clear(),5000);
  }
  clear(){
   if(this.hideTimer)clearTimeout(this.hideTimer);this.hideTimer=null;

@@ -24,14 +24,12 @@ def main():
     except ImportError as exc:
         raise RuntimeError("Python package 'osmium' is required (pip install osmium)") from exc
     with open(MAP_PATH,encoding="utf-8") as f: data=json.load(f)
-    q=urllib.parse.urlencode({"q":"Йошкар-Ола, Республика Марий Эл, Россия","format":"jsonv2","polygon_geojson":1,"limit":1})
-    req=urllib.request.Request("https://nominatim.openstreetmap.org/search?"+q,
-                               headers={"User-Agent":"BMW-Speed-Camera-Warning/0.7.0"})
-    with urllib.request.urlopen(req,timeout=25) as response: places=json.loads(response.read().decode("utf-8"))
-    if not places or "geojson" not in places[0]: raise RuntimeError("Nominatim returned no Yoshkar-Ola boundary")
-    geom=places[0]["geojson"]
+    with open(os.path.join(ROOT,'data','region-boundaries.json'),encoding='utf-8') as f:
+        geom=json.load(f)['regions']['yoshkar-ola']
     polygons=geom["coordinates"] if geom["type"]=="MultiPolygon" else [geom["coordinates"]]
     rings=[poly[0] for poly in polygons]
+    bbox=(min(x for ring in rings for x,y in ring),min(y for ring in rings for x,y in ring),
+          max(x for ring in rings for x,y in ring),max(y for ring in rings for x,y in ring))
     roads=[]; seen=set()
     class Handler(osmium.SimpleHandler):
         def way(self,w):
@@ -44,6 +42,7 @@ def main():
             name=(w.tags.get("name") or w.tags.get("ref") or w.tags.get("highway") or "Улица")[:100]
             for a,b in zip(pts,pts[1:]):
                 midlon=(a[0]+b[0])/2; midlat=(a[1]+b[1])/2
+                if not (bbox[0]<=midlon<=bbox[2] and bbox[1]<=midlat<=bbox[3]): continue
                 if not any(inside(midlon,midlat,ring) for ring in rings): continue
                 if abs(a[0]-b[0])+abs(a[1]-b[1])>0.02: continue
                 row=[name,float(a[1]),float(a[0]),float(b[1]),float(b[0])]

@@ -12,18 +12,29 @@ class CameraVoiceAlerts {
     this.log = options.log || function () {};
     this.queue = Promise.resolve();
     this.lastError = null;
+    this.generation = 0;
+    this.pending = 0;
   }
 
-  camera(stage) {
-    return this._send(stage === 2 ? FILES[2] : FILES[1]);
+  camera(stage, relevant) {
+    return this._send(stage === 2 ? FILES[2] : FILES[1], relevant);
   }
 
   test() {
     return this._send(FILES[1]);
   }
 
-  _send(file) {
-    const task = this.queue.then(() => this._request(file)).then((result) => {
+  cancel() { this.generation++; }
+
+  _send(file, relevant) {
+    if(this.pending>=2)return Promise.resolve(false);
+    this.pending++;
+    const generation=this.generation,created=Date.now();
+    const task = this.queue.then(() => {
+      if(generation!==this.generation||Date.now()-created>8000||(relevant&&!relevant()))return {ok:true,skipped:true};
+      return this._request(file);
+    }).then((result) => {
+      if(result&&result.skipped)return false;
       if (!result || result.ok !== true) {
         throw new Error(result && result.error ? result.error : 'BMW voice service rejected the request');
       }
@@ -35,7 +46,7 @@ class CameraVoiceAlerts {
       this.lastError = error && error.message ? error.message : String(error);
       this.log('BMW VOICE SERVICE ERROR: ' + this.lastError);
       return false;
-    });
+    }).then(result=>{this.pending--;return result;});
     return this.queue;
   }
 

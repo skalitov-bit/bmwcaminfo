@@ -95,6 +95,11 @@ class RoadGuidanceWarnings {
         Object.keys(this.zones).forEach(id => {
             const camera = byId[id], zone = this.zones[id];
             if (!camera || !Number.isFinite(camera.lat) || !Number.isFinite(camera.lon)) return;
+            // A downloaded camera may have moved since the bundled roads were generated.
+            // Never attach its old road geometry to a new location or control direction.
+            if (Math.abs(camera.lat-zone.lat)>0.0000001 || Math.abs(camera.lon-zone.lon)>0.0000001) return;
+            if (Array.isArray(camera.mapcamTravel) && camera.mapcamTravel.length &&
+                !camera.mapcamTravel.some(h => diff(h, fix.headingDeg) <= 35)) return;
             seen[id] = true;
             let previousState = this.states[id];
             if (previousState && now - previousState.lastSeenAt > 5000) {

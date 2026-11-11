@@ -141,10 +141,12 @@ def main():
     zone_ids={z.get("id") for z in zones}
     baseline_items=len(baseline_ids)
     baseline_zones=len(baseline_ids & zone_ids)
-    if baseline_zones < max(1,int(baseline_items*0.20)):
+    if baseline_items and baseline_zones < max(1,int(baseline_items*0.20)):
         raise RuntimeError("Too few road-confirmed baseline camera zones (%d/%d); refusing to publish" % (baseline_zones,baseline_items))
     mapcam_items=len(mapcam_ids)
     mapcam_zones=len(mapcam_ids & zone_ids)
+    if mapcam_items and mapcam_zones == 0:
+        raise RuntimeError('No MapCam cameras matched to roads; refusing to publish')
     print("MapCam road-confirmed zones:",mapcam_zones,"/",mapcam_items)
     payload={"schemaVersion":1,"region":"RU-ME","source":"OpenStreetMap contributors (ODbL 1.0), regional PBF extract",
              "databaseRevision":db.get("revision"),"radiusM":RADIUS_M,"cameraCount":len(items),

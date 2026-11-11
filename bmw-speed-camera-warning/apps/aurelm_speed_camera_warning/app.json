@@ -1,8 +1,8 @@
 {
   "id": "aurelm_speed_camera_warning",
   "title": "Speed Camera Warning",
-  "description": "Камеры скорости, пользовательские камеры и визуальные предупреждения на KOMBI/HUD через cluster-render.",
-  "version": "0.7.31",
+  "description": "Камеры MapCam по России: секторы, направления, участки контроля, средняя скорость и вывод KOMBI/HUD.",
+  "version": "0.9.0",
   "vendor": "Andrug05",
   "loggingId": "SCAM",
   "iconGlyph": "camera",
@@ -42,10 +42,14 @@
   "settings": [
     {
       "key": "city",
-      "label": "Город",
+      "label": "База камер",
       "type": "choice",
-      "default": "yoshkar-ola",
+      "default": "russia",
       "options": [
+        [
+          "russia",
+          "Россия · рядом с GPS"
+        ],
         [
           "yoshkar-ola",
           "Йошкар-Ола"
@@ -53,14 +57,6 @@
         [
           "mari-el",
           "Республика Марий Эл"
-        ],
-        [
-          "moscow",
-          "Москва"
-        ],
-        [
-          "sochi",
-          "Сочи"
         ]
       ]
     },
@@ -87,6 +83,78 @@
           "Выкл."
         ]
       ]
+    },
+    {
+      "key": "mapcam_voice",
+      "label": "MapCam: голос",
+      "type": "choice",
+      "default": "always",
+      "options": [
+        [
+          "always",
+          "Каждая камера"
+        ],
+        [
+          "speeding",
+          "При превышении"
+        ],
+        [
+          "off",
+          "Выключен"
+        ]
+      ]
+    },
+    {
+      "key": "mapcam_excess",
+      "label": "MapCam: порог превышения",
+      "type": "choice",
+      "default": "0",
+      "options": [
+        [
+          "0",
+          "Лимит + 0 км/ч"
+        ],
+        [
+          "10",
+          "Лимит + 10 км/ч"
+        ],
+        [
+          "18",
+          "Лимит + 18 км/ч"
+        ],
+        [
+          "20",
+          "Лимит + 20 км/ч"
+        ]
+      ]
+    },
+    {
+      "key": "mapcam_distance",
+      "label": "MapCam: дистанция",
+      "type": "choice",
+      "default": "0",
+      "options": [
+        [
+          "0",
+          "Из базы MapCam"
+        ],
+        [
+          "500",
+          "500 м"
+        ],
+        [
+          "700",
+          "700 м"
+        ],
+        [
+          "1000",
+          "1000 м"
+        ],
+        [
+          "2000",
+          "2000 м"
+        ]
+      ]
     }
   ],
   "signals": {
@@ -96,5 +164,7 @@
         "updatePosition"
       ]
     }
-  }
+  },
+  "maxDiskUsage": 268435456,
+  "memoryKB": 524288
 }

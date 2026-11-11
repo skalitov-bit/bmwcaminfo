@@ -1,0 +1,26 @@
+{
+  "runtimeBase": "andrug05/bmwcaminfo 0.7.57",
+  "kitCommit": "9c7125cc83ad65dca839a5f9f01c56247679da8d",
+  "inputs": [
+    {
+      "name": "upstream.mgu",
+      "url": "https://github.com/andrug05/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.7.57/aurelm_speed_camera_warning%400.7.57.mgu",
+      "sha256": "e2da55b66a9c0d39fa67988c922b1dbb928d2d0411dc3a2c2244d14588dad0ed"
+    },
+    {
+      "name": "build.py",
+      "url": "https://raw.githubusercontent.com/aurelmarius/bmw-games/9c7125cc83ad65dca839a5f9f01c56247679da8d/kit/tools/build.py",
+      "sha256": "f1b3e29bfbcab163ffd5f963cd795609ae4b007ad63acb2d813f7be57181c43b"
+    },
+    {
+      "name": "pack_data.py",
+      "url": "https://raw.githubusercontent.com/aurelmarius/bmw-games/9c7125cc83ad65dca839a5f9f01c56247679da8d/kit/tools/pack_data.py",
+      "sha256": "f0795f6170588a11efb2db504bd6cee6fb58a5aefd689d05d926583eff05e0ce"
+    },
+    {
+      "name": "localize.py",
+      "url": "https://raw.githubusercontent.com/aurelmarius/bmw-games/9c7125cc83ad65dca839a5f9f01c56247679da8d/kit/tools/localize.py",
+      "sha256": "6910c7da719f06acddd311ddffdf7fa8dc985bf4e0e4968447778a0da43e66a5"
+    }
+  ]
+}

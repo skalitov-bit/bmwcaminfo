@@ -1,45 +1,28 @@
-# BMW Speed Camera Warning
+# BMWCamInfo 0.9.0
 
-**Основной и единственный активный проект этого репозитория** — приложение предупреждения о камерах контроля скорости для BMW MGU ID7.
+Приложение предупреждения о камерах для BMW MGU ID7. Сохранена оболочка BMWCamInfo; база и логика предупреждений адаптированы под экспорт MapCam.
 
-Weather & Road Info больше не входит в исходный код проекта. Репозиторий используется для разработки, сборки и публикации BMW Speed Camera Warning.
+[Скачать версию 0.9.0](https://github.com/skalitov-bit/bmwcaminfo/releases/tag/aurelm_speed_camera_warning%400.9.0)
 
-## Последняя версия
+- Вся Россия: 84 594 записи, включая Марий Эл (439) и Йошкар-Олу (118).
+- Направления, секторы, дистанции и геометрия участков контроля из выгрузки MapCam.
+- Средняя скорость на участке, отметка частичного проезда, сброс при потере GPS.
+- Настройки голоса, порога превышения и дистанции; защита от старой базы и повторов предупреждений.
+- Сохранены карта, локальные камеры и вывод KOMBI/HUD.
 
-**0.7.32**
+Исходники находятся в [bmw-speed-camera-warning](bmw-speed-camera-warning). [Инструкция, сборка и ограничения совместимости](bmw-speed-camera-warning/INTEGRATION_RU.txt). [Источники данных](bmw-speed-camera-warning/DATA-NOTICE.txt).
 
-- [Скачать установочный пакет MGU](https://github.com/andrug05/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.7.32/aurelm_speed_camera_warning%400.7.32.mgu)
-- [Скачать архив приложения TGZ](https://github.com/andrug05/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.7.32/aurelm_speed_camera_warning%400.7.32.tgz)
-- [Все релизы](https://github.com/andrug05/bmwcaminfo/releases)
+Проверены автоматические GPS-сценарии, импорт базы, запуск приложения и интерфейс в Windows-эмуляторе. Работа в автомобиле, реальный голос и KOMBI/HUD не проверены. Это адаптация функций, а не полная копия APK MapCam. Использована ранее полученная выгрузка: нового успешного ответа API MapCam в этой версии не подтверждено.
 
-## Возможности
+В релизе доступны MGU, TGZ, полный архив исходников, инструкция, результаты тестов и SHA256. Для установки используйте привычный способ установки BMWCamInfo. Windows EXE Updater остаётся отдельным загрузчиком и в этом релизе не изменён.
 
-- Работа на BMW MGU ID7.
-- GPS-позиция автомобиля и предупреждение при приближении к камере.
-- Локальная база камер с автономной работой после загрузки.
-- Обновление базы при наличии интернет-соединения.
-- Региональная база Республики Марий Эл.
-- Отдельный раздел Йошкар-Олы с объединением данных из нескольких источников.
-- В версии 0.7.32 включён снимок Overpass от 08.11.2026: 92 OSM-узла Йошкар-Олы, с сохранением направлений и классификацией описаний перекрёстков.
-- Карта камер и отображение источника записи.
-- Неполные адресные записи без подтверждённых координат не используются для GPS-предупреждений.
+## Обновление базы и сборка
 
-## Источники базы
+Замените `BMW MapCam.zip` своей выгрузкой и выполните:
 
-- [SpeedCams.world](https://speedcams.world/download/russia) — основной источник.
-- [OpenStreetMap](https://www.openstreetmap.org/) и [Overpass API](https://overpass-api.de/) — дополнительные данные.
-- [HelpRadar](https://helpradar.ru/kamery-gibdd/ioshkar-ola), [SpeedCamOnline](https://speedcamonline.ru/map/Rus/1562/) и локальные источники — дополнительные сведения по Йошкар-Оле.
+```sh
+python bmw-speed-camera-warning/tools/import_mapcam.py "BMW MapCam.zip"
+python bmw-speed-camera-warning/tools/build_local.py --out release-local
+```
 
-Данные OpenStreetMap распространяются по лицензии ODbL. © OpenStreetMap contributors.
-
-## Исходный код
-
-Каталог приложения: [bmw-speed-camera-warning](./bmw-speed-camera-warning/)
-
-Описание, настройки базы и логика предупреждений: [README проекта](./bmw-speed-camera-warning/README.md)
-
-## Сборка
-
-GitHub Actions → **Build BMW Speed Camera Warning**.
-
-Запуск сборки вручную: Actions → Build BMW Speed Camera Warning → Run workflow. По умолчанию используется версия 0.7.32.
+Сборщик загружает зависимости с проверкой закреплённых SHA256. Проверенные локальные пакеты 0.9.0 опубликованы в Releases. GitHub Actions также содержит отдельный процесс сборки.

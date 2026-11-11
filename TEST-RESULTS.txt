@@ -1,0 +1,52 @@
+> bmw-speed-camera-warning\tests\mapcam-warnings.test.js
+PASS First fix silent, configured database distance and speed limit
+PASS Base distance and override independent of legacy 500/700 rule
+PASS Wrong direction, sideways camera and narrow sector rejected
+PASS Bidirectional and omnidirectional cameras
+PASS Minimum speed strictly above 15 and accuracy strictly below 15
+PASS Duplicate/out-of-order, stale GPS and implausible jumps
+PASS Voice settings and unknown limits
+PASS Point passage and rear control
+PASS 20 minute repeat filter survives suspend/reset but expires
+PASS Section entry, distance to end, measured mean, stops and exit
+PASS Mid-section reconnection is partial; opposing/parallel paths excluded
+PASS Long section indexed when entry camera is more than 2 km away
+PASS Optional hours with midnight and unknown fields
+MapCam scenarios passed: 13
+Exit: 0
+
+> bmw-speed-camera-warning\tests\mapcam-integration.test.js
+1000 nearby searches (ms): 817
+Actual MapCam point approach: mapcam-6976
+Actual MapCam section approach: mapcam-959188
+MapCam integration tests passed; RSS MiB: 560
+Exit: 0
+
+> bmw-speed-camera-warning\tests\app-startup.test.js
+App startup/render smoke test passed; images: 6 RSS MiB: 327
+Exit: 0
+
+> bmw-speed-camera-warning\tests\voice-queue.test.js
+Voice expiry/cancellation/queue tests passed
+Exit: 0
+
+> bmw-speed-camera-warning\tests\road-guidance.test.js
+Road-matched camera guidance tests passed
+Exit: 0
+
+> bmw-speed-camera-warning\tests\readout-config.test.js
+Speed Camera Warning 0.9.0 tests passed
+Exit: 0
+
+> -m unittest discover -s bmw-speed-camera-warning\tests -p test_mapcam*.py
+........
+----------------------------------------------------------------------
+Ran 8 tests in 0.001s
+
+OK
+Exit: 0
+
+Installed TGZ extraction: byte-for-byte source/data checks passed.
+App startup/render smoke test passed; images: 6 RSS MiB: 327
+Exit: 0
+Final test maintenance: startup and nationwide integration checks now follow the imported record count rather than a fixed snapshot. Both rerun successfully; actual point mapcam-6976 and section mapcam-959188 passed. Archive rebuilt with the final test sources.
