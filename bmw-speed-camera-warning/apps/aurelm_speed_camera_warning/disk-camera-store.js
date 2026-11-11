@@ -14,7 +14,7 @@ function fetchResource(requestUrl,destination,maxBytes,request,redirects){
             if(response)response.destroy();req.destroy();
             if(output){output.once('close',()=>reject(error));output.destroy();}else reject(error);
         }
-        const req=request({protocol:parsed.protocol,hostname:parsed.hostname,path:parsed.path,headers:{'User-Agent':'BMWCamInfo/0.9.1','Accept':'application/octet-stream'}},res=>{
+        const req=request({protocol:parsed.protocol,hostname:parsed.hostname,path:parsed.path,headers:{'User-Agent':'BMWCamInfo/0.9.3','Accept':'application/octet-stream'}},res=>{
             response=res;
             if([301,302,303,307,308].indexOf(res.statusCode)>=0){
                 res.resume();settled=true;clearTimeout(timer);
@@ -46,24 +46,29 @@ function fetchResource(requestUrl,destination,maxBytes,request,redirects){
         timer=setTimeout(()=>fail(new Error('CAMERA_DB_TOTAL_TIMEOUT')),300000);
     });
 }
-function generation(m){return 'camera-catalog-'+m.revision+'-'+m.records.sha256.slice(0,20)+'-'+m.index.sha256.slice(0,20);}
+function generation(m){return (m.datasetId==='hybrid-rus-v1'?'hybrid-catalog-':'camera-catalog-')+m.revision+'-'+m.records.sha256.slice(0,20)+'-'+m.index.sha256.slice(0,20);}
 function removeCatalog(dir){
     // Only fixed files in our own generation directories; never user cameras/settings.
-    [MANIFEST,INDEX,RECORDS].forEach(f=>{try{fs.unlinkSync(path.join(dir,f));}catch(e){if(e.code!=='ENOENT')throw e;}});
+    [MANIFEST,INDEX,RECORDS,'hybrid-manifest-v1.json','hybrid-index-v1.bin','hybrid-records-v1.bin'].forEach(f=>{try{fs.unlinkSync(path.join(dir,f));}catch(e){if(e.code!=='ENOENT')throw e;}});
     try{fs.rmdirSync(dir);}catch(e){if(e.code!=='ENOENT')throw e;}
 }
 class CameraStore{
     constructor(options){
         const o=options||{};this.dataDir=o.dataDir||process.cwd();this.bundledDir=o.bundledDir||__dirname;
         this.request=o.request||https.get;this.log=o.log||function(){};this.current=null;this.source='bundle';this.inFlight=null;
+        this.hybrid=fs.existsSync(path.join(this.bundledDir,'hybrid-manifest-v1.json'));
+        this.codec=require(this.hybrid?'./hybrid-catalog':'./camera-catalog');
+        this.pointer=this.hybrid?'hybrid-catalog-active.json':POINTER;
+        this.prefix=this.hybrid?'hybrid-catalog-':'camera-catalog-';
     }
     memory(stage){const m=process.memoryUsage();this.log('CAMERA_DB '+stage+' rssMiB='+Math.round(m.rss/1048576)+' heapMiB='+Math.round(m.heapUsed/1048576));}
     async loadLocal(){
+        const {readManifest,openCatalog}=this.codec;
         const bundled=readManifest(this.bundledDir);let cachedDir=null,cached=null;
         try{
-            const pointerPath=path.join(this.dataDir,POINTER);if(fs.statSync(pointerPath).size>4096)throw new Error('CAMERA_DB_POINTER_SIZE');
+            const pointerPath=path.join(this.dataDir,this.pointer);if(fs.statSync(pointerPath).size>4096)throw new Error('CAMERA_DB_POINTER_SIZE');
             const p=JSON.parse(fs.readFileSync(pointerPath,'utf8'));
-            if(!p||!/^camera-catalog-[0-9]{1,16}-[a-f0-9]{20}-[a-f0-9]{20}$/.test(p.directory))throw new Error('CAMERA_DB_POINTER');
+            if(!p||!new RegExp('^'+this.prefix+'[0-9]{1,16}-[a-f0-9]{20}-[a-f0-9]{20}$').test(p.directory))throw new Error('CAMERA_DB_POINTER');
             cachedDir=path.join(this.dataDir,p.directory);cached=readManifest(cachedDir);
             if(generation(cached)!==p.directory||cached.revision<bundled.revision||
                 (cached.revision===bundled.revision&&cached.contentHash!==bundled.contentHash))cached=null;
@@ -74,7 +79,7 @@ class CameraStore{
         this.cleanup();return {database:this.current,source:this.source};
     }
     cleanup(){
-        try{fs.readdirSync(this.dataDir).filter(n=>/^camera-catalog-[0-9]{1,16}-[a-f0-9]{20}-[a-f0-9]{20}$/.test(n)||n==='camera-catalog-staging').forEach(n=>{
+        try{fs.readdirSync(this.dataDir).filter(n=>new RegExp('^'+this.prefix+'[0-9]{1,16}-[a-f0-9]{20}-[a-f0-9]{20}$').test(n)||n===this.prefix+'staging').forEach(n=>{
             const dir=path.join(this.dataDir,n);if(this.current&&dir!==this.current.dir)removeCatalog(dir);
         });}catch(e){this.log('CAMERA_DB cleanup: '+e.message);}
     }
@@ -83,9 +88,11 @@ class CameraStore{
         this.inFlight=this.doRefresh(onStatus).then(r=>{this.inFlight=null;return r;},e=>{this.inFlight=null;throw e;});return this.inFlight;
     }
     async doRefresh(onStatus){
+        const {validateManifest,openCatalog,MANIFEST}=this.codec;
         const status=typeof onStatus==='function'?onStatus:function(){};let next=null,staging=null;
         try{
             if(!this.current)throw new Error('CAMERA_DB_NOT_LOADED');
+            if(this.hybrid&&this.current.manifest.updateChannel==='bundled')return {updated:false,database:this.current,source:this.source,message:'Гибридная база обновляется с приложением'};
             status('Проверка версии базы...');this.memory('manifest');
             const m=validateManifest(JSON.parse(await fetchResource(BASE_URL+MANIFEST,null,16384,this.request,0)));
             if(m.revision<this.current.revision)throw new Error('CAMERA_DB_OLDER_REVISION');
@@ -93,7 +100,7 @@ class CameraStore{
                 if(m.contentHash!==this.current.contentHash)throw new Error('CAMERA_DB_REVISION_CONFLICT');
                 return {updated:false,database:this.current,source:this.source};
             }
-            ensureDirectory(this.dataDir);this.cleanup();staging=path.join(this.dataDir,'camera-catalog-staging');ensureDirectory(staging);
+            ensureDirectory(this.dataDir);this.cleanup();staging=path.join(this.dataDir,this.prefix+'staging');ensureDirectory(staging);
             for(const key of ['index','records']){
                 status(key==='index'?'Загрузка индекса...':'Загрузка базы на диск...');
                 await fetchResource(BASE_URL+m[key].file,path.join(staging,m[key].file),m[key].bytes,this.request,0);
@@ -105,7 +112,7 @@ class CameraStore{
             // On Windows a live file handle prevents directory rename.
             fs.renameSync(staging,target);staging=null;
             next=await openCatalog(target,m);
-            const pointer=path.join(this.dataDir,POINTER),tmp=pointer+'.tmp';
+            const pointer=path.join(this.dataDir,this.pointer),tmp=pointer+'.tmp';
             fs.writeFileSync(tmp,JSON.stringify({directory:path.basename(target)}),'utf8');
             const fd=fs.openSync(tmp,'r+');try{fs.fsyncSync(fd);}finally{fs.closeSync(fd);}
             fs.renameSync(tmp,pointer);

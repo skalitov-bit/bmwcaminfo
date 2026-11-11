@@ -7,6 +7,9 @@ const base=process.argv[2]||path.join(__dirname,'../apps/aurelm_speed_camera_war
 const {CameraStore,POINTER}=require(path.resolve(base,'disk-camera-store'));
 const {MANIFEST,INDEX,RECORDS,readManifest,validateManifest,validateIndex}=require(path.resolve(base,'camera-catalog'));
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'bmw-disk-test-')),manifest=readManifest(base);
+// Exercise backward compatibility using a genuine legacy-only bundle.
+const legacyBundle=path.join(tmp,'legacy-bundle');fs.mkdirSync(legacyBundle);
+for(const file of [MANIFEST,INDEX,RECORDS])fs.copyFileSync(path.join(base,file),path.join(legacyBundle,file));
 let served=JSON.parse(JSON.stringify(manifest)),fault='',requests=[],stores=[],port,peak=0;
 function memory(stage){const rss=process.memoryUsage().rss/1048576;peak=Math.max(peak,rss);console.log(stage+' RSS MiB='+rss.toFixed(2));}
 const server=http.createServer((req,res)=>{
@@ -23,7 +26,7 @@ const server=http.createServer((req,res)=>{
     else stream.pipe(res);
 });
 const request=(options,cb)=>http.get({hostname:'127.0.0.1',port,path:options.path},cb);
-function store(dir){const s=new CameraStore({dataDir:dir,bundledDir:base,request,log:m=>{if(m.indexOf('rssMiB')>=0)memory(m);}});stores.push(s);return s;}
+function store(dir){const s=new CameraStore({dataDir:dir,bundledDir:legacyBundle,request,log:m=>{if(m.indexOf('rssMiB')>=0)memory(m);}});stores.push(s);return s;}
 async function run(){
     await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));port=server.address().port;
     const s=store(tmp);await s.loadLocal();assert.strictEqual(s.current.cities.russia.length,manifest.count);

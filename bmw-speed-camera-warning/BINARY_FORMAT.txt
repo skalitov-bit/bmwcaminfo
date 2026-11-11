@@ -1,0 +1,77 @@
+BMWCamInfo 0.9.4 — hybrid-blocks-v1
+
+Files: hybrid-manifest-v1.json, hybrid-index-v1.bin, hybrid-records-v1.bin.
+SQLite is a build input only. No SQLite library or Android native code is needed
+on MGU. The loader uses Node fs, zlib and crypto.
+
+Index header (24 bytes, little endian): magic BHYIDX1\0 (8), version u16=1,
+record width u16=52, block count u32, total records u32, dictionary bytes u32.
+Followed by block descriptors (28 bytes each): latitude cell i16, longitude
+cell i16, file offset u32, compressed size u32, expanded size u32, record count
+u16, warning record count u16, city bits u32, reserved u32=0. Cell size .05°.
+The remainder is UTF-8 JSON: source-specific categories, complex name codes,
+source revision dates, region bits and extra path-to-block index references.
+
+Each data block is independently zlib-compressed, max 256 records, max 256 KiB
+expanded. Its fixed records are followed by the variable geometry byte pool.
+The current exporter refuses oversized blocks instead of silently truncating.
+
+Record offsets:
+ 0 i32 latitude * 1e7; 4 i32 longitude * 1e7 (max rounding error .5e-7 degrees)
+ 8 u32 source record ID (MapCam ID or Estrelka physical record index)
+12 u16 ORIGINAL category code; interpret only with source namespace
+14 u8 complex dictionary code (0 unknown)
+15 u8 bit0 Estrelka, bit1 Yoshkar-Ola, bit2 Mari El
+16 u16 speed km/h (0 unknown); 18 u8 direction type; 19 reserved=0
+20 u16 approach heading *100 (65535 unknown); 22 u16 warning distance metres
+24 u16 native Estrelka flags (65535 absent)
+26 u32 native Estrelka additional distance (0xffffffff absent)
+30 u32 geometry offset relative to expanded block; 34 u16 geometry byte count
+36 u16 MapCam sector (65535 absent)
+38 u16 ORIGINAL MapCam azimuth *100 (65535 absent). Source value 360 is
+   preserved as data; it is NOT used as a valid travel heading.
+40 12 bytes: Estrelka hybrid identity hash, or zeros for MapCam.
+
+MapCam nonempty geometry: original float32 latitude/longitude (8 bytes) plus
+unchanged MC85 geometry string. The original float32 origin is retained to
+prevent coordinate rounding from shifting decoded path deltas.
+Estrelka geometry: unchanged bytes decoded from the source hexadecimal field.
+Estrelka flags/extra geometry are preserved but not guessed into MapCam fields.
+
+Runtime: manifest and index are checked; data/index SHA256 are streamed before
+use. Records are read by block offset. At most 8 blocks, 1024 decoded records,
+and 128 KiB of their expanded binary sizes are cached. These are cache bounds,
+NOT a bound on total Node/UI RAM. Temporary decompression is bounded at 256 KiB.
+The map's 25km view retains only the nearest requested 500 warning objects.
+The monitoring query covers all matching warning objects within 2.1km.
+
+All 313682 hybrid rows remain in the file. Warning records are fixed/mobile
+cameras, dummies and weight-control points. Road-only hazards are retained as
+data and do not become camera voice alerts. Models and functions remain separate.
+Camera names are used by the shared banner/KOMBI/HUD label function. Dummy labels
+retain МУЛЯЖ. Unknown model names fall back to category text.
+
+MapCam path warnings retain the existing section/average-speed algorithm.
+Estrelka points use source speed/direction/distance with the existing point
+engine (default sector 60 degrees when none is provided). This is not an exact
+replica of Android detection. Estrelka average-speed points without a verified
+section only warn of the control type; they do not calculate a fictitious average
+or trigger an instantaneous-speed violation. Dummies do not trigger speeding.
+
+Update channel in this build: bundled. The old GitHub MapCam catalogue cannot
+replace the hybrid. The UI reports that updates are delivered with the app.
+The file reader/store retains compatibility with older MapCam-only bundles.
+
+Build: python tools/pack_hybrid_catalog.py PATH_TO_BMW_Hybrid_RUS.sqlite
+Then: python tools/build_local.py --out OUT --cache PINNED_BUILD_CACHE
+The source SQLite is not included in the installation package. Binary datasets
+remain subject to their source terms, separately from the program licence.
+
+Tests: node tests/hybrid-catalog.test.js
+       node --max-old-space-size=64 tests/hybrid-memory.test.js
+       node tests/app-startup.test.js
+The first test compares a semantic SHA256 of EVERY decoded row with the export,
+checks spatial queries against exhaustive scans, source/category separation,
+real Estrelka approach warnings, average/dummy handling and corrupt-file rejection.
+Memory test runs on desktop Node; a 64 MiB old-space setting is not a total RSS
+limit and is not a measurement of the actual MGU runtime.

@@ -79,7 +79,7 @@ class MapcamWarnings{
   if(moved>2&&fix.speedKmh>5)this.heading=bearing(previous,fix);
   if(this.heading===null)return [];
   const events=[],seen=Object.create(null),list=Object.create(null);
-  (cameras||[]).forEach(c=>{if(c&&c.source==='MapCam.info')list[c.id]=c;});
+  (cameras||[]).forEach(c=>{if(c&&(c.source==='MapCam.info'||c.warningProfile==='hybrid-v1')&&c.warningEnabled!==false)list[c.id]=c;});
   Object.keys(this.states).forEach(id=>{if(!list[id])list[id]=this.states[id].camera;});
   Object.keys(list).forEach(id=>{
    const c=list[id],o=this.options;
@@ -123,7 +123,7 @@ class MapcamWarnings{
    const useAverage=section&&path.total>=300;
    state.useAverage=!!useAverage;
    state.speedKmh=useAverage?state.averageKmh:fix.speedKmh;
-   const speeding=Number.isFinite(c.limit)&&Number.isFinite(state.speedKmh)&&state.speedKmh>=c.limit+o.excessKmh;
+   const speeding=c.camera_family!=='dummy'&&(!c.averageControl||useAverage)&&Number.isFinite(c.limit)&&Number.isFinite(state.speedKmh)&&state.speedKmh>=c.limit+o.excessKmh;
    state.speeding=speeding;
    function event(type,voice){return {type,stage:1,camera:c,distanceM:Math.round(state.distanceM),
     phase:state.phase,speedKmh:Number.isFinite(state.speedKmh)?Math.round(state.speedKmh):null,

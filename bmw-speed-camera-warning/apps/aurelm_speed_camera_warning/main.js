@@ -9,10 +9,11 @@ const {LocalCameraStore}=require('./local-camera-store');
 const {CameraVoiceAlerts}=require('./voice-alert');
 const {CameraClusterOutput}=require('./cluster-output');
 const {MapcamWarnings,freshFix:mapcamFreshFix}=require('./mapcam-warnings');
+const {category}=require('./camera-label');
 const CITY_LABELS={russia:'Россия · рядом с GPS','yoshkar-ola':'Йошкар-Ола','mari-el':'Республика Марий Эл',moscow:'Москва',sochi:'Сочи'};
 const REFRESH_INTERVAL_MS=21600000,W=1600,H=520;
 const MAP={x:24,y:66,w:1120,h:420},P={x:1170,y:66,w:406,h:420};
-const C={bg:'#080d13',panel:'#101923',road:'#334252',edge:'#637487',text:'#e9f0f6',muted:'#91a2b5',blue:'#58b6ff',red:'#ff525e',green:'#5de0a1',yellow:'#ffd166',grid:'#172430'};
+const C={bg:'#080d13',panel:'#101923',road:'#334252',edge:'#637487',text:'#e9f0f6',muted:'#91a2b5',blue:'#58b6ff',red:'#d32c36',green:'#5de0a1',yellow:'#ffd166',grid:'#172430'};
 mgu.run({async start(ctx){
  const {ui,settings,log,dataDir}=ctx;uplink.init(dataDir);log.info('UPLINK '+uplink.describe());uplink.checkInternet({timeout:3500}).then(ok=>log.info('UPLINK_HTTPS_PROBE '+(ok?'online':'offline')+'; '+uplink.describe())).catch(e=>log.warn('UPLINK_PROBE_ERROR '+e));let city=String(settings.get('city')||'russia'),view='MAP',index=0,zoom=.75,zoomIndex=1,fix=null,cameraDisplayMode=String(settings.get('camera_display')||'kombi'),gpsStatus={state:'starting',errorCode:null,eventsReceived:0,invalidEvents:0},lastAlert='Нет предупреждений',alertUntil=0,activeAlert=null;
  const store=new CameraStore({dataDir,bundledDir:__dirname,log:m=>log.info(m)});let database=(await store.loadLocal()).database;
@@ -28,14 +29,14 @@ mgu.run({async start(ctx){
  const warningRows=[
   {key:'mapcam_voice',label:'Голос',values:['always','speeding','off'],labels:['Каждая камера','При превышении','Выключен']},
   {key:'mapcam_excess',label:'Порог превышения',values:['0','10','18','20'],labels:['Лимит камеры','Лимит + 10 км/ч','Лимит + 18 км/ч','Лимит + 20 км/ч']},
-  {key:'mapcam_distance',label:'Дистанция',values:['0','500','700','1000','2000'],labels:['Из базы MapCam','500 м','700 м','1000 м','2000 м']}
+  {key:'mapcam_distance',label:'Дистанция',values:['0','500','700','1000','2000'],labels:['Из базы','500 м','700 м','1000 м','2000 м']}
  ];
  function warningValue(r){const value=String(settings.get(r.key)||r.values[0]);return Math.max(0,r.values.indexOf(value));}
  function changeWarningSetting(){const r=warningRows[warningSettingIndex];settings.set(r.key,r.values[(warningValue(r)+1)%r.values.length]);mapcamWarnings.configure(mapcamOptions());clearLiveAlerts();renderSafe();}
  function clearLiveAlerts(){activeAlert=null;alertUntil=0;clusterOutput.clear();if(voice.cancel)voice.cancel();}
  function drawWarningSettings(){
   const cv=ctx.canvas(W,H).clear(C.bg);cv.roundRect(48,72,W-96,400,16,C.panel);
-  txt(cv,'ПРЕДУПРЕЖДЕНИЯ MAPCAM · РОССИЯ',82,115,24,C.blue);
+  txt(cv,'ПРЕДУПРЕЖДЕНИЯ · ГИБРИД · РОССИЯ',82,115,24,C.blue);
   warningRows.forEach((r,i)=>{const y=145+i*70;cv.roundRect(76,y,1448,58,9,i===warningSettingIndex?'#17496a':'#172431');txt(cv,r.label,98,y+37,22,C.text);txt(cv,r.labels[warningValue(r)],780,y+37,22,C.green);});
   txt(cv,'1 / 2 — выбрать настройку · 4 — изменить · 3 — настройки KOMBI/HUD',82,392,18,C.text);
   txt(cv,'Участки: расстояние до конца и средняя скорость. Голос камеры — не чаще раза в 20 минут.',82,428,16,C.muted);
@@ -94,7 +95,8 @@ mgu.run({async start(ctx){
   cv.circle(x+93,y+71,22,'#07111d');
   cv.roundRect(x+77,y+61,32,21,5,'#eaf2f8');
   cv.circle(x+93,y+71,7,'#07111d');
-  txt(cv,e.phase==='section'?'КОНТРОЛЬ НА УЧАСТКЕ':e.phase==='rear'?'КОНТРОЛЬ ПОСЛЕ КАМЕРЫ':'КАМЕРА ВПЕРЕДИ',x+194,y+43,24,C.text);
+  const title=category(c).full.toUpperCase();
+  txt(cv,title,x+194,y+43,title.length>36?20:24,C.text);
   txt(cv,(e.phase==='section'?'До конца ':e.phase==='rear'?'За камерой ':'Через ')+Math.max(0,Math.round(e.distanceM||0))+' м',x+194,y+86,26,C.text);if(e.useAverage)txt(cv,e.partialSection?'Средняя с момента подключения':'Средняя на участке',x+194,y+116,16,C.muted);
   if(limit!==null){
     cv.circle(x+755,y+72,37,'#f4f6f8');
@@ -107,7 +109,7 @@ mgu.run({async start(ctx){
   }
   if(speeding){
     cv.roundRect(x+1110,y+17,320,108,14,'#35121a');
-    txt(cv,'ПРЕВЫШЕНИЕ',x+1130,y+48,17,'#ff9ca3');
+    txt(cv,'ПРЕВЫШЕНИЕ',x+1130,y+48,17,C.red);
     txt(cv,'+'+(speed-limit)+' км/ч',x+1130,y+91,34,C.red);
   }else if(speed!==null){
     txt(cv,(e.useAverage?'Средняя ':'Скорость ')+speed+' км/ч',x+1140,y+81,19,C.muted);
@@ -134,7 +136,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
    if(active)txt(cv,'ВЫБРАНО',x+165,240,11,C.green,{align:'center'});
   });
   txt(cv,'Текущий режим: '+displayModeLabel(cameraDisplayMode),82,304,21,C.green);
-  txt(cv,'1 / 2 — режим вывода · 3 — предупреждения MapCam',82,352,17,C.text);
+  txt(cv,'1 / 2 — режим вывода · 3 — предупреждения гибридной базы',82,352,17,C.text);
   txt(cv,'Кнопка 5 — голосовая проверка и тестовая карточка камеры',82,384,17,C.text);
   txt(cv,cameraDisplayMode==='off'?'В режиме «Выкл.» тестовая карточка не появится, голос будет проверен.':'Тестовая карточка появится на выбранном дисплее на 10 секунд.',82,420,16,C.yellow);
   txt(cv,'HUD — экспериментальный режим; результат зависит от cluster-render и конфигурации автомобиля.',82,458,14,C.muted);
@@ -143,7 +145,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  function testCameraOutputs(){
   lastAlert='ТЕСТ КАМЕРЫ · '+displayModeLabel(cameraDisplayMode);alertUntil=Date.now()+10000;
   if(cameraDisplayMode!=='off'){
-   clusterOutput.show({type:'camera',stage:1,distanceM:500,camera:{id:'camera-output-test',name:'ТЕСТОВАЯ КАМЕРА',limit:60},speedKmh:0});
+   clusterOutput.show({type:'camera',stage:1,distanceM:500,camera:{id:'camera-output-test',name:'ТЕСТОВАЯ КАМЕРА',type:'Стационарная камера скорости',mapcamTypeCode:1,limit:60},speedKmh:0});
    setTimeout(()=>{if(clusterOutput.current&&clusterOutput.current.camera&&clusterOutput.current.camera.id==='camera-output-test')clusterOutput.clear();},10000);
   }
   renderSafe();
@@ -152,7 +154,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
    alertUntil=Date.now()+10000;renderSafe();
   });
  }
- function drawMainMap(){const cv=ctx.canvas(W,H).clear(C.bg);cv.roundRect(18,12,W-36,40,10,Date.now()<alertUntil?'#7b1820':'#111c27');txt(cv,Date.now()<alertUntil?'⚠ '+lastAlert:'КАРТА КАМЕР · '+(CITY_LABELS[city]||city),660,39,Date.now()<alertUntil?16:18,Date.now()<alertUntil?'#ffffff':C.text);txt(cv,city==='russia'?'До 500 камер в радиусе 25 км':'Локальная схема · без интернета',W-38,39,15,C.muted,{align:'right'});drawMap(cv);drawPanel(cv);drawAlertBanner(cv);txt(cv,'MapCam · предупреждения по всей России · секторы и участки из базы',MAP.x+2,H-8,12,C.muted);drawTabs(cv,'MAP');drawActionLegend(cv,'MAP');return ui.image('MAIN_GFX',cv);}
+ function drawMainMap(){const cv=ctx.canvas(W,H).clear(C.bg);cv.roundRect(18,12,W-36,40,10,Date.now()<alertUntil?'#7b1820':'#111c27');txt(cv,Date.now()<alertUntil?'⚠ '+lastAlert:'КАРТА КАМЕР · '+(CITY_LABELS[city]||city),660,39,Date.now()<alertUntil?16:18,Date.now()<alertUntil?'#ffffff':C.text);txt(cv,city==='russia'?'До 500 камер в радиусе 25 км':'Локальная схема · без интернета',W-38,39,15,C.muted,{align:'right'});drawMap(cv);drawPanel(cv);drawAlertBanner(cv);txt(cv,'MapCam + еСтрелка · предупреждения по всей России',MAP.x+2,H-8,12,C.muted);drawTabs(cv,'MAP');drawActionLegend(cv,'MAP');return ui.image('MAIN_GFX',cv);}
  function render(){if(view==='ADD')return drawAddCamera();if(view==='MY')return drawMyCameras();if(view==='SETTINGS')return drawSettings();return drawMainMap();}
  let renderQueued=false,renderRunning=false,renderTimer=null,lastRenderAt=0,renderCount=0;
  function renderSafe(){
@@ -200,7 +202,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   if(current){
    const st=current.state,c=st.camera||localCameras.find(c=>c.id===current.id);
    if(c){const e={camera:c,distanceM:st.distanceM,type:st.speeding?'speeding':'camera',speeding:st.speeding,
-    phase:st.phase,speedKmh:Number.isFinite(st.speedKmh)?Math.round(st.speedKmh):null,averageKmh:st.averageKmh,
+    phase:st.phase,speedKmh:Number.isFinite(st.speedKmh)?Math.round(st.speedKmh):null,measuredSpeedKmh:st.speedKmh,averageKmh:st.averageKmh,
     useAverage:st.useAverage,partialSection:st.partialSection};
     activeAlert=e;alertUntil=now+3500;lastAlert=(e.phase==='section'?'ДО КОНЦА УЧАСТКА ':e.phase==='rear'?'ЗА КАМЕРОЙ ':'КАМЕРА ЧЕРЕЗ ')+Math.round(e.distanceM)+' м';
     if(!clusterOutput.current||clusterOutput.current.camera.id!==c.id)clusterOutput.show(e);
@@ -209,7 +211,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   }else if(activeAlert){clearLiveAlerts();}
  }
 
- async function refresh(){if(refreshInFlight)return refreshInFlight;refreshBusy=true;refreshError=false;refreshStatus='Проверка обновлений...';renderSafe();refreshInFlight=store.refresh((state)=>{refreshStatus=state;renderSafe();}).then(r=>{database=r.database;if(r.updated){cameraIndex=database;displayCache=null;index=0;roadGuidance.reset();mapcamWarnings.reset();clearLiveAlerts();refreshStatus='Обновлено успешно';refreshError=false;}else if(r.error){refreshStatus='Ошибка: '+String(r.error).slice(0,42);refreshError=true;}else{refreshStatus='Обновлений нет';refreshError=false;}renderSafe();return r;}).catch(e=>{refreshStatus='Ошибка: '+String(e&&e.message||e).slice(0,42);refreshError=true;log.warn('DB refresh '+e);renderSafe();return {error:String(e)};}).then(r=>{refreshBusy=false;refreshInFlight=null;renderSafe();return r;});return refreshInFlight;}
+ async function refresh(){if(refreshInFlight)return refreshInFlight;refreshBusy=true;refreshError=false;refreshStatus='Проверка обновлений...';renderSafe();refreshInFlight=store.refresh((state)=>{refreshStatus=state;renderSafe();}).then(r=>{database=r.database;if(r.updated){cameraIndex=database;displayCache=null;index=0;roadGuidance.reset();mapcamWarnings.reset();clearLiveAlerts();refreshStatus='Обновлено успешно';refreshError=false;}else if(r.error){refreshStatus='Ошибка: '+String(r.error).slice(0,42);refreshError=true;}else{refreshStatus=r.message||'Обновлений нет';refreshError=false;}renderSafe();return r;}).catch(e=>{refreshStatus='Ошибка: '+String(e&&e.message||e).slice(0,42);refreshError=true;log.warn('DB refresh '+e);renderSafe();return {error:String(e)};}).then(r=>{refreshBusy=false;refreshInFlight=null;renderSafe();return r;});return refreshInFlight;}
  const CAMERA_TYPES=['Камера скорости','Контроль светофора','Скорость + светофор'];
  function drawTabs(cv,active){
   const tabs=[['MAP','КАРТА'],['ADD','ДОБАВИТЬ'],['MY','МОИ КАМЕРЫ'],['SETTINGS','НАСТРОЙКИ']];
@@ -315,5 +317,5 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  settings.onChange(k=>{if(k.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());clearLiveAlerts();renderSafe();return;}if(k==='city'){city=String(settings.get('city')||'russia');index=0;roadGuidance.reset();renderSafe();}else if(k==='camera_display'){cameraDisplayMode=String(settings.get('camera_display')||'kombi');clusterOutput.setMode(cameraDisplayMode);renderSafe();}});
  gps.on('change',gpsChanged);gps.start();ui.onVisible((n,v)=>{if(n==='MAIN'&&v)renderSafe();});
  renderSafe();refresh();setInterval(refresh,REFRESH_INTERVAL_MS);ctx.loop('MAIN',1000,()=>{if(fix&&Date.now()-fix.timeMs>3000){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}renderSafe();});
- log.info('Speed Camera Warning 0.9.1 started; MapCam sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
+ log.info('Speed Camera Warning 0.9.3 started; MapCam sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
 }});

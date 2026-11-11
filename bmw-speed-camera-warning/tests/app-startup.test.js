@@ -14,7 +14,7 @@ const ctx={dataDir:tmp,canvas:()=>cv,onTap:()=>{},loop:(name,ms,fn)=>{loopHandle
     settings:{get:k=>settings[k],set:(k,v)=>{settings[k]=v;},onChange:fn=>{changeHandler=fn;}},
     ui:{image:()=>{images++;},onClick:(k,fn)=>{buttons[k]=fn;},onVisible:()=>{}}};
 let activeStore;
-class CameraStore extends RealStore {constructor(o){super(o);activeStore=this;}async loadLocal(){const r=await super.loadLocal();expectedCameras=this.current.cities.russia.length;return r;}refresh(){this.pending=(async()=>{const old=this.current;this.current=await appRequire('./camera-catalog').openCatalog(path.dirname(path.resolve(file)));old.close();return {updated:true,database:this.current,source:this.source};})();return this.pending;}}
+class CameraStore extends RealStore {constructor(o){super(o);activeStore=this;}async loadLocal(){const r=await super.loadLocal();expectedCameras=this.current.cities.russia.length;return r;}refresh(){this.pending=(async()=>{const old=this.current;this.current=await this.codec.openCatalog(path.dirname(path.resolve(file)));old.close();return {updated:true,database:this.current,source:this.source};})();return this.pending;}}
 class GPS {on(k,fn){gpsHandler=fn;}start(){}}
 class Voice {cancel(){}camera(){return Promise.resolve(true);}test(){return Promise.resolve(true);}}
 class Cluster {setMode(){}show(){}clear(){}sync(){}}
@@ -41,7 +41,7 @@ async function run(){
     buttons.BTN_CAMERA_MENU();buttons.BTN_CAMERA_MENU();buttons.BTN_CAMERA_MENU();
     await new Promise(resolve=>setTimeout(resolve,30));
     buttons.BTN_ZOOM();await new Promise(resolve=>setTimeout(resolve,30));
-    assert(texts.some(t=>t.includes('ПРЕДУПРЕЖДЕНИЯ MAPCAM')));
+    assert(texts.some(t=>t.includes('ПРЕДУПРЕЖДЕНИЯ')));
     buttons.BTN_REFRESH();assert.strictEqual(settings.mapcam_voice,'speeding');
     buttons.BTN_CAM_NEXT();buttons.BTN_REFRESH();assert.strictEqual(settings.mapcam_excess,'10');
     buttons.BTN_CAM_NEXT();buttons.BTN_REFRESH();assert.strictEqual(settings.mapcam_distance,'500');

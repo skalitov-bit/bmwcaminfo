@@ -1,8 +1,8 @@
 {
   "id": "aurelm_speed_camera_warning",
   "title": "Speed Camera Warning",
-  "description": "Камеры MapCam по России: секторы, направления, участки контроля, средняя скорость и вывод KOMBI/HUD.",
-  "version": "0.9.1",
+  "description": "Гибрид MapCam + еСтрелка по России: компактная база, названия комплексов и предупреждения KOMBI/HUD.",
+  "version": "0.9.7",
   "vendor": "Andrug05",
   "loggingId": "SCAM",
   "iconGlyph": "camera",

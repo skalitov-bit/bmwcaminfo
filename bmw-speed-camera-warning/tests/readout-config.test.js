@@ -17,7 +17,7 @@ assert(map.roads.length>=20);
 assert(map.source && map.source.includes('OpenStreetMap'));
 for(const r of map.roads){assert.strictEqual(r.length,5);assert(r.slice(1).every(Number.isFinite));}
 const app=JSON.parse(fs.readFileSync(path.join(base,'app.json'),'utf8'));
-assert.strictEqual(app.version,'0.9.1');assert.strictEqual(app.screens.length,1,'Camera management must stay inside one MGU window');
+assert.strictEqual(app.version,'0.9.4');assert.strictEqual(app.screens.length,1,'Camera management must stay inside one MGU window');
 assert.strictEqual(app.screens[0].name,'MAIN');
 assert.strictEqual(app.screens[0].kind,'canvas');
 for(const id of ['BTN_CAM_PREV','BTN_CAM_NEXT','BTN_ZOOM','BTN_REFRESH','BTN_VOICE_TEST','BTN_CAMERA_MENU'])assert(app.screens[0].buttons.some(b=>b[0]===id),'Missing main-window control '+id);
@@ -67,4 +67,4 @@ assert(!w.update({lat:56.629,lon:47.928,speedKmh:100,headingDeg:0,accuracyM:10},
 for(const f of ['mapcam-warnings.js','main.js','gps.js','camera-store.js','local-camera-store.js','proximity.js','road-guidance.js','voice-alert.js','cluster-output.js','cluster_render_client.js'])cp.execFileSync(process.execPath,['--check',path.join(base,f)]);
 cp.execFileSync(process.env.PYTHON || 'python3',['-m','py_compile',path.join(__dirname,'../tools/import_camera_sources.py')]);
 cp.execFileSync(process.env.PYTHON || 'python3',['-m','py_compile',path.join(__dirname,'../tools/import_city_roads.py')]);
-console.log('Speed Camera Warning 0.9.1 tests passed');
+console.log('Speed Camera Warning 0.9.4 tests passed');
