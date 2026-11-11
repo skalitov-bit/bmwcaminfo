@@ -1,0 +1,17 @@
+name: Replace SpeedCAM demo with static screenshots
+on:
+  push:
+    branches: ['docs/0.9.28-screenshots']
+permissions:
+  contents: write
+jobs:
+  publish-screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace GIF with four emulator and HUD examples
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .release/publish_release_screenshots.py
+
