@@ -1,0 +1,17 @@
+name: Add SpeedCAM 0.9.28 emulator GIF
+on:
+  push:
+    branches: ['docs/0.9.28-demo']
+permissions:
+  contents: write
+jobs:
+  publish-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Embed emulator recording in release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .release/publish_release_demo.py
+
