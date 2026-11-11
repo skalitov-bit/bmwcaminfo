@@ -5,6 +5,8 @@ const W=420,H=116,S=4,IW=W*S,IH=H*S;
 const RING_SIZE=84,RING_PIXELS=RING_SIZE*S;
 const ALERT_RED=[211,44,54,255]; // Same red as the speed-limit sign (#D32C36).
 const clusterText=require('./cluster-text');
+const suppliedCameraIcon=require('./camera-icon');
+const {PULSE,pulseOpacity,monotonicMs}=require('./ring-pulse');
 function shouldBlink(e){
  const c=e&&e.camera||{},limit=c.limit;
  const speed=e&&(e.useAverage?e.averageKmh:Number.isFinite(e.measuredSpeedKmh)?e.measuredSpeedKmh:e.speedKmh);
@@ -24,21 +26,8 @@ function rgba(r,g,b,a){return [r,g,b,a===undefined?255:a];}
 function put(px,x,y,c){if(x<0||y<0||x>=IW||y>=IH)return;const i=(y*IW+x)*4;px[i]=c[0];px[i+1]=c[1];px[i+2]=c[2];px[i+3]=c[3];}
 function rect(px,x,y,w,h,c){for(let yy=y*S;yy<(y+h)*S;yy++)for(let xx=x*S;xx<(x+w)*S;xx++)put(px,xx,yy,c);}
 function circle(px,cx,cy,r,c){const rr=r*S,ccx=cx*S,ccy=cy*S;for(let y=Math.floor(ccy-rr-1);y<=Math.ceil(ccy+rr+1);y++)for(let x=Math.floor(ccx-rr-1);x<=Math.ceil(ccx+rr+1);x++){const dx=x+0.5-ccx,dy=y+0.5-ccy,d=Math.sqrt(dx*dx+dy*dy),coverage=Math.max(0,Math.min(1,rr+0.5-d));if(coverage>0){const a=Math.round(c[3]*coverage);put(px,x,y,[c[0],c[1],c[2],a]);}}}
-function roundDistance(x,y,cx,cy,w,h,r){
- const dx=Math.abs(x-cx)-(w/2-r),dy=Math.abs(y-cy)-(h/2-r);
- return Math.hypot(Math.max(dx,0),Math.max(dy,0))+Math.min(Math.max(dx,dy),0)-r;
-}
 function cameraIcon(px){
- // Analytic rounded outline at the renderer's 4x resolution; no pixel-grid lens.
- const stroke=2.4;
- for(let yy=38*S;yy<75*S;yy++)for(let xx=30*S;xx<80*S;xx++){
-  const x=(xx+.5)/S,y=(yy+.5)/S;
-  const body=roundDistance(x,y,55,58.5,42,25,5),top=roundDistance(x,y,51.5,46,18,10,3);
-  const outline=Math.abs(Math.min(body,top))-stroke/2;
-  const lens=Math.abs(Math.hypot(x-55,y-58.5)-7)-stroke/2;
-  const coverage=Math.max(0,Math.min(1,.5-Math.min(outline,lens)*S));
-  if(coverage)put(px,xx,yy,rgba(245,249,252,Math.round(coverage*255)));
- }
+ suppliedCameraIcon.drawPixels(px,IW,IH,25*S,34*S,60*S,49.5*S,[245,249,252]);
 }
 function makeFrame(e){
  const px=Buffer.alloc(IW*IH*4),red=e.type==='speeding',white=rgba(245,249,252),muted=rgba(169,190,207),accent=red?ALERT_RED:rgba(255,205,74);
@@ -64,6 +53,7 @@ function makeFrame(e){
 class CameraClusterOutput{
  constructor(options){
   const o=options||{};this.log=o.log||function(){};this.mode=o.mode||'kombi';this.cr=null;this.layers={};this.rings={};this.blinkTimer=null;this.blinkOn=false;this.current=null;this.hideTimer=null;this.missingTimer=null;this.closed=false;
+  this.now=o.now||monotonicMs;this.blinkStarted=0;this.blinkOpacity=-1;
   if(this.mode==='off')return;
   try{
    this.cr=new ClusterRender('aurelm_speed_camera_warning');
@@ -85,7 +75,7 @@ class CameraClusterOutput{
    if(ref){this.layers[target]=ref;this.log('CLUSTER_RENDER_LAYER_CREATED target='+target+' ref='+ref+' x='+(hud?190:750)+' y='+(hud?182:302)+' size='+W+'x'+H+' class=overlay');}else this.log('CLUSTER_RENDER_LAYER_CREATE_FAILED target='+target);
    }
    if(!this.rings[target]){
-    const ref=this.cr.image({target,klass:'overlay',z:901,x:(hud?190:750)+315,y:(hud?182:302)+17,w:RING_SIZE,h:RING_SIZE,iw:RING_PIXELS,ih:RING_PIXELS,sampling:'bilinear',visible:false,opacity:1});
+    const ref=this.cr.image({target,klass:'overlay',z:901,x:(hud?190:750)+315,y:(hud?182:302)+17,w:RING_SIZE,h:RING_SIZE,iw:RING_PIXELS,ih:RING_PIXELS,sampling:'bilinear',visible:false,opacity:0});
     if(ref){this.rings[target]=ref;this.cr.pixels(ref,null,makeRing());}
    }
   });
@@ -96,22 +86,24 @@ class CameraClusterOutput{
   Object.keys(this.layers).forEach(target=>{const ref=this.layers[target];this.cr.pixels(ref,null,px);this.cr.set(ref,{visible:true});});
   this._syncBlink(e);
  }
- _setBlink(visible){
-  this.blinkOn=visible;
-  if(this.cr)Object.keys(this.rings).forEach(target=>this.cr.set(this.rings[target],{visible}));
+ _setBlink(opacity,force){
+  opacity=Math.round(Math.max(0,Math.min(1,opacity))*1000)/1000;
+  if(!force&&opacity===this.blinkOpacity)return;
+  this.blinkOpacity=opacity;this.blinkOn=opacity>0;
+  if(this.cr)Object.keys(this.rings).forEach(target=>this.cr.set(this.rings[target],{visible:this.blinkOn,opacity}));
  }
  _stopBlink(){
-  if(this.blinkTimer!==null)clearInterval(this.blinkTimer);this.blinkTimer=null;this._setBlink(false);
+  if(this.blinkTimer!==null)clearInterval(this.blinkTimer);this.blinkTimer=null;this._setBlink(0);this.blinkStarted=0;
  }
  _syncBlink(e){
   if(!shouldBlink(e)){this._stopBlink();return;}
-  if(this.blinkTimer!==null)return;
-  this._setBlink(true);
-  // Only toggle a small overlay: no full-card allocation or upload per flash.
+  if(this.blinkTimer!==null){this._setBlink(pulseOpacity(this.now()-this.blinkStarted),true);return;}
+  this.blinkStarted=this.now();this._setBlink(0,true);
+  // Update only opacity of the cached overlay. Elapsed time avoids drift after delayed ticks.
   this.blinkTimer=setInterval(()=>{
    if(!this.current||this.closed||!shouldBlink(this.current)){this._stopBlink();return;}
-   if(this.cr&&this.cr.ready)this._setBlink(!this.blinkOn);
-  },500);
+   if(this.cr&&this.cr.ready)this._setBlink(pulseOpacity(this.now()-this.blinkStarted));
+  },PULSE.frameMs);
  }
  show(event){
   if(!event||!event.camera||!this.cr)return;

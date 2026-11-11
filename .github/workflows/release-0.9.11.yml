@@ -1,0 +1,29 @@
+name: Build and publish BMWCamInfo 0.9.11
+on:
+  push:
+    branches: ['release/0.9.11']
+permissions:
+  contents: write
+concurrency:
+  group: release-0.9.11
+  cancel-in-progress: true
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build from pinned runtime inputs
+        run: python bmw-speed-camera-warning/tools/build_local.py --out release0911 --cache .build-cache
+      - name: Compare every packaged file and run packaged tests
+        run: python .release/verify_and_package0911.py
+      - name: Upload verified files and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .release/publish0911.py
