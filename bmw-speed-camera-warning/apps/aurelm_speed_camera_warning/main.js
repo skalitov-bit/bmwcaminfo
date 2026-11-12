@@ -3,6 +3,7 @@ const mgu=require('./kit/mgu');
 const uplink=require('./uplink');
 const cityMap=require('./city-map.json');
 const {CameraStore}=require('./disk-camera-store');
+const {updateFailure}=require('./database-update-status');
 const {BmwGps}=require('./gps');
 const {RoadGuidanceWarnings,prepare}=require('./road-guidance');
 const {LocalCameraStore}=require('./local-camera-store');
@@ -56,7 +57,7 @@ mgu.run({async start(ctx){
  const migratedVolume=VOLUME_LEVELS.reduce((best,value)=>Math.abs(Number(value)-volumeNumber)<Math.abs(Number(best)-volumeNumber)?value:best,VOLUME_LEVELS[0]);
  if(String(savedVolume)!==migratedVolume)settings.set('notification_volume',migratedVolume);
  const gps=new BmwGps(),roadGuidance=new RoadGuidanceWarnings([]),voice=new CameraVoiceAlerts({assetDir:__dirname,getVolume:()=>settings.get('notification_volume'),log:(m)=>log.warn(m)});
- const clusterOutput=new CameraClusterOutput({mode:cameraDisplayMode,log:(m)=>log.info(m)});let refreshInFlight=null,refreshBusy=false,refreshStartedAt=0,refreshError=false,refreshStatus='База готова';
+ const clusterOutput=new CameraClusterOutput({mode:cameraDisplayMode,log:(m)=>log.info(m)});let refreshInFlight=null,refreshBusy=false,refreshStartedAt=0,refreshError=false,refreshDetails=[],refreshStatus='База готова';
  const mapcamOptions=()=>({voice:String(settings.get('mapcam_voice')||'always'),excessKmh:Number(settings.get('mapcam_excess')||0),distanceM:Number(settings.get('mapcam_distance')||0),repeat200:settings.get('mapcam_repeat200')!=='off'});
  const mapcamWarnings=new MapcamWarnings(mapcamOptions());
  roadGuidance.configure(mapcamOptions());
@@ -199,13 +200,16 @@ mgu.run({async start(ctx){
   txt(cv,fix?(Number.isFinite(fix.speedKmh)?Math.round(fix.speedKmh)+' КМ/Ч':'СКОРОСТЬ Н/Д')+' · ТОЧНОСТЬ '+(Number.isFinite(fix.accuracyM)?Math.round(fix.accuracyM)+' М':'Н/Д'):'ПРЕДУПРЕЖДЕНИЯ ЖДУТ КООРДИНАТ',P.x+22,P.y+317,18,C.muted,{maxWidth:400});
   const installedDate=new Date(Number(database.revision)*1000);
   const dateLabel=Number(database.revision)>0&&Number.isFinite(installedDate.getTime())?installedDate.toISOString().slice(0,10).split('-').reverse().join('.'):'НЕ УКАЗАНА';
-  txt(cv,'ДАТА БАЗЫ: '+dateLabel,P.x+22,P.y+P.h-55,20,C.text,{maxWidth:400});
+  txt(cv,'ДАТА БАЗЫ: '+dateLabel,P.x+22,P.y+P.h-(refreshError?88:55),20,C.text,{maxWidth:400});
   if(refreshBusy){
    const baseline=P.y+P.h-25,phase=Math.floor((monotonicMs()-refreshStartedAt)/300)%4;
    txt(cv,'ОБНОВЛЕНИЕ',P.x+22,baseline,18,C.muted,{maxWidth:170});
    // Fixed dot positions: disappear left to right, then all three return.
    for(let i=0;i<3;i++)if(i>=phase)cv.circle(P.x+150+i*12,baseline-2,2,C.muted);
-  }else txt(cv,refreshStatus,P.x+22,P.y+P.h-25,17,refreshError?C.red:C.muted,{maxWidth:400});
+  }else if(refreshError){
+   txt(cv,refreshStatus,P.x+22,P.y+P.h-61,20,C.red,{maxWidth:400});
+   refreshDetails.forEach((line,i)=>txt(cv,line,P.x+22,P.y+P.h-37+i*22,17,C.muted,{maxWidth:400}));
+  }else txt(cv,refreshStatus,P.x+22,P.y+P.h-25,17,C.muted,{maxWidth:400});
  }
  function drawAlertBanner(cv){
   // Suppress only the central overlay; retain live warning state, voice and HUD/KOMBI.
@@ -386,7 +390,11 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   backgroundNotification.update(live&&notificationPolicy.destination()==='system'?activeAlert:null,fix&&fix.speedKmh);
  }
 
- async function refresh(){if(refreshInFlight)return refreshInFlight;refreshBusy=true;refreshStartedAt=monotonicMs();refreshError=false;refreshStatus='Проверка обновлений...';renderSafe();refreshInFlight=store.refresh((state)=>{refreshStatus=state;renderSafe();}).then(r=>{database=r.database;if(r.updated){cameraIndex=database;displayCache=null;radarCamera=null;index=0;roadGuidance.reset();mapcamWarnings.reset();notificationSession.clear();clearLiveAlerts();refreshStatus='База обновлена';refreshError=false;}else if(r.error){refreshStatus='Ошибка: '+String(r.error).slice(0,42);refreshError=true;}else{refreshStatus=r.message||'База актуальна';refreshError=false;}renderSafe();return r;}).catch(e=>{refreshStatus='Ошибка: '+String(e&&e.message||e).slice(0,42);refreshError=true;log.warn('DB refresh '+e);renderSafe();return {error:String(e)};}).then(r=>{refreshBusy=false;refreshInFlight=null;renderSafe();return r;});return refreshInFlight;}
+ function showRefreshError(error){
+  const message=updateFailure(error);refreshStatus=message.title;refreshDetails=message.lines;refreshError=true;
+  log.warn('DB refresh '+String(error&&error.message||error));
+ }
+ async function refresh(){if(refreshInFlight)return refreshInFlight;refreshBusy=true;refreshStartedAt=monotonicMs();refreshError=false;refreshDetails=[];refreshStatus='Проверка обновлений...';renderSafe();refreshInFlight=store.refresh((state)=>{refreshStatus=state;renderSafe();}).then(r=>{database=r.database;if(r.updated){cameraIndex=database;displayCache=null;radarCamera=null;index=0;roadGuidance.reset();mapcamWarnings.reset();notificationSession.clear();clearLiveAlerts();refreshStatus='База обновлена';refreshError=false;}else if(r.error){showRefreshError(r.error);}else{refreshStatus=r.message||'База актуальна';refreshError=false;}renderSafe();return r;}).catch(e=>{showRefreshError(e);renderSafe();return {error:String(e)};}).then(r=>{refreshBusy=false;refreshInFlight=null;renderSafe();return r;});return refreshInFlight;}
  const CAMERA_TYPES=['Камера скорости','Контроль светофора','Скорость + светофор'];
  function drawTabs(cv,active){
   style.drawNav(cv,active);
@@ -528,5 +536,5 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  const backgroundTimer=setInterval(()=>{if(fix&&!mapcamFreshFix(fix,Date.now())){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}syncBackgroundNotification();},250);
  if(ctx.app&&typeof ctx.app.on==='function')ctx.app.on('shutdown',()=>{clearInterval(backgroundTimer);gps.stop();clearLiveAlerts();});
  renderSafe();refresh();setInterval(refresh,REFRESH_INTERVAL_MS);ctx.loop('MAIN',10,()=>{if(fix&&Date.now()-fix.timeMs>3000){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}renderSafe();});
- log.info('SpeedCAM 0.9.37 started; camera sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
+ log.info('SpeedCAM 0.9.38 started; camera sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
 }});

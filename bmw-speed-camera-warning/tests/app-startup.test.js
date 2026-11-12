@@ -18,7 +18,7 @@ const ctx={dataDir:tmp,canvas:()=>native?new native.Recorder(1600,520):previewDi
     log:{info:()=>{},warn:s=>warnings.push(String(s))},
     settings:{get:k=>settings[k],set:(k,v)=>{settings[k]=v;},onChange:fn=>{changeHandler=fn;}},
     ui:{visible:(id,on)=>{nativeButtonState[id]=on;},enabled:()=>{},image:(id,image)=>{images++;pageTargets=image.targets||[];lastCanvas=native?native.play(image.words(),new Canvas(1600,520)):image;},onClick:(k,fn)=>{buttons[k]=fn;},isVisible:()=>true,onVisible:fn=>{visibleHandler=fn;}}};
-let activeStore,pulseTime=0,voiceTests=0,voiceWarnings=0,clusterWarnings=0,centralWarnings=0;
+let nextRefreshFailure=null,activeStore,pulseTime=0,voiceTests=0,voiceWarnings=0,clusterWarnings=0,centralWarnings=0;
 const systemPopupCalls=[];
 class TestPopupTransport {
  constructor(){this.available=true;}
@@ -26,7 +26,19 @@ class TestPopupTransport {
  open(){systemPopupCalls.push('open');return Promise.resolve();}
  close(){systemPopupCalls.push('close');return Promise.resolve();}
 }
-class CameraStore extends RealStore {constructor(o){super(o);activeStore=this;}async loadLocal(){const r=await super.loadLocal();expectedCameras=this.current.cities.russia.length;return r;}refresh(){this.pending=(async()=>{const old=this.current;this.current=await this.codec.openCatalog(path.dirname(path.resolve(file)));old.close();return {updated:true,database:this.current,source:this.source};})();return this.pending;}}
+class CameraStore extends RealStore {constructor(o){super(o);activeStore=this;}async loadLocal(){const r=await super.loadLocal();expectedCameras=this.current.cities.russia.length;return r;}refresh(){this.pending=(async()=>{
+ if(nextRefreshFailure){
+  const failure=nextRefreshFailure;nextRefreshFailure=null;
+  const request=this.request;
+  this.request=()=>{
+   const req=new (require('events').EventEmitter)();
+   req.destroy=()=>{};req.setTimeout=()=>{};
+   process.nextTick(()=>req.emit('error',new Error(failure)));
+   return req;
+  };
+  try{return await super.refresh();}finally{this.request=request;}
+ }
+ const old=this.current;this.current=await this.codec.openCatalog(path.dirname(path.resolve(file)));old.close();return {updated:true,database:this.current,source:this.source};})();return this.pending;}}
 class GPS {on(k,fn){gpsHandler=fn;}start(){}}
 class Voice {cancel(){}camera(stage,relevant,camera){assert(camera&&camera.id,'Voice dispatch includes the database camera for model selection');assert.strictEqual(typeof relevant,'function');voiceWarnings++;return Promise.resolve(true);}test(){voiceTests++;return Promise.resolve(true);}}
 class Cluster {setMode(){}show(){clusterWarnings++;}clear(){}sync(){}}
@@ -72,6 +84,27 @@ async function run(){
     tapHandler(100,263);await settle();tapHandler(1530,246);tapHandler(100,50);await settle();
     assert.strictEqual(cameraCounter(),firstCounter,'Other pages cannot select map cameras');
     save('01-map');
+    const installedBeforeFailure=activeStore.current;
+    const dateBeforeFailure=texts.filter(t=>t.startsWith('ДАТА БАЗЫ:')).slice(-1)[0];
+    for(const [failure,title] of [
+      ['getaddrinfo ENOTFOUND github.com','НЕТ СВЯЗИ С СЕРВЕРОМ'],
+      ['CAMERA_DB_TIMEOUT','НЕТ СВЯЗИ С СЕРВЕРОМ'],
+      ['CAMERA_DB_HTTP_503','СЕРВЕР НЕ ВЫДАЛ ОБНОВЛЕНИЕ'],
+      ['CAMERA_DB_HASH_MISMATCH','НЕ УДАЛОСЬ ОБНОВИТЬ БАЗУ']
+    ]){
+      nextRefreshFailure=failure;texts.length=0;buttons.BTN_REFRESH();
+      await activeStore.pending;await settle();
+      assert.strictEqual(activeStore.current,installedBeforeFailure,'Failed download preserves the live catalog');
+      assert.strictEqual(texts.filter(t=>t.startsWith('ДАТА БАЗЫ:')).slice(-1)[0],dateBeforeFailure,'Failed download preserves installed date');
+      assert(texts.includes(title),'Friendly failure title is rendered');
+      assert(texts.includes('ИСПОЛЬЗУЕТСЯ УСТАНОВЛЕННАЯ БАЗА'),'Existing database remains explicitly usable');
+      assert(!texts.some(t=>t.includes(failure)),'Technical diagnostic is hidden from the screen');
+      if(failure.includes('ENOTFOUND'))save('15-database-offline');
+    }
+    texts.length=0;buttons.BTN_REFRESH();await activeStore.pending;await settle();
+    assert(texts.includes('База обновлена'),'Successful retry replaces the failure');
+    assert(!texts.includes('ИСПОЛЬЗУЕТСЯ УСТАНОВЛЕННАЯ БАЗА'),'Retry clears old error details');
+
     if(previewDir){
       const beforePulse=Buffer.from(lastCanvas.d),reads=activeStore.current.readBlocks;
       pulseTime=700;loopHandler();await settle();save('07-map-pulse');

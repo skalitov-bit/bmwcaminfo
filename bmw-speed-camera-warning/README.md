@@ -16,7 +16,7 @@
 
 Для установки используйте файл `.mgu` из последнего релиза. Там же находятся исходники, инструкция, результаты проверок и контрольные суммы.
 
-[Текущие исходники](https://github.com/skalitov-bit/bmwcaminfo/tree/release/0.9.37-graphite-ui/bmw-speed-camera-warning) · [Инструкция и ограничения](https://github.com/skalitov-bit/bmwcaminfo/blob/release/0.9.37-graphite-ui/bmw-speed-camera-warning/INTEGRATION_RU.txt)
+[Текущие исходники](https://github.com/skalitov-bit/bmwcaminfo/tree/release/0.9.38-update-status/bmw-speed-camera-warning) · [Инструкция и ограничения](https://github.com/skalitov-bit/bmwcaminfo/blob/release/0.9.38-update-status/bmw-speed-camera-warning/INTEGRATION_RU.txt)
 
 Сборки проверяются на ПК и в эмуляторе. Работа фоновых окон, автозапуска после сна и аппаратного вывода HUD/KOMBI требует проверки на реальном MGU.
 

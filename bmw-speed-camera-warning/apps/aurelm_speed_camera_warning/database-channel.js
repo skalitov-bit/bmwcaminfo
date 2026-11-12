@@ -1,6 +1,6 @@
 'use strict';
 const {validateManifest}=require('./hybrid-catalog');
-const VERSION='0.9.36';
+const VERSION='0.9.38';
 const CHANNEL_URL='https://github.com/skalitov-bit/speedcam-db/releases/latest/download/channel.json';
 function version(v){if(typeof v!=='string'||!/^\d+\.\d+\.\d+$/.test(v))throw new Error('DB_CHANNEL_VERSION');return v.split('.').map(Number);}
 function validateChannel(c){
