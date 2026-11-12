@@ -12,7 +12,7 @@ const frame=vm.runInNewContext(source+'\n({makeFrame});',{
 const bannerSource=fs.readFileSync(path.join(base,'central-alert.js'),'utf8');
 const texts=[];
 const drawBanner=vm.runInNewContext(bannerSource+'\ndrawCentralAlert;',{
- Buffer,module:{exports:{}},require:n=>n==='./hud-canvas'?{text:(_cv,value)=>texts.push(String(value))}:n==='./camera-icon'?{drawCanvas:()=>{}}:req(n)
+ Buffer,module:{exports:{}},require:n=>n==='./hud-canvas'?{text:(_cv,value)=>texts.push(String(value))}:n==='./point-kind'?{...req(n),iconFor:()=>({drawCanvas:()=>{}})}:n==='./camera-icon'?{drawCanvas:()=>{}}:req(n)
 });
 async function run(){
 const types=new Map();let count=0;

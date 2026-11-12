@@ -3,25 +3,27 @@ const assert=require('assert'),path=require('path'),fs=require('fs'),os=require(
 const base=path.resolve(process.argv[2]||path.join(__dirname,'../apps/aurelm_speed_camera_warning'));
 const {openCatalog,canonical,readManifest,validateManifest,INDEX,RECORDS,MANIFEST}=require(path.join(base,'hybrid-catalog'));
 const {MapcamWarnings,pathSegments}=require(path.join(base,'mapcam-warnings'));
+const {policeKind}=require(path.join(base,'point-kind'));
 const {category}=require(path.join(base,'camera-label'));
 const {distanceToCamera}=require(path.join(base,'camera-index'));
 const {CameraStore}=require(path.join(base,'disk-camera-store'));
 const queries=[{lat:56.63,lon:47.928},{lat:55.75,lon:37.62},{lat:43.12,lon:131.9},{lat:53.02,lon:158.65}];
 async function run(){
- const initial=process.memoryUsage().heapUsed,c=await openCatalog(base),digest=crypto.createHash('sha256'),ids=new Set(),expected=queries.map(()=>[]),expectedWide=queries.map(()=>[]),counts={},cityCounts={'yoshkar-ola':0,'mari-el':0};let count=0,named=0,warningCount=0,sample=null,sectionSample=null,unknownModel=false;
+ const initial=process.memoryUsage().heapUsed,c=await openCatalog(base),digest=crypto.createHash('sha256'),ids=new Set(),expected=queries.map(()=>[]),expectedWide=queries.map(()=>[]),counts={},cityCounts={'yoshkar-ola':0,'mari-el':0};const policeCities={'yoshkar-ola':0,'mari-el':0};let policeCount=0;let count=0,named=0,warningCount=0,sample=null,sectionSample=null,unknownModel=false;
  assert.strictEqual(c.readBlocks,0,'Opening must not decode the nationwide database');
  for(let i=0;i<c.index.blocks.length;i++)for(const r of c.block(i)){
   count++;assert(!ids.has(r.id));ids.add(r.id);digest.update(JSON.stringify(canonical(r))+'\n');
   counts[r.camera_family]=(counts[r.camera_family]||0)+1;named+=!!r.camera_model;
+  if(policeKind(r)){policeCount++;for(const city of Object.keys(policeCities))policeCities[city]+=!!(r.cityMask&c.index.meta.cityBits[city]);}
   if(r.warningEnabled){warningCount++;for(const city of Object.keys(cityCounts))cityCounts[city]+=!!(r.cityMask&c.index.meta.cityBits[city]);queries.forEach((q,j)=>{const d=distanceToCamera(q,r);if(d<=2100)expected[j].push(r.id);if(d<=4200)expectedWide[j].push(r.id);});}
   if(r.source==='еСтрелка'&&r.camera_model==='СТРЕЛКА'&&r.camera_family==='fixed'&&r.mapcamDirectionType===1&&r.mapcamWarningDistanceM>=300&&!r.averageControl)sample=r;
   if(!sectionSample&&r.mapcamTypeCode===4&&r.mapcamPath.length>1){const segment=pathSegments(r).segments.find(s=>s.len>250);if(segment)sectionSample={camera:r,segment};}
   if(r.source==='еСтрелка'&&!r.camera_model){unknownModel=true;assert(category(r).full);}
   if(r.camera_family==='dummy')assert(category(r).full.toUpperCase().includes('МУЛЯЖ'),'A model name must not hide dummy status');
  }
- assert.strictEqual(count,c.manifest.count);assert.strictEqual(named,c.manifest.namedCount);assert.strictEqual(warningCount,c.manifest.warningCount);assert.deepStrictEqual(counts,c.manifest.familyCounts);
+ assert.strictEqual(count,c.manifest.count);assert.strictEqual(named,c.manifest.namedCount);assert.strictEqual(warningCount,c.manifest.warningCount+policeCount);assert.deepStrictEqual(counts,c.manifest.familyCounts);
  assert.strictEqual(digest.digest('hex'),c.manifest.contentHash,'Every runtime field must agree with the SQLite export');
- for(const city of Object.keys(cityCounts)){assert.strictEqual(cityCounts[city],c.cities[city].length);assert.strictEqual(c.recordsFor(city).length,cityCounts[city]);}
+ for(const city of Object.keys(cityCounts)){assert.strictEqual(cityCounts[city]-policeCities[city],c.cities[city].length);assert.strictEqual(c.recordsFor(city).length,cityCounts[city]);}
  for(let j=0;j<queries.length;j++)assert.deepStrictEqual(c.near(queries[j],2100).map(r=>r.id).sort(),expected[j].sort(),'Spatial index must agree with exhaustive search');
  for(let j=0;j<queries.length;j++)assert.deepStrictEqual(c.nearWarnings(queries[j]).map(r=>r.id).sort(),expectedWide[j].sort(),'4.2km warning selection must agree with exhaustive search without a 500-object cap');
  assert(expectedWide[1].length>500,'Dense-city warning test must exceed the map cap');
@@ -59,8 +61,8 @@ async function run(){
  const nearStart=Date.now();for(let i=0;i<100;i++)c.near(queries[1],2100);const elapsed=Date.now()-nearStart;
  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'hybrid-test-'));let store;
  try{
-  store=new CameraStore({dataDir:tmp,bundledDir:base,request:()=>{throw new Error('Bundled channel must not contact an unpublished endpoint');}});
-  const loaded=await store.loadLocal();assert.strictEqual(loaded.database.datasetId,'hybrid-rus-v1');assert.strictEqual(loaded.database.readBlocks,0);const refresh=await store.refresh();assert(!refresh.updated&&refresh.message&&refresh.database===loaded.database);
+  store=new CameraStore({dataDir:tmp,bundledDir:base,request:()=>{throw new Error('TEST_OFFLINE');}});
+  const loaded=await store.loadLocal();assert.strictEqual(loaded.database.datasetId,'hybrid-rus-v1');assert.strictEqual(loaded.database.readBlocks,0);const refresh=await store.refresh();assert(!refresh.updated&&refresh.error==='TEST_OFFLINE'&&refresh.database===loaded.database,'Failed update retains bundled catalog');
   const bad=JSON.parse(JSON.stringify(c.manifest));bad.records.file='../escape.bin';assert.throws(()=>validateManifest(bad));
   for(const f of [MANIFEST,INDEX,RECORDS])fs.copyFileSync(path.join(base,f),path.join(tmp,f));
   const fd=fs.openSync(path.join(tmp,RECORDS),'r+');fs.writeSync(fd,Buffer.from([0]),0,1,0);fs.closeSync(fd);

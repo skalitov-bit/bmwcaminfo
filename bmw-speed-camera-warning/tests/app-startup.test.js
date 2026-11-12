@@ -41,10 +41,11 @@ class CameraStore extends RealStore {constructor(o){super(o);activeStore=this;}a
  const old=this.current;this.current=await this.codec.openCatalog(path.dirname(path.resolve(file)));old.close();return {updated:true,database:this.current,source:this.source};})();return this.pending;}}
 class GPS {on(k,fn){gpsHandler=fn;}start(){}}
 class Voice {cancel(){}camera(stage,relevant,camera){assert(camera&&camera.id,'Voice dispatch includes the database camera for model selection');assert.strictEqual(typeof relevant,'function');voiceWarnings++;return Promise.resolve(true);}test(){voiceTests++;return Promise.resolve(true);}}
-class Cluster {setMode(){}show(){clusterWarnings++;}clear(){}sync(){}}
+let lastClusterCamera=null,lastCentralCamera=null;
+class Cluster {setMode(){}show(e){clusterWarnings++;lastClusterCamera=e.camera.id;}clear(){}sync(){}}
 const replacements={
     './background-notification':Object.assign({},appRequire('./background-notification'),{RhmiPopupTransport:TestPopupTransport}),
-    './central-alert':{drawCentralAlert:(...args)=>{centralWarnings++;return appRequire('./central-alert').drawCentralAlert(...args);}},
+    './central-alert':{drawCentralAlert:(...args)=>{centralWarnings++;lastCentralCamera=args[1].camera.id;return appRequire('./central-alert').drawCentralAlert(...args);}},
     './ring-pulse':Object.assign({},appRequire('./ring-pulse'),{monotonicMs:()=>pulseTime}),
     './kit/mgu':{run:o=>{startPromise=o.start(ctx);}},
     './screen-style':Object.assign({},appRequire('./screen-style'),{heading:(cv,s,...args)=>{texts.push(String(s));return appRequire('./screen-style').heading(cv,s,...args);},text:(cv,s,...args)=>{texts.push(String(s));return appRequire('./screen-style').text(cv,s,...args);}}),
@@ -292,6 +293,40 @@ async function run(){
       }
       for(const entry of native.atlasList){assert(entry.f.atlasW<=1024,'MGU atlas width limit');assert(entry.f.atlasH<=4096,'MGU atlas height limit');}
     }
+    // Both police categories must reach Radar, the visible banner and the hidden-app popup.
+    const oldNear=activeStore.current.near,oldNearWarnings=activeStore.current.nearWarnings;
+    for(const [kind,fields] of [['post',{typeNamespace:'estrelka',typeCode:206}],['stationary',{typeNamespace:'mapcam',typeCode:20,mapcamTypeCode:20}]]){
+      const police=Object.assign({},sample,fields,{id:'dps-integration-'+kind,camera_model:null,camera_family:'road_warning',mapcamPath:[],averageControl:false,limit:20,warningEnabled:true,mapcamApproachHeadingDeg:0,mapcamDirectionType:0,mapcamAngleDeg:60,mapcamTravel:[]});
+      activeStore.current.near=()=>[police];activeStore.current.nearWarnings=()=>[police];
+      gpsHandler({state:'lost',fix:null});settings.auto_monitor='on';settings.central_notifications='always';settings.radar_no_duplicate='on';settings.mapcam_distance='2000';changeHandler('mapcam_distance');
+      tapHandler(100,165);await settle();texts.length=0;
+      const time=Date.now(),dpsFix=(d,t)=>({lat:police.lat-d/111320,lon:police.lon,accuracyM:5,speedKmh:100,headingDeg:0,timeMs:t});
+      const clusterCount=clusterWarnings,bannerCount=centralWarnings;
+      gpsHandler({fix:dpsFix(320,time-1000),state:'fix'});gpsHandler({fix:dpsFix(300,time),state:'fix'});await settle();
+      assert(texts.includes('ПОСТ ДПС')&&texts.includes('ДО ПОСТА'),'DPS Radar labels');
+      assert(!texts.includes('МОДЕЛЬ НЕ УКАЗАНА')&&!texts.includes('ЛИМИТ'),'Police must not look like an unidentified speed camera');
+      if(kind==='stationary')assert(texts.includes('СТАЦИОНАРНЫЙ'));
+      assert(clusterWarnings>clusterCount,'Police events dispatch to configured cluster/HUD output');
+      assert.strictEqual(centralWarnings,bannerCount,'Radar suppresses duplicate DPS banner');save('dps-'+kind+'-radar');
+      tapHandler(100,50);await settle();assert(centralWarnings>bannerCount,'DPS central banner when leaving Radar');save('dps-'+kind+'-map-banner');
+      const opened=systemPopupCalls.filter(x=>x==='open').length;
+      visibleHandler('MAIN',false);await settle();assert(systemPopupCalls.filter(x=>x==='open').length>opened,'DPS popup with app hidden');
+      visibleHandler('MAIN',true);await settle();
+    }
+    // A nearer police post must not steal any visual destination from speed control.
+    const speedPoint=Object.assign({},sample,{id:'priority-speed',lat:55,lon:37,typeNamespace:'mapcam',typeCode:1,mapcamTypeCode:1,camera_model:'ТЕСТ СКОРОСТИ',camera_family:'fixed',mapcamPath:[],averageControl:false,limit:60,mapcamDirectionType:0,mapcamTravel:[],mapcamAngleDeg:60,warningEnabled:true,mapcamWarningDistanceM:2000});
+    const nearPost=Object.assign({},speedPoint,{id:'priority-police',lat:55-400/111320,typeCode:20,mapcamTypeCode:20,camera_model:null,camera_family:'road_warning',limit:null});
+    activeStore.current.near=()=>[nearPost,speedPoint];activeStore.current.nearWarnings=()=>[nearPost,speedPoint];
+    gpsHandler({state:'lost',fix:null});tapHandler(100,165);await settle();texts.length=0;
+    const priorityTime=Date.now(),priorityFix=(d,t)=>({lat:55-d/111320,lon:37,accuracyM:5,speedKmh:70,headingDeg:0,timeMs:t});
+    gpsHandler({fix:priorityFix(520,priorityTime-1000),state:'fix'});gpsHandler({fix:priorityFix(500,priorityTime),state:'fix'});await settle();
+    assert(texts.includes('ТЕСТ СКОРОСТИ')&&!texts.includes('ПОСТ ДПС'),'Radar prefers speed control at 500m over police at 100m');
+    assert.strictEqual(lastClusterCamera,'priority-speed','HUD/KOMBI dispatch the speed camera');save('speed-priority');
+    tapHandler(100,50);await settle();assert.strictEqual(lastCentralCamera,'priority-speed','Central banner uses the same priority');
+    visibleHandler('MAIN',false);await settle();assert(systemPopupCalls.includes('paint:priority-speed'),'Background popup uses speed priority');
+    visibleHandler('MAIN',true);await settle();
+    activeStore.current.near=oldNear;activeStore.current.nearWarnings=oldNearWarnings;
+    assert(!warnings.some(w=>/UI_RENDER_FAILED|render:|ReferenceError|TypeError/.test(w)),warnings.join('\n'));
     console.log('App startup/render smoke test passed; images:',images,'RSS MiB:',Math.round(process.memoryUsage().rss/1048576));
 }
 run().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{if(activeStore)activeStore.close();fs.rmSync(tmp,{recursive:true,force:true});});

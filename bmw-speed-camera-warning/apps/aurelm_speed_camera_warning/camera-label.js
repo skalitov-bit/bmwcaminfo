@@ -1,5 +1,6 @@
 'use strict';
 // Category names from the MapCam type code; these are not hardware model names.
+const {policeKind}=require('./point-kind');
 const TYPES={
  1:['Стационарная камера скорости','СТАЦ. СКОРОСТЬ'],
  2:['Встроенная камера','ВСТРОЕННАЯ'],
@@ -32,7 +33,8 @@ const ESTRELKA_CONTROL={15:'СКОРОСТЬ',192:'СКОРОСТЬ',68:'СТО�
  16:'ПОЛОСА ОТ',155:'МУЛЯЖ',156:'КОНТРОЛЬ ПДД',199:'МОБИЛЬНАЯ',
  208:'ОСТАНОВКА/СТОЯНКА',210:'ПЛАТОН',211:'ВЕСОВОЙ КОНТРОЛЬ',227:'СРЕДНЯЯ СКОРОСТЬ'};
 function hudLabels(camera){
- const c=camera||{};
+ const c=camera||{},police=policeKind(c);
+ if(police)return {control:'ПОСТ ДПС',model:police==='stationary'?'СТАЦИОНАРНЫЙ':''};
  let control;
  if(c.typeNamespace==='estrelka')control=ESTRELKA_CONTROL[c.typeCode];
  else {

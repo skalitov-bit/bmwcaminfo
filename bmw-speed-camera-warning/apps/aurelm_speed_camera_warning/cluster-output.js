@@ -15,12 +15,12 @@ const ALERT_LAYER={klass:'alert',z:1000,exclusive:false,contend:true,yield:false
 // stock maneuver box while our map layer is wanted. This needs on-car testing.
 const OUTPUT_RECT={map:{x:334,y:182},hud:{x:190,y:182}};
 const clusterText=require('./cluster-text');
-const suppliedCameraIcon=require('./camera-icon');
+const {policeKind,iconFor}=require('./point-kind');
 const {PULSE,pulseOpacity,monotonicMs}=require('./ring-pulse');
 function shouldBlink(e){
  const c=e&&e.camera||{},limit=c.limit;
  const speed=e&&(e.useAverage?e.averageKmh:Number.isFinite(e.measuredSpeedKmh)?e.measuredSpeedKmh:e.speedKmh);
- return c.camera_family!=='dummy'&&(!c.averageControl||e.useAverage)&&
+ return !policeKind(c)&&c.camera_family!=='dummy'&&(!c.averageControl||e.useAverage)&&
   Number.isFinite(limit)&&limit>0&&Number.isFinite(speed)&&speed-limit>20;
 }
 function makeRing(){
@@ -36,25 +36,25 @@ function rgba(r,g,b,a){return [r,g,b,a===undefined?255:a];}
 function put(px,x,y,c){if(x<0||y<0||x>=IW||y>=IH)return;const i=(y*IW+x)*4;px[i]=c[0];px[i+1]=c[1];px[i+2]=c[2];px[i+3]=c[3];}
 function rect(px,x,y,w,h,c){for(let yy=y*S;yy<(y+h)*S;yy++)for(let xx=x*S;xx<(x+w)*S;xx++)put(px,xx,yy,c);}
 function circle(px,cx,cy,r,c){const rr=r*S,ccx=cx*S,ccy=cy*S;for(let y=Math.floor(ccy-rr-1);y<=Math.ceil(ccy+rr+1);y++)for(let x=Math.floor(ccx-rr-1);x<=Math.ceil(ccx+rr+1);x++){const dx=x+0.5-ccx,dy=y+0.5-ccy,d=Math.sqrt(dx*dx+dy*dy),coverage=Math.max(0,Math.min(1,rr+0.5-d));if(coverage>0){const a=Math.round(c[3]*coverage);put(px,x,y,[c[0],c[1],c[2],a]);}}}
-function cameraIcon(px){
- suppliedCameraIcon.drawPixels(px,IW,IH,25*S,34*S,60*S,49.5*S,[245,249,252]);
+function cameraIcon(px,c){
+ iconFor(c).drawPixels(px,IW,IH,25*S,34*S,60*S,49.5*S,[245,249,252]);
 }
 function makeFrame(e){
- const px=Buffer.alloc(IW*IH*4),red=e.type==='speeding',white=rgba(245,249,252),muted=rgba(169,190,207),accent=red?ALERT_RED:rgba(255,205,74);
+ const px=Buffer.alloc(IW*IH*4),red=!policeKind(e.camera)&&e.type==='speeding',white=rgba(245,249,252),muted=rgba(169,190,207),accent=red?ALERT_RED:rgba(255,205,74);
  const label=(value,x,y,size,color,options)=>clusterText.draw(px,IW,IH,S,value,x,y,size,color,options);
  // Preserve transparency so OEM cluster information remains visible around the card.
  rect(px,0,0,W,5,accent);
- cameraIcon(px);
+ cameraIcon(px,e.camera);
  const titles=hudLabels(e.camera);
  label(titles.control,108,13,18,white,{maxWidth:207});
  if(titles.model)label(titles.model,108,36,16,muted,{maxWidth:207});
  label(String(Math.max(0,Math.round(e.distanceM||0)))+' М',108,59,32,accent,{maxWidth:207});
- const limit=Number(e.camera&&e.camera.limit);
+ const limit=policeKind(e.camera)?NaN:Number(e.camera&&e.camera.limit);
  if(Number.isFinite(limit)&&limit>0){
   circle(px,357,59,32,ALERT_RED);circle(px,357,59,26,rgba(255,255,255));
   const size=clusterText.fittedSize(String(limit),32,44);
   label(String(limit),357,59-clusterText.capHeight(size)/2,size,rgba(20,29,38),{align:'center'});
- }else label('ЛИМИТ Н/Д',300,52,11,muted,{maxWidth:110});
+ }else if(!policeKind(e.camera))label('ЛИМИТ Н/Д',300,52,11,muted,{maxWidth:110});
  if(e.useAverage&&Number.isFinite(e.averageKmh))label((e.partialSection?'ЧАСТ. СРЕДНЯЯ ':'СРЕДНЯЯ ')+Math.round(e.averageKmh),108,94,12,red?ALERT_RED:white,{maxWidth:207});
  else if(e.phase==='section'||e.phase==='rear')label((e.phase==='section'?'УЧАСТОК':'ПОСЛЕ')+(red?' / ПРЕВЫШЕНИЕ':''),108,94,12,red?ALERT_RED:white,{maxWidth:207});
  else if(red)label('ПРЕВЫШЕНИЕ',108,94,12,ALERT_RED,{maxWidth:207});

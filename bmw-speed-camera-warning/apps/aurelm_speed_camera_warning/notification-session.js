@@ -1,6 +1,7 @@
 'use strict';
 const {distance,bearing,diff,freshFix,pointHit}=require('./mapcam-warnings');
 const {warningRange}=require('./notification-rules');
+const {compareWarnings}=require('./notification-priority');
 // One announcement ledger per physical approach. No elapsed-time camera lockout.
 class NotificationSession {
  constructor(voice,getOptions,now){this.voice=voice;this.getOptions=getOptions;this.now=now||Date.now;
@@ -16,7 +17,7 @@ class NotificationSession {
    const turnedBack=states[id]&&r.passed&&d>30&&Number.isFinite(heading)&&diff(heading,r.heading)>100;
    if(turnedBack||!states[id]&&(passed||d>warningRange(r.camera,o,fix.speedKmh)+250))this.encounters.delete(id);
   }
-  const sorted=Object.values(states).filter(s=>s.camera&&Number.isFinite(s.distanceM)).sort((a,b)=>a.distanceM-b.distanceM||String(a.camera.id).localeCompare(String(b.camera.id)));
+  const sorted=Object.values(states).filter(s=>s.camera&&Number.isFinite(s.distanceM)).sort(compareWarnings);
   this.current=sorted[0]||null;
   for(const s of sorted){
    const id=s.camera.id;
@@ -61,7 +62,7 @@ function selectRadar(current,cameras,fix,heading,roadEngine){
  for(const c of cameras){
   if(c.warningEnabled===false)continue;
   const hit=c.source==='local-user'?roadEngine.preview(c,fix,4200):pointHit(c,fix,heading,Number.isFinite(c.mapcamAngleDeg)?c.mapcamAngleDeg:60,4200,4200);
-  if(hit&&(!best||hit.distanceM<best.distanceM))best={camera:c,distanceM:hit.distanceM,active:false};
+  if(hit){const candidate={camera:c,distanceM:hit.distanceM,active:false};if(!best||compareWarnings(candidate,best)<0)best=candidate;}
  }
  return best;
 }

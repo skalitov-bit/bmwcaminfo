@@ -1,5 +1,6 @@
 'use strict';
 const net = require('net');
+const {policeKind}=require('./point-kind');
 
 const SOCKET = '/run/bmwcaminfo-voice/ctl.sock';
 const FILES = {
@@ -9,6 +10,7 @@ const FILES = {
 
 // Model is an explicit database field. Never infer it from an address or display name.
 function cameraVoiceFile(stage, camera) {
+  if(policeKind(camera))return null;
   const c = camera || {}, generic = stage === 2 ? FILES[2] : FILES[1];
   if (c.camera_family === 'dummy' || c.typeNamespace === 'estrelka' && Number(c.typeCode) === 155) return generic;
   const model = typeof c.camera_model === 'string' ? c.camera_model.trim().toUpperCase() : '';
@@ -57,6 +59,7 @@ class CameraVoiceAlerts {
 
   _send(file, relevant, fallback, detailed) {
     const output=r=>detailed?r:r.ok===true;
+    if(!file)return Promise.resolve(output({ok:true,visualOnly:true}));
     if(this.pending>=2)return Promise.resolve(output({ok:false,skipped:true}));
     this.pending++;
     const generation=this.generation,created=Date.now();

@@ -1,4 +1,5 @@
 'use strict';
+const {policeKind}=require('./point-kind');
 function warningRange(camera,options,speed){
  const override=Number(options&&options.distanceM);
  if(override>0)return Math.min(2000,override);
@@ -6,7 +7,7 @@ function warningRange(camera,options,speed){
  return camera.source==='local-user'?(speed>90?700:500):2000;
 }
 function isSpeeding(camera,speed,options,previous,useAverage){
- if(camera.camera_family==='dummy'||camera.averageControl&&!useAverage||
+ if(policeKind(camera)||camera.camera_family==='dummy'||camera.averageControl&&!useAverage||
     !Number.isFinite(camera.limit)||camera.limit<=0||!Number.isFinite(speed))return false;
  const threshold=camera.limit+Math.max(0,Number(options&&options.excessKmh)||0);
  // Entry is strictly above the chosen threshold; leave 2 km/h below it.

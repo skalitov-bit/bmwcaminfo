@@ -1,6 +1,6 @@
 'use strict';
 const text=require('./cluster-text');
-const cameraIcon=require('./camera-icon');
+const {policeKind,iconFor}=require('./point-kind');
 const {drawSelection}=require('./screen-style');
 const {monotonicMs}=require('./ring-pulse');
 const {hudLabels}=require('./camera-label');
@@ -23,11 +23,11 @@ function drawCentralAlert(cv,event,fallbackSpeed,bounds,animationMs){
   };
   cv=scaled;
  }
- const e=event,c=e.camera||{},x=72,y=86,w=1456,h=174;
+ const e=event,c=e.camera||{},police=policeKind(c),x=72,y=86,w=1456,h=174;
  const measured=e.useAverage?e.averageKmh:Number.isFinite(e.speedKmh)?e.speedKmh:fallbackSpeed;
  const speed=Number.isFinite(measured)?Math.round(measured):null;
- const limit=Number.isFinite(c.limit)&&c.limit>0?c.limit:null;
- const speeding=e.type==='speeding'||e.speeding===true;
+ const limit=!police&&Number.isFinite(c.limit)&&c.limit>0?c.limit:null;
+ const speeding=!police&&(e.type==='speeding'||e.speeding===true);
  const gw=Math.ceil(w*k),gh=Math.ceil(h*k),glyphs={w:gw,h:gh,d:Buffer.alloc(gw*gh*4)};
  const label=(value,l,t,size,color,maxWidth,align)=>native?require('./hud-canvas').text(original,value,(bounds?bounds.x:x)+l*k,(bounds?bounds.y:y)+t*k,size*k,color,{maxWidth:maxWidth*k,align}):text.draw(glyphs.d,gw,gh,1,value,l*k,t*k,size*k,color,{maxWidth:maxWidth*k,align});
  drawSelection(cv,x,y,w,h);
@@ -40,7 +40,7 @@ function drawCentralAlert(cv,event,fallbackSpeed,bounds,animationMs){
   const wave=Math.pow((1+Math.cos(2*Math.PI*(i/stripes-phase)))/2,4);
   cv.fillRect(x+4+left,y+1,right-left,h-2,RED.concat(Math.round(36*wave)));
  }
- cameraIcon.drawCanvas(original,(bounds?bounds.x:x)+23*k,(bounds?bounds.y:y)+29*k,140*k,116*k,[234,242,248]);
+ iconFor(c).drawCanvas(original,(bounds?bounds.x:x)+23*k,(bounds?bounds.y:y)+29*k,140*k,116*k,[234,242,248]);
  const titles=hudLabels(c);
  label(titles.control,194,13,30,WHITE,510);
  if(titles.model)label(titles.model,194,48,26,MUTED,510);
@@ -55,7 +55,7 @@ function drawCentralAlert(cv,event,fallbackSpeed,bounds,animationMs){
   label(String(limit),786,h/2-text.capHeight(size)/2,size,[20,29,38],74,'center');
   label('ОГРАНИЧЕНИЕ',864,30,24,MUTED,211);
   label('КМ/Ч',864,74,30,WHITE,211);
- }else{
+ }else if(!police){
   label('ЛИМИТ',748,35,32,MUTED,320);
   label('НЕ УКАЗАН',748,80,30,MUTED,320);
  }

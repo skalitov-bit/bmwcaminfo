@@ -1,4 +1,5 @@
 'use strict';
+const {policeKind}=require('./point-kind');
 const fs=require('fs'),path=require('path'),zlib=require('zlib');
 const {verifyFile}=require('./camera-catalog');
 const {distanceToCamera}=require('./camera-index');
@@ -51,7 +52,7 @@ function decodeRecord(b,p,count,meta){
  if(!type||!mod||Math.abs(latI)>900000000||Math.abs(lonI)>1800000000||dt>3||flags>7||b[p+19]!==0||(limit!==null&&(limit<5||limit>250))||(heading!==null&&heading>=360)||(azimuth!==null&&azimuth>511)||(angle!==null&&angle>255)||warning>2047||off<count*SIZE||off+len>b.length)fail();
  if(!e&&len>0&&len<8)fail();
  const id=e?'estrelka-'+b.slice(p+40,p+52).toString('hex'):'mapcam-'+sourceId,geo=b.slice(off,off+len),encoded=e?null:geo.slice(8).toString('utf8')||null,extra=e?geo.toString('hex')||null:null;
- const lat=latI/1e7,lon=lonI/1e7,family=type[2],name=mod.name||null,warningEnabled=['fixed','mobile','dummy','weight_control'].includes(family);
+ const lat=latI/1e7,lon=lonI/1e7,family=type[2],name=mod.name||null,warningEnabled=['fixed','mobile','dummy','weight_control'].includes(family)||!!policeKind({typeNamespace:source,typeCode:code});
  const c={id,name:name||type[1],type:type[1],lat,lon,limit,source:e?'еСтрелка':'MapCam.info',sourceLabel:(e?'еСтрелка':'MapCam.info')+' · '+String(meta.sourceRevisions[source]).slice(0,10),sourceRecordId:sourceId,typeNamespace:source,typeCode:code,camera_model:name,camera_model_code:model||null,camera_model_kind:mod.kind,camera_family:family,warningProfile:'hybrid-v1',warningEnabled,averageControl:e?code===227:code===4,cityMask:flags&6,
   mapcamTypeCode:e?null:code,mapcamType:type[0],mapcamDirectionType:dt,mapcamApproachHeadingDeg:heading,mapcamTravel:heading===null?[]:dt===1?[heading]:dt===2?[heading,(heading+180)%360]:[],mapcamWarningDistanceM:warning,mapcamAngleDeg:angle===null?60:angle,mapcamControlDirection:null,mapcamHours:null,mapcamPath:encoded?geometry(encoded,geo.readFloatLE(0),geo.readFloatLE(4)):[],
   originalAngleDeg:angle,originalAzimuthDeg:azimuth,estrelkaFlagsRaw:rawFlags,estrelkaAdditionalDistanceM:additional,encodedGeometry:encoded,estrelkaGeometryHex:extra};
@@ -79,7 +80,8 @@ class HybridCatalog{
   const dy=radius/111320,dx=dy/Math.max(.01,Math.cos(fix.lat*Math.PI/180)),blocks=new Set(this.index.meta.longBlocks),hits=[];
   for(let y=Math.floor((fix.lat-dy)/.05);y<=Math.floor((fix.lat+dy)/.05);y++)for(let x=Math.floor((fix.lon-dx)/.05);x<=Math.floor((fix.lon+dx)/.05);x++)for(const i of this.index.cells[y+':'+x]||[])blocks.add(i);
   const compare=(a,b)=>a.d-b.d||a.c.id.localeCompare(b.c.id);
-  for(const i of blocks){if(!this.index.blocks[i].warnings)continue;for(const c of this.block(i,cache)){if(!c.warningEnabled)continue;const d=distanceToCamera(fix,c);if(d>radius)continue;const hit={c,d};
+  // Old indices count only cameras; a zero-warning block can contain a police post.
+  for(const i of blocks){for(const c of this.block(i,cache)){if(!c.warningEnabled)continue;const d=distanceToCamera(fix,c);if(d>radius)continue;const hit={c,d};
    if(limit===undefined){hits.push(hit);continue;}
    // The 25km map view retains only the requested nearest 500 objects, not all
    // decoded cameras in a large city. Monitoring's 4.2km query remains complete.
@@ -89,7 +91,7 @@ class HybridCatalog{
   }}
   if(limit===undefined)hits.sort(compare);return hits.map(h=>h.c);
  }
- recordsFor(city){const bit=this.index.meta.cityBits[city];if(!bit)return [];const result=[];for(let i=0;i<this.index.blocks.length;i++){const d=this.index.blocks[i];if(d.warnings&&(d.cities&bit))for(const c of this.block(i))if(c.warningEnabled&&(c.cityMask&bit))result.push(c);}return result;}
+ recordsFor(city){const bit=this.index.meta.cityBits[city];if(!bit)return [];const result=[];for(let i=0;i<this.index.blocks.length;i++){const d=this.index.blocks[i];if(d.cities&bit)for(const c of this.block(i))if(c.warningEnabled&&(c.cityMask&bit))result.push(c);}return result;}
  close(){if(this.fd!==null){fs.closeSync(this.fd);this.fd=null;}for(const cache of [this,this.warningCache]){cache.cache.clear();cache.cacheBytes=0;cache.cacheRecords=0;}this.index=null;}
 }
 async function openCatalog(dir,manifest){const m=validateManifest(manifest||readManifest(dir));await verifyFile(path.join(dir,INDEX),m.index);await verifyFile(path.join(dir,RECORDS),m.records);return new HybridCatalog(dir,m,readIndex(dir,m));}

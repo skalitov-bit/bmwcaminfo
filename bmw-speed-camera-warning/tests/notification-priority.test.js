@@ -1,0 +1,44 @@
+'use strict';
+const assert=require('assert'),path=require('path');
+const base=path.resolve(process.argv[2]||path.join(__dirname,'../apps/aurelm_speed_camera_warning'));
+const {controlsSpeed,compareWarnings}=require(path.join(base,'notification-priority'));
+const {NotificationSession,selectRadar}=require(path.join(base,'notification-session'));
+const make=(id,fields)=>Object.assign({id,lat:55,lon:37,warningEnabled:true,mapcamDirectionType:0,mapcamAngleDeg:60},fields);
+const speed=make('speed',{typeNamespace:'mapcam',typeCode:1});
+const mobile=make('mobile',{typeNamespace:'estrelka',typeCode:199});
+const average=make('average',{typeNamespace:'estrelka',typeCode:227});
+const police=make('police',{typeNamespace:'estrelka',typeCode:206});
+const stop=make('stop',{typeNamespace:'estrelka',typeCode:68,limit:60,camera_model:'СТРЕЛКА'});
+const dummy=make('dummy',{typeNamespace:'estrelka',typeCode:155,camera_family:'dummy',limit:60});
+const state=(camera,distanceM,phase='point')=>({camera,distanceM,phase,speedKmh:70,speeding:false});
+const fix={lat:55-500/111320,lon:37,accuracyM:5,speedKmh:70,timeMs:Date.now()};
+const flush=async()=>{for(let i=0;i<10;i++)await Promise.resolve();};
+async function run(){
+ for(const code of [1,2,4,5,6])assert(controlsSpeed({typeNamespace:'mapcam',typeCode:code}));
+ for(const code of [15,192,199,227])assert(controlsSpeed({typeNamespace:'estrelka',typeCode:code}));
+ for(const c of [police,stop,dummy,{camera_model:'СТРЕЛКА',limit:60},{typeNamespace:'mapcam',typeCode:15},{typeNamespace:'estrelka',typeCode:1},{typeNamespace:'mapcam',typeCode:13,limit:60},{source:'local-user',type:'Контроль светофора'}])assert(!controlsSpeed(c));
+ for(const type of ['Камера скорости','Скорость + светофор'])assert(controlsSpeed({source:'local-user',type}));
+ const calls=[],voice={cameraResult:async(stage,relevant,camera)=>{assert(relevant());calls.push(camera.id);return {ok:true};}};
+ const session=new NotificationSession(voice,()=>({voice:'always',repeat200:true}),()=>fix.timeMs);
+ const s={police:state(police,100),stop:state(stop,150),dummy:state(dummy,80),speed:state(speed,500)};
+ assert.strictEqual(session.update(s,fix,0).camera.id,'speed');await flush();assert.deepStrictEqual(calls,['speed']);
+ assert.strictEqual(selectRadar(session.current,[police,speed],fix,0,null).camera.id,'speed','Radar uses the same active priority as visual and voice outputs');
+ s.mobile=state(mobile,300);assert.strictEqual(session.update(s,fix,0).camera.id,'mobile');await flush();assert.deepStrictEqual(calls,['speed','mobile']);
+ s.average=state(average,200,'section');assert.strictEqual(session.update(s,fix,0).camera.id,'average');await flush();
+ delete s.average;delete s.mobile;delete s.speed;assert.strictEqual(session.update(s,fix,0).camera.id,'dummy','After speed control ends, restore nearest remaining point');await flush();
+ assert(compareWarnings(state(speed,20,'rear'),state(police,100))>0,'Passed camera must not hide a point ahead');
+ assert(compareWarnings(state(speed,500),state(average,700,'section'))<0);
+ const second={...speed,id:'z-speed'};assert(compareWarnings(state(speed,500),state(second,500))<0,'Stable equal-distance ordering');
+ const closePolice={...police,lat:fix.lat+100/111320};
+ assert.strictEqual(selectRadar(null,[closePolice,speed],fix,0,null).camera.id,'speed','Speed camera wins in forward Radar preview');
+ const behind={...speed,lat:fix.lat-100/111320};
+ assert.strictEqual(selectRadar(null,[closePolice,behind],fix,0,null).camera.id,'police','Behind the vehicle is excluded before priority');
+ const side={...speed,lon:37+.01};assert.strictEqual(selectRadar(null,[closePolice,side],fix,0,null).camera.id,'police','Off-route speed camera is excluded');
+ const tooFar={...speed,lat:fix.lat+5000/111320};assert.strictEqual(selectRadar(null,[closePolice,tooFar],fix,0,null).camera.id,'police');
+ const activePolice=state(closePolice,100);assert.strictEqual(selectRadar(activePolice,[closePolice,tooFar],fix,0,null).camera.id,'police','Preview must not override an active notification with a not-yet-active camera');
+ // A queued lower-priority phrase becomes irrelevant when a speed control activates.
+ let relevant,complete;const queued=new NotificationSession({cameraResult:(stage,check)=>{relevant=check;return new Promise(r=>{complete=r;});}},()=>({voice:'always'}),()=>fix.timeMs);
+ queued.update({police:state(police,100)},fix,0);assert(relevant());queued.update({police:state(police,100),speed:state(speed,500)},fix,0);assert(!relevant());complete({ok:false,skipped:true});await flush();
+ console.log('PASS: speed-control priority; nearest within type; local/mobile/average; no inference from model or limit; pass/return; direction/range; common Radar/voice selection; queued speech revalidation.');
+}
+run().catch(e=>{console.error(e);process.exitCode=1;});
