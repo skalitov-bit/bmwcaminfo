@@ -1,10 +1,10 @@
 {
   "id": "bmwcaminfo-voice",
   "kind": "tool",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "license": "MIT",
   "title": "BMW Camera Voice Service",
-  "description": "High-loudness normalized BMW MediaPlayer Russian voice alerts with previous audio route restoration",
+  "description": "Russian camera warnings with model-specific Strelka and Avtodoria speech and previous audio route restoration",
   "requires": {
     "mgu-deploy": "0.7.0"
   },
@@ -19,13 +19,48 @@
       "mode": "0644"
     },
     {
-      "path": "audio/camera-500.m4a",
-      "from": "audio/camera-500.m4a",
+      "path": "audio-manifest.json",
+      "from": "audio-manifest.json",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/avtodoria-200.m4a",
+      "from": "audio/avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/avtodoria-average-200.m4a",
+      "from": "audio/avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/avtodoria-average.m4a",
+      "from": "audio/avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/avtodoria.m4a",
+      "from": "audio/avtodoria.m4a",
       "mode": "0644"
     },
     {
       "path": "audio/camera-200.m4a",
       "from": "audio/camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/camera-500.m4a",
+      "from": "audio/camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/strelka-200.m4a",
+      "from": "audio/strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/strelka.m4a",
+      "from": "audio/strelka.m4a",
       "mode": "0644"
     }
   ],

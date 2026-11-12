@@ -2,7 +2,7 @@
   "id": "aurelm_speed_camera_warning",
   "title": "SpeedCAM",
   "description": "Гибрид MapCam + еСтрелка по России: компактная база, названия комплексов и предупреждения KOMBI/HUD.",
-  "version": "0.9.28",
+  "version": "0.9.29",
   "vendor": "Andrug05",
   "loggingId": "SCAM",
   "iconGlyph": "camera",
@@ -155,6 +155,58 @@
           "2000 м"
         ]
       ]
+    },
+    {
+      "key": "auto_monitor",
+      "label": "Автозапуск контроля",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включён"
+        ],
+        [
+          "off",
+          "После открытия SpeedCAM"
+        ]
+      ]
+    },
+    {
+      "key": "central_notifications",
+      "label": "Центральный дисплей",
+      "type": "choice",
+      "default": "always",
+      "options": [
+        [
+          "always",
+          "В приложении и в фоне"
+        ],
+        [
+          "foreground",
+          "Только в приложении"
+        ],
+        [
+          "off",
+          "Выключен"
+        ]
+      ]
+    },
+    {
+      "key": "radar_no_duplicate",
+      "label": "Без дубля на Радаре",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
     }
   ],
   "signals": {
@@ -166,5 +218,6 @@
     }
   },
   "maxDiskUsage": 268435456,
-  "memoryKB": 524288
+  "memoryKB": 524288,
+  "mguAppStartType": "autostart"
 }

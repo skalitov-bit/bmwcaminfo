@@ -44,6 +44,8 @@ def build(out, cache):
             raw=(APP/db[key]['file']).read_bytes()
             if len(raw)!=db[key]['bytes'] or hashlib.sha256(raw).hexdigest()!=db[key]['sha256']:raise ValueError('Hybrid catalog checksum mismatch')
     xml,ui,strings,state_ids=builder.build_ui(app)
+    from notification_layout import add_notification_layout
+    xml=add_notification_layout(xml,ui)
     builder.unicode_resources(ui,strings)
     blobs={};modes={}
     with tarfile.open(cache/'upstream.mgu','r:gz') as t:
@@ -54,6 +56,10 @@ def build(out, cache):
     def put_json(name,value):blobs[name]=json.dumps(value,ensure_ascii=False,indent=1).encode('utf-8')
     pkg=json.loads(blobs['source/package.json'])
     pkg.update(version=app['version'],description=app['description'],productName=app['title'])
+    start_type=app.get('mguAppStartType','manually')
+    if start_type not in ('autostart','lum','manually'):
+        raise ValueError('Invalid mguAppStartType')
+    pkg['mguAppStartType']=start_type
     pkg['oapAppSettings'].update(maxDiskUsage=app['maxDiskUsage'],memoryThresholdKB=app['memoryKB'])
     put_json('source/package.json',pkg)
     meta=json.loads(blobs['meta.json']);meta.update(version=app['version'],title=app['title']);put_json('meta.json',meta)

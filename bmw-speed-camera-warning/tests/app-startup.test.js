@@ -19,11 +19,19 @@ const ctx={dataDir:tmp,canvas:()=>native?new native.Recorder(1600,520):previewDi
     settings:{get:k=>settings[k],set:(k,v)=>{settings[k]=v;},onChange:fn=>{changeHandler=fn;}},
     ui:{visible:(id,on)=>{nativeButtonState[id]=on;},enabled:()=>{},image:(id,image)=>{images++;pageTargets=image.targets||[];lastCanvas=native?native.play(image.words(),new Canvas(1600,520)):image;},onClick:(k,fn)=>{buttons[k]=fn;},isVisible:()=>true,onVisible:fn=>{visibleHandler=fn;}}};
 let activeStore,pulseTime=0,voiceTests=0,voiceWarnings=0,clusterWarnings=0,centralWarnings=0;
+const systemPopupCalls=[];
+class TestPopupTransport {
+ constructor(){this.available=true;}
+ paint(e){systemPopupCalls.push('paint:'+e.camera.id);return Promise.resolve();}
+ open(){systemPopupCalls.push('open');return Promise.resolve();}
+ close(){systemPopupCalls.push('close');return Promise.resolve();}
+}
 class CameraStore extends RealStore {constructor(o){super(o);activeStore=this;}async loadLocal(){const r=await super.loadLocal();expectedCameras=this.current.cities.russia.length;return r;}refresh(){this.pending=(async()=>{const old=this.current;this.current=await this.codec.openCatalog(path.dirname(path.resolve(file)));old.close();return {updated:true,database:this.current,source:this.source};})();return this.pending;}}
 class GPS {on(k,fn){gpsHandler=fn;}start(){}}
-class Voice {cancel(){}camera(){voiceWarnings++;return Promise.resolve(true);}test(){voiceTests++;return Promise.resolve(true);}}
+class Voice {cancel(){}camera(stage,relevant,camera){assert(camera&&camera.id,'Voice dispatch includes the database camera for model selection');assert.strictEqual(typeof relevant,'function');voiceWarnings++;return Promise.resolve(true);}test(){voiceTests++;return Promise.resolve(true);}}
 class Cluster {setMode(){}show(){clusterWarnings++;}clear(){}sync(){}}
 const replacements={
+    './background-notification':Object.assign({},appRequire('./background-notification'),{RhmiPopupTransport:TestPopupTransport}),
     './central-alert':{drawCentralAlert:(...args)=>{centralWarnings++;return appRequire('./central-alert').drawCentralAlert(...args);}},
     './ring-pulse':Object.assign({},appRequire('./ring-pulse'),{monotonicMs:()=>pulseTime}),
     './kit/mgu':{run:o=>{startPromise=o.start(ctx);}},
@@ -87,7 +95,7 @@ async function run(){
     tapHandler(980,180);await settle();assert.strictEqual(settings.camera_display,'both','Display tile selects KOMBI + HUD');
     buttons.BTN_ZOOM();await settle();save('05-warning-settings');
     const voiceBefore=settings.mapcam_voice;
-    tapHandler(280,140);tapHandler(400,176);await settle();assert.strictEqual(settings.mapcam_voice,voiceBefore,'Padding and row gaps must not change settings');
+    tapHandler(280,140);tapHandler(400,144);await settle();assert.strictEqual(settings.mapcam_voice,voiceBefore,'Padding and row gaps must not change settings');
     tapHandler(400,130);await settle();assert.strictEqual(settings.mapcam_voice,'speeding','Warning row remains clickable');
     settings.mapcam_voice='always';
     tapHandler(100,50);await settle();
@@ -107,8 +115,15 @@ async function run(){
     buttons.BTN_ZOOM();await new Promise(resolve=>setTimeout(resolve,30));
     assert(texts.some(t=>t.includes('УВЕДОМЛЕНИЯ')));
     buttons.BTN_REFRESH();assert.strictEqual(settings.mapcam_voice,'always','Removed button 4 must not change settings');tapHandler(400,130);assert.strictEqual(settings.mapcam_voice,'speeding');
-    buttons.BTN_CAM_NEXT();tapHandler(400,218);assert.strictEqual(settings.mapcam_excess,'10');
-    buttons.BTN_CAM_NEXT();tapHandler(400,306);assert.strictEqual(settings.mapcam_distance,'500');
+    buttons.BTN_CAM_NEXT();tapHandler(400,174);assert.strictEqual(settings.mapcam_excess,'10');
+    buttons.BTN_CAM_NEXT();tapHandler(400,230);assert.strictEqual(settings.mapcam_distance,'500');
+    tapHandler(400,290);assert.strictEqual(settings.auto_monitor,'off');
+    tapHandler(400,290);assert.strictEqual(settings.auto_monitor,'on');
+    tapHandler(400,350);assert.strictEqual(settings.central_notifications,'foreground');
+    tapHandler(400,350);assert.strictEqual(settings.central_notifications,'off');
+    tapHandler(400,350);assert.strictEqual(settings.central_notifications,'always');
+    tapHandler(400,408);assert.strictEqual(settings.radar_no_duplicate,'off');
+    tapHandler(400,408);assert.strictEqual(settings.radar_no_duplicate,'on');
     gpsHandler({state:'lost',fix:null});loopHandler();
     await new Promise(resolve=>setTimeout(resolve,30));
     assert(!warnings.some(w=>/UI_RENDER_FAILED|render:|ReferenceError|TypeError/.test(w)),warnings.join('\n'));
@@ -162,8 +177,18 @@ async function run(){
     tapHandler(100,50);await settle();assert(centralWarnings>centralBefore,'Returning to Map restores a still-active central warning');
     visibleHandler('MAIN',false);const hiddenCount=centralWarnings;loopHandler();await settle();
     assert.strictEqual(centralWarnings,hiddenCount,'Hidden app screen must not render a central banner');
+    assert(systemPopupCalls.includes('open'),'Hidden app must request its separate system popup');
     visibleHandler('MAIN',true);await settle();assert(centralWarnings>hiddenCount,'Visibility restoration must not leave central warnings disabled');
+    assert(systemPopupCalls.includes('close'),'Returning to the app closes the separate popup');
     const restoredCount=centralWarnings;tapHandler(100,165);await settle();assert.strictEqual(centralWarnings,restoredCount,'Switching back to Radar hides an existing banner');
+    const opens=systemPopupCalls.filter(x=>x==='open').length;
+    visibleHandler('MAIN',false);await settle();
+    assert(systemPopupCalls.filter(x=>x==='open').length>opens,'Hidden app on remembered Radar must still notify');
+    settings.central_notifications='off';changeHandler('central_notifications');await settle();
+    assert.strictEqual(systemPopupCalls[systemPopupCalls.length-1],'close','Disable closes a live system popup');
+    visibleHandler('MAIN',true);settings.central_notifications='always';changeHandler('central_notifications');await settle();
+    settings.radar_no_duplicate='off';changeHandler('radar_no_duplicate');await settle();assert(centralWarnings>restoredCount,'Radar duplicate preference can be switched off');
+    settings.radar_no_duplicate='on';changeHandler('radar_no_duplicate');
     assert(!warnings.some(w=>/UI_RENDER_FAILED|render:|ReferenceError|TypeError/.test(w)),warnings.join('\n'));
     if(native){
       gpsHandler({state:'lost',fix:null});tapHandler(100,50);await settle();
@@ -209,6 +234,11 @@ async function run(){
       await press('engineering-test');assert.strictEqual(voiceTests,engineeringVoiceCount+1,'Joystick activates engineering output test');
       texts.length=0;await press('engineering-back');assert(!texts.includes('ИНЖЕНЕРНОЕ МЕНЮ'),'Joystick back exits engineering');
       assert.strictEqual(nativeButtonState.BTN_CAM_PREV,true,'Settings actions restore on leaving engineering');
+      if(!pageTargets.some(t=>t.key==='warning-setting-auto_monitor'))await press('action-BTN_ZOOM');
+      for(const key of ['auto_monitor','central_notifications','radar_no_duplicate']){
+        const before=settings[key];await press('warning-setting-'+key);
+        assert.notStrictEqual(settings[key],before,'Joystick changes '+key);
+      }
       for(const entry of native.atlasList){assert(entry.f.atlasW<=1024,'MGU atlas width limit');assert(entry.f.atlasH<=4096,'MGU atlas height limit');}
     }
     console.log('App startup/render smoke test passed; images:',images,'RSS MiB:',Math.round(process.memoryUsage().rss/1048576));

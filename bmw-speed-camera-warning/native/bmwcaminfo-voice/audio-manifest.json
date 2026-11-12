@@ -1,0 +1,50 @@
+{
+  "strelka.m4a": {
+    "text": "Внимание, впереди комплекс Стрелка",
+    "provider": "ru-RU-SvetlanaNeural",
+    "durationSeconds": 3.7106666666666666,
+    "sha256": "b87dd3e9a86c4877f46cc86edd85e654e8af398130b376d9248528310665df28"
+  },
+  "strelka-200.m4a": {
+    "text": "Комплекс Стрелка через двести метров",
+    "provider": "ru-RU-SvetlanaNeural",
+    "durationSeconds": 3.510666666666667,
+    "sha256": "a8d71996f2d1596b80459b40ac4116a55e20754706886ea989b6d3d5f1bf3167"
+  },
+  "avtodoria.m4a": {
+    "text": "Внимание, впереди комплекс Автодория",
+    "provider": "ru-RU-SvetlanaNeural",
+    "durationSeconds": 4.110666666666667,
+    "sha256": "8dfea1fce046d5d3fbbbb0cd554c2436b69e8f39330c64c700c3e3fc90dc5c49"
+  },
+  "avtodoria-200.m4a": {
+    "text": "Комплекс Автодория через двести метров",
+    "provider": "ru-RU-SvetlanaNeural",
+    "durationSeconds": 3.6106666666666665,
+    "sha256": "767d170d7b79e1368034964b9815507d9d7445f616cf3aa1282333fb23c35492"
+  },
+  "avtodoria-average.m4a": {
+    "text": "Внимание, впереди Автодория. Контроль средней скорости",
+    "provider": "ru-RU-SvetlanaNeural",
+    "durationSeconds": 6.510666666666666,
+    "sha256": "6c13832a2d16243ddac4403a227ec8aa40b286fdee8677106d10725c9204de77"
+  },
+  "avtodoria-average-200.m4a": {
+    "text": "Автодория через двести метров. Контроль средней скорости",
+    "provider": "ru-RU-SvetlanaNeural",
+    "durationSeconds": 5.910666666666667,
+    "sha256": "9bdc71b8ad85ab4bc0d14ea2c07084f9669647db781f0d272e6b66347f7c5fe0"
+  },
+  "camera-500.m4a": {
+    "text": "Внимание, впереди камера",
+    "provider": "release 0.1.9 original",
+    "durationSeconds": 3.2106666666666666,
+    "sha256": "5ef879484eff64bdc50d3d6bc57861737707b595f4079815846c6c7b4ce09740"
+  },
+  "camera-200.m4a": {
+    "text": "Повторное предупреждение. Камера через двести метров",
+    "provider": "release 0.1.9 original",
+    "durationSeconds": 5.610666666666667,
+    "sha256": "0219fdf31dded15a2673b898e30d1001e6db882862676ba26bf10d4fa7fce565"
+  }
+}

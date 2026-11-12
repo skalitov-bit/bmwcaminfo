@@ -13,6 +13,8 @@ const {category,hudLabels}=require('./camera-label');
 const style=require('./screen-style');
 const cameraIcon=require('./camera-icon');
 const {drawCentralAlert}=require('./central-alert');
+const {NotificationPolicy}=require('./notification-policy');
+const {BackgroundNotification,RhmiPopupTransport}=require('./background-notification');
 const {monotonicMs}=require('./ring-pulse');
 const {distanceToCamera}=require('./camera-index');
 const CITY_LABELS={russia:'Россия · рядом с GPS','yoshkar-ola':'Йошкар-Ола','mari-el':'Республика Марий Эл',moscow:'Москва',sochi:'Сочи'};
@@ -29,6 +31,10 @@ mgu.run({async start(ctx){
  const store=new CameraStore({dataDir,bundledDir:__dirname,log:m=>log.info(m)});let database=(await store.loadLocal()).database;
  let cameraIndex=database,displayCache=null,mapPulseVisible=false,radarCamera=null;
  let mainScreenVisible=typeof ui.isVisible==='function'&&ui.isVisible('MAIN');
+ const notificationPolicy=new NotificationPolicy(k=>settings.get(k),mainScreenVisible);
+ const backgroundNotification=new BackgroundNotification(new RhmiPopupTransport(ui,m=>log.warn(m)),m=>log.info(m));
+ const presentImage=ui.image.bind(ui);
+ ui.image=(name,cv)=>{if(name==='MAIN_GFX')drawAlertBanner(cv);return presentImage(name,cv);};
  const actionHandlers=Object.create(null);let nativeButtonView=null;
  require('./controller-navigation').install(ctx.display);
  function bindAction(id,fn){actionHandlers[id]=fn;ui.onClick(id,fn);}
@@ -46,23 +52,25 @@ mgu.run({async start(ctx){
  const warningRows=[
   {key:'mapcam_voice',label:'Голос',values:['always','speeding','off'],labels:['Каждая камера','При превышении','Выключен']},
   {key:'mapcam_excess',label:'Порог превышения',values:['0','10','18','20'],labels:['Лимит камеры','Лимит + 10 км/ч','Лимит + 18 км/ч','Лимит + 20 км/ч']},
-  {key:'mapcam_distance',label:'Дистанция',values:['0','500','700','1000','2000'],labels:['Из базы','500 м','700 м','1000 м','2000 м']}
+  {key:'mapcam_distance',label:'Дистанция',values:['0','500','700','1000','2000'],labels:['Из базы','500 м','700 м','1000 м','2000 м']},
+  {key:'auto_monitor',label:'Автозапуск контроля',values:['on','off'],labels:['Включён','После открытия SpeedCAM']},
+  {key:'central_notifications',label:'Центральный дисплей',values:['always','foreground','off'],labels:['В приложении и в фоне','Только в приложении','Выключен']},
+  {key:'radar_no_duplicate',label:'Без дубля на «Радаре»',values:['on','off'],labels:['Включено','Выключено']}
  ];
  function warningValue(r){const value=String(settings.get(r.key)||r.values[0]);return Math.max(0,r.values.indexOf(value));}
- function changeWarningSetting(){const r=warningRows[warningSettingIndex];settings.set(r.key,r.values[(warningValue(r)+1)%r.values.length]);mapcamWarnings.configure(mapcamOptions());clearLiveAlerts();renderSafe();}
- function clearLiveAlerts(){activeAlert=null;alertUntil=0;clusterOutput.clear();if(voice.cancel)voice.cancel();}
+ function changeWarningSetting(){const r=warningRows[warningSettingIndex];settings.set(r.key,r.values[(warningValue(r)+1)%r.values.length]);if(r.key.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());clearLiveAlerts();}else syncBackgroundNotification();renderSafe();}
+ function clearLiveAlerts(){activeAlert=null;alertUntil=0;backgroundNotification.clear();clusterOutput.clear();if(voice.cancel)voice.cancel();}
  function drawWarningSettings(){
   const cv=ctx.canvas(W,H).clear(C.bg);style.heading(cv,'УВЕДОМЛЕНИЯ','ГИБРИД · РОССИЯ');
   cv.roundRect(266,74,1314,398,10,C.panel);
-  warningRows.forEach((r,i)=>{const y=98+i*88,on=i===warningSettingIndex;
-   cv.roundRect(288,y,1270,74,8,on?'#251318':'#19212a');
-   if(on)cv.strokeRoundRect(288,y,1270,74,8,2,C.red);
-   txt(cv,r.label,310,y+46,27,C.text,{maxWidth:510});txt(cv,r.labels[warningValue(r)],900,y+46,28,C.text,{maxWidth:630});
+  warningRows.forEach((r,i)=>{const y=88+i*59,on=i===warningSettingIndex;
+   cv.roundRect(288,y,1270,53,8,on?'#251318':'#19212a');
+   if(on)cv.strokeRoundRect(288,y,1270,53,8,2,C.red);
+   txt(cv,r.label,310,y+35,24,C.text,{maxWidth:570});txt(cv,r.labels[warningValue(r)],900,y+35,24,C.text,{maxWidth:630});
   });
-  txt(cv,'НАЖМИТЕ СТРОКУ, ЧТОБЫ ИЗМЕНИТЬ ЗНАЧЕНИЕ',290,399,19,C.muted,{maxWidth:1250});
-  txt(cv,'ГОЛОС КАМЕРЫ — НЕ ЧАЩЕ ОДНОГО РАЗА В 20 МИНУТ',290,432,18,C.muted,{maxWidth:1250});
+  txt(cv,'ФОНОВЫЙ БАННЕР: '+({unavailable:'НЕДОСТУПЕН',unverified:'ТРЕБУЕТ ПРОВЕРКИ НА MGU',requested:'ЗАПРОШЕН',visible:'ПОКАЗ ПОДТВЕРЖДЁН',hidden:'СКРЫТ',error:'ОШИБКА СВЯЗИ'}[backgroundNotification.status]||'ОЖИДАНИЕ'),290,458,17,C.muted,{maxWidth:1250});
   drawTabs(cv,'SETTINGS');drawActionLegend(cv,'SETTINGS');
-  warningRows.forEach((r,i)=>pageTarget(cv,288,98+i*88,1270,74,()=>{warningSettingIndex=i;changeWarningSetting();},'warning-setting-'+r.key));
+  warningRows.forEach((r,i)=>pageTarget(cv,288,88+i*59,1270,53,()=>{warningSettingIndex=i;changeWarningSetting();},'warning-setting-'+r.key));
   return ui.image('MAIN_GFX',cv);
  }
  const cameras=()=>{
@@ -168,7 +176,8 @@ mgu.run({async start(ctx){
  }
  function drawAlertBanner(cv){
   // Suppress only the central overlay; retain live warning state, voice and HUD/KOMBI.
-  if(!mainScreenVisible||view==='RADAR'||!activeAlert||Date.now()>=alertUntil)return;
+  notificationPolicy.view=view;
+  if(notificationPolicy.destination()!=='canvas'||!activeAlert||Date.now()>=alertUntil)return;
   drawCentralAlert(cv,activeAlert,fix&&fix.speedKmh,{x:282,y:92,w:1282});
 }
 function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспериментально)',both:'KOMBI + HUD',off:'Выкл.'})[mode]||'KOMBI';}
@@ -199,7 +208,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  }
  function drawEngineering(){
   const cv=ctx.canvas(W,H).clear(C.bg),mem=process.memoryUsage(),wc=database.warningCache;
-  style.heading(cv,'ИНЖЕНЕРНОЕ МЕНЮ','SPEEDCAM 0.9.28');
+  style.heading(cv,'ИНЖЕНЕРНОЕ МЕНЮ','SPEEDCAM 0.9.29');
   cv.roundRect(266,74,650,274,10,C.panel);cv.roundRect(936,74,644,274,10,C.panel);
   const age=fix&&Number.isFinite(fix.timeMs)?Math.max(0,Date.now()-fix.timeMs):null;
   const left=[
@@ -268,7 +277,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  }
  function drawMainMap(){
   const cv=ctx.canvas(W,H).clear(C.bg);style.heading(cv,'КАРТА КАМЕР',CITY_LABELS[city]||city);
-  drawMap(cv);drawPanel(cv);drawAlertBanner(cv);drawZoomButtons(cv);drawTabs(cv,'MAP');drawActionLegend(cv,'MAP');
+  drawMap(cv);drawPanel(cv);drawZoomButtons(cv);drawTabs(cv,'MAP');drawActionLegend(cv,'MAP');
   return ui.image('MAIN_GFX',cv);
  }
  function syncNativeButtons(){
@@ -279,7 +288,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
    if(typeof ui[method]==='function')Promise.resolve(ui[method](id,!hidden)).catch(e=>log.warn('BUTTON_STATE_FAILED '+id+' '+String(e)));
   }
  }
- function render(){syncNativeButtons();if(view==='RADAR')return drawRadar();if(view==='ENGINEERING')return drawEngineering();if(view==='ADD')return drawAddCamera();if(view==='MY')return drawMyCameras();if(view==='SETTINGS')return drawSettings();return drawMainMap();}
+ function render(){syncBackgroundNotification();if(!mainScreenVisible)return;syncNativeButtons();if(view==='RADAR')return drawRadar();if(view==='ENGINEERING')return drawEngineering();if(view==='ADD')return drawAddCamera();if(view==='MY')return drawMyCameras();if(view==='SETTINGS')return drawSettings();return drawMainMap();}
  let renderQueued=false,renderRunning=false,renderTimer=null,lastRenderAt=0,renderCount=0;
  function renderSafe(){
   renderQueued=true;
@@ -311,6 +320,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   }
   updateWarnings();}else{radarCamera=null;mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}renderSafe();}
  function updateWarnings(){
+  if(!notificationPolicy.monitoring()){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();return;}
   const now=Date.now(),near=monitoringCameras();
   if(!mapcamFreshFix(fix,now)){radarCamera=null;mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();return;}
   radarCamera=null;
@@ -324,7 +334,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   events.forEach(e=>{
    if(e.type==='end')lastAlert='КОНТРОЛЬ ЗАВЕРШЁН · '+e.camera.name;
    if(e.type==='voice'||e.type==='camera'&&e.camera.source==='local-user'){
-    voice.camera(e.stage,()=>!!states[e.camera.id]&&!!fix&&Date.now()-fix.timeMs<=3000&&!!(mapcamWarnings.states[e.camera.id]||roadGuidance.states[e.camera.id]))
+    voice.camera(e.stage,()=>!!states[e.camera.id]&&!!fix&&Date.now()-fix.timeMs<=3000&&!!(mapcamWarnings.states[e.camera.id]||roadGuidance.states[e.camera.id]),e.camera)
      .then(ok=>{if(!ok)log.warn('VOICE_NOT_PLAYED camera='+e.camera.id+' '+(voice.lastError||'expired'));});
    }
    if(e.type!=='voice')log.info('WARNING '+e.type+' camera='+e.camera.id+' distance='+e.distanceM);
@@ -340,6 +350,12 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
    }
    clusterOutput.sync(states);
   }else if(activeAlert){clearLiveAlerts();}
+  syncBackgroundNotification();
+ }
+ function syncBackgroundNotification(){
+  notificationPolicy.view=view;
+  const live=activeAlert&&Date.now()<alertUntil&&mapcamFreshFix(fix,Date.now());
+  backgroundNotification.update(live&&notificationPolicy.destination()==='system'?activeAlert:null,fix&&fix.speedKmh);
  }
 
  async function refresh(){if(refreshInFlight)return refreshInFlight;refreshBusy=true;refreshError=false;refreshStatus='Проверка обновлений...';renderSafe();refreshInFlight=store.refresh((state)=>{refreshStatus=state;renderSafe();}).then(r=>{database=r.database;if(r.updated){cameraIndex=database;displayCache=null;radarCamera=null;index=0;roadGuidance.reset();mapcamWarnings.reset();clearLiveAlerts();refreshStatus='Обновлено успешно';refreshError=false;}else if(r.error){refreshStatus='Ошибка: '+String(r.error).slice(0,42);refreshError=true;}else{refreshStatus=r.message||'Обновлений нет';refreshError=false;}renderSafe();return r;}).catch(e=>{refreshStatus='Ошибка: '+String(e&&e.message||e).slice(0,42);refreshError=true;log.warn('DB refresh '+e);renderSafe();return {error:String(e)};}).then(r=>{refreshBusy=false;refreshInFlight=null;renderSafe();return r;});return refreshInFlight;}
@@ -388,13 +404,13 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
    const button=ZOOM_BUTTONS.find(b=>x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h);
    if(button){changeZoom(button.step,false);return;}
    // Alert overlay hides this part of the panel; hidden arrows must not react.
-   if(activeAlert&&Date.now()<alertUntil)return;
+   if(notificationPolicy.destination()==='canvas'&&activeAlert&&Date.now()<alertUntil)return;
    const cameraButton=CAMERA_BUTTONS.find(b=>x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h);
    if(cameraButton){changeSelectedCamera(cameraButton.step);return;}
   }
   if(view==='SETTINGS'&&warningSettings&&x>=288&&x<1558){
-   const row=Math.floor((y-98)/88);
-   if(row>=0&&row<3&&y<98+row*88+74){warningSettingIndex=row;changeWarningSetting();}return;
+   const row=Math.floor((y-88)/59);
+   if(row>=0&&row<warningRows.length&&y<88+row*59+53){warningSettingIndex=row;changeWarningSetting();}return;
   }
   if(view==='SETTINGS'&&!warningSettings&&y>=142&&y<246){
    const column=Math.floor((x-290)/319);
@@ -473,13 +489,16 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  }
  ctx.onTap(handlePageTap);
  bindAction('BTN_CAMERA_MENU',()=>{if(view!=='MAP'&&view!=='ADD'&&view!=='MY'&&view!=='SETTINGS')cycleView();});
- bindAction('BTN_CAM_PREV',()=>{if(view==='RADAR')return;if(view==='ENGINEERING'){openView('SETTINGS');return;}if(view==='SETTINGS'){if(warningSettings){warningSettingIndex=(warningSettingIndex+2)%3;renderSafe();}else cycleDisplayMode(-1);return;}if(view==='ADD'){cameraLimit=Math.max(20,cameraLimit-10);renderSafe();}else if(view==='MY'){deletePending=false;localCameraIndex=Math.max(0,localCameraIndex-1);renderSafe();}else{changeSelectedCamera(-1);}});
- bindAction('BTN_CAM_NEXT',()=>{if(view==='RADAR')return;if(view==='ENGINEERING'){return;}if(view==='SETTINGS'){if(warningSettings){warningSettingIndex=(warningSettingIndex+1)%3;renderSafe();}else cycleDisplayMode(1);return;}if(view==='ADD'){cameraLimit=Math.min(130,cameraLimit+10);renderSafe();}else if(view==='MY'){deletePending=false;localCameraIndex=Math.min(Math.max(0,localCameras.length-1),localCameraIndex+1);renderSafe();}else{changeSelectedCamera(1);}});
+ bindAction('BTN_CAM_PREV',()=>{if(view==='RADAR')return;if(view==='ENGINEERING'){openView('SETTINGS');return;}if(view==='SETTINGS'){if(warningSettings){warningSettingIndex=(warningSettingIndex+warningRows.length-1)%warningRows.length;renderSafe();}else cycleDisplayMode(-1);return;}if(view==='ADD'){cameraLimit=Math.max(20,cameraLimit-10);renderSafe();}else if(view==='MY'){deletePending=false;localCameraIndex=Math.max(0,localCameraIndex-1);renderSafe();}else{changeSelectedCamera(-1);}});
+ bindAction('BTN_CAM_NEXT',()=>{if(view==='RADAR')return;if(view==='ENGINEERING'){return;}if(view==='SETTINGS'){if(warningSettings){warningSettingIndex=(warningSettingIndex+1)%warningRows.length;renderSafe();}else cycleDisplayMode(1);return;}if(view==='ADD'){cameraLimit=Math.min(130,cameraLimit+10);renderSafe();}else if(view==='MY'){deletePending=false;localCameraIndex=Math.min(Math.max(0,localCameras.length-1),localCameraIndex+1);renderSafe();}else{changeSelectedCamera(1);}});
  bindAction('BTN_ZOOM',()=>{if(view==='RADAR')return;if(view==='ENGINEERING'){return;}if(view==='SETTINGS'){warningSettings=!warningSettings;renderSafe();return;}if(view==='ADD'){cameraType=(cameraType+1)%CAMERA_TYPES.length;renderSafe();}else if(view==='MY'){if(localCameras.length){deletePending=true;renderSafe();}}else{changeZoom(1,true);}});
  bindAction('BTN_REFRESH',()=>{if(view==='ENGINEERING'){return;}if(view==='SETTINGS')return;if(view==='ADD'){cameraDirection=cameraDirection==='forward'?'both':'forward';renderSafe();}else if(view==='MY'){removeSelectedCamera();}else refresh();});
  bindAction('BTN_VOICE_TEST',()=>{if(view==='MAP'||view==='SETTINGS')return;if(view==='ADD'){saveLocalCamera();return;}if(view==='MY'){deletePending=false;beginAddCamera();view='ADD';renderSafe();return;}testCameraOutputs();});
- settings.onChange(k=>{if(k.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());clearLiveAlerts();renderSafe();return;}if(k==='city'){city=String(settings.get('city')||'russia');index=0;roadGuidance.reset();renderSafe();}else if(k==='camera_display'){cameraDisplayMode=String(settings.get('camera_display')||'kombi');clusterOutput.setMode(cameraDisplayMode);renderSafe();}});
- gps.on('change',gpsChanged);gps.start();ui.onVisible((n,v)=>{if(n==='MAIN'){mainScreenVisible=!!v;if(v)renderSafe();}});
+ settings.onChange(k=>{if(['auto_monitor','central_notifications','radar_no_duplicate'].includes(k)){syncBackgroundNotification();renderSafe();return;}if(k.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());clearLiveAlerts();renderSafe();return;}if(k==='city'){city=String(settings.get('city')||'russia');index=0;roadGuidance.reset();renderSafe();}else if(k==='camera_display'){cameraDisplayMode=String(settings.get('camera_display')||'kombi');clusterOutput.setMode(cameraDisplayMode);renderSafe();}});
+ gps.on('change',gpsChanged);gps.start();ui.onVisible((n,v)=>{if(n==='MAIN'){mainScreenVisible=!!v;notificationPolicy.setVisible(v);syncBackgroundNotification();if(v)renderSafe();}});
+ // This timer is independent of ctx.loop(), which stops when MAIN is hidden.
+ const backgroundTimer=setInterval(()=>{if(fix&&!mapcamFreshFix(fix,Date.now())){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}syncBackgroundNotification();},250);
+ if(ctx.app&&typeof ctx.app.on==='function')ctx.app.on('shutdown',()=>{clearInterval(backgroundTimer);gps.stop();clearLiveAlerts();});
  renderSafe();refresh();setInterval(refresh,REFRESH_INTERVAL_MS);ctx.loop('MAIN',10,()=>{if(fix&&Date.now()-fix.timeMs>3000){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}renderSafe();});
- log.info('SpeedCAM 0.9.28 started; MapCam sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
+ log.info('SpeedCAM 0.9.29 started; MapCam sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
 }});

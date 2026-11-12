@@ -8,10 +8,16 @@ const ROOT = '/var/opt/bmwcaminfo-voice/current';
 const SRC_ID = 1046;
 const SINK_ID = 1024;
 const LANG = 7695972;
-const ALLOWED = {
-  'camera-500.m4a': true,
-  'camera-200.m4a': true
-};
+const ASSETS = require('./audio-manifest.json');
+const ALLOWED = Object.create(null);
+Object.keys(ASSETS).forEach(function (file) {
+  var duration = ASSETS[file].durationSeconds;
+  if (!/^[a-z0-9-]+\.m4a$/.test(file) || typeof duration !== 'number' || !(duration > 0 && duration < 20)) {
+    throw new Error('Invalid voice asset manifest: ' + file);
+  }
+  // Hold the BMW audio route for the full recording, including startup margin.
+  ALLOWED[file] = Math.max(file === 'camera-200.m4a' ? 6500 : 4000, Math.ceil(duration * 1000) + 1000);
+});
 
 function sleep(ms) {
   return new Promise(function (resolve) { setTimeout(resolve, ms); });
@@ -118,7 +124,7 @@ VoiceService.prototype.play = async function (file) {
       var result = await self.mp.callMethod('playFile', { path: audio, languageCode: LANG }, 7000);
       log('playFile: ' + JSON.stringify(result));
       if (!result || result.EntError !== 'OK') throw new Error('BMW MediaPlayer rejected audio: ' + JSON.stringify(result));
-      await sleep(file === 'camera-200.m4a' ? 6500 : 4000);
+      await sleep(ALLOWED[file]);
     } finally {
       await self.release();
     }

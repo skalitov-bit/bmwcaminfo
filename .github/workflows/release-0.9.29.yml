@@ -1,0 +1,31 @@
+name: Build and publish SpeedCAM 0.9.29
+on:
+  push:
+    branches: ['release/0.9.29']
+permissions:
+  contents: write
+concurrency:
+  group: release-0.9.29
+  cancel-in-progress: true
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build application and voice service from checked-in assets
+        run: |
+          python bmw-speed-camera-warning/tools/build_local.py --out release0929 --cache .build-cache
+          python bmw-speed-camera-warning/tools/pack_voice.py --out release0929
+      - name: Compare all package files and run release checks
+        run: python .release/verify_and_package0929.py
+      - name: Publish verified application and voice service
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .release/publish0929.py

@@ -6,7 +6,7 @@ on:
       version:
         description: "Speed Camera Warning version"
         required: true
-        default: "0.9.1"
+        default: "0.9.3"
       refresh_data:
         description: "Force refresh camera and OSM data"
         required: false
@@ -32,9 +32,9 @@ jobs:
   build-release:
     runs-on: ubuntu-latest
     env:
-      APP_VERSION: ${{ inputs.version || '0.9.1' }}
+      APP_VERSION: ${{ inputs.version || '0.9.3' }}
       APP_ID: aurelm_speed_camera_warning
-      VOICE_VERSION: 0.1.9
+      VOICE_VERSION: 0.1.10
     steps:
       - uses: actions/checkout@v5
       - uses: actions/checkout@v5
@@ -131,7 +131,7 @@ jobs:
           set -euo pipefail
           VOICE_DIR="bmw-speed-camera-warning/native/bmwcaminfo-voice"
           mkdir -p "${VOICE_DIR}/audio"
-          python3 -m pip install --break-system-packages --disable-pip-version-check edge-tts gTTS
+          python3 -m pip install --break-system-packages --disable-pip-version-check edge-tts gTTS imageio-ffmpeg mutagen
 
           synthesize() {
             local text="$1"
@@ -163,6 +163,7 @@ jobs:
           ffmpeg -nostdin -hide_banner -loglevel error -y -i /tmp/camera-200.mp3 -af "acompressor=threshold=-24dB:ratio=4:attack=5:release=80:makeup=10dB,loudnorm=I=-8:TP=-0.3:LRA=4,alimiter=limit=0.99" -c:a aac -b:a 128k -movflags +faststart "${VOICE_DIR}/audio/camera-200.m4a"
           test -s "${VOICE_DIR}/audio/camera-500.m4a"
           test -s "${VOICE_DIR}/audio/camera-200.m4a"
+          python3 bmw-speed-camera-warning/tools/build_voice_assets.py
           node --check "${VOICE_DIR}/voice.js"
           node mgu-store/deploy/hu artifact "${VOICE_DIR}" --out release
           test -s "release/bmwcaminfo-voice@${VOICE_VERSION}.tgz"
@@ -213,8 +214,11 @@ jobs:
           node --check bmw-speed-camera-warning/native/bmwcaminfo-voice/voice.js
           test -s release/bmwcaminfo-voice@${VOICE_VERSION}.tgz
           node bmw-speed-camera-warning/tests/readout-config.test.js
+          node bmw-speed-camera-warning/tests/notification-types.test.js
           node bmw-speed-camera-warning/tests/mapcam-warnings.test.js
           node bmw-speed-camera-warning/tests/voice-queue.test.js
+          node bmw-speed-camera-warning/tests/voice-models.test.js
+          node bmw-speed-camera-warning/tests/voice-service-assets.test.js
           node bmw-speed-camera-warning/tests/road-guidance.test.js
           node bmw-speed-camera-warning/tests/mapcam-integration.test.js
           node --max-old-space-size=64 bmw-speed-camera-warning/tests/app-startup.test.js
