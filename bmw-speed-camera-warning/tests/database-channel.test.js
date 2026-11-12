@@ -10,7 +10,7 @@ for(const k of ['index','records'])channel.files[k]='https://github.com/skalitov
 assert.strictEqual(validateChannel(channel),channel);
 const copy=()=>JSON.parse(JSON.stringify(channel));
 let c=copy();c.minAppVersion='1.0.0';assert.throws(()=>validateChannel(c),/REQUIRES_APP_UPDATE/);
-c=copy();c.minAppVersion='0.9.33';assert.throws(()=>validateChannel(c),/REQUIRES_APP_UPDATE/);
+c=copy();c.minAppVersion='0.9.34';assert.throws(()=>validateChannel(c),/REQUIRES_APP_UPDATE/);
 c=copy();c.minAppVersion='0.8.99';validateChannel(c);
 c=copy();c.files.records=c.files.records.replace('speedcam-db','another-repository');assert.throws(()=>validateChannel(c),/ASSET_URL/);
 c=copy();c.files.records=c.files.records.replace(tag,'db-1-000000000000');assert.throws(()=>validateChannel(c),/MIXED_RELEASE/);

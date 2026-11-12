@@ -49,7 +49,7 @@ mgu.run({async start(ctx){
  if(!database.cities[city])city='russia';
  const localStore=new LocalCameraStore(dataDir);let localCameras=localStore.load(),addScreenActive=false,captureFixes=[],cameraDraft=null,captureStatus='Ожидание GPS...',cameraLimit=60,cameraType=0,cameraDirection='forward',gpsTrack=[];
  const gps=new BmwGps(),roadGuidance=new RoadGuidanceWarnings([]),voice=new CameraVoiceAlerts({assetDir:__dirname,log:(m)=>log.warn(m)});
- const clusterOutput=new CameraClusterOutput({mode:cameraDisplayMode,log:(m)=>log.info(m)});let refreshInFlight=null,refreshBusy=false,refreshError=false,refreshStatus='База готова · '+store.source;
+ const clusterOutput=new CameraClusterOutput({mode:cameraDisplayMode,log:(m)=>log.info(m)});let refreshInFlight=null,refreshBusy=false,refreshStartedAt=0,refreshError=false,refreshStatus='База готова';
  const mapcamOptions=()=>({voice:String(settings.get('mapcam_voice')||'always'),excessKmh:Number(settings.get('mapcam_excess')||0),distanceM:Number(settings.get('mapcam_distance')||0),repeat200:settings.get('mapcam_repeat200')!=='off'});
  const mapcamWarnings=new MapcamWarnings(mapcamOptions());
  roadGuidance.configure(mapcamOptions());
@@ -180,7 +180,15 @@ mgu.run({async start(ctx){
   ln(cv,[P.x+22,P.y+252],[P.x+P.w-22,P.y+252],1,'#303a46');
   txt(cv,gpsHealth(fix,Date.now()),P.x+22,P.y+285,22,mapcamFreshFix(fix,Date.now())?C.text:C.yellow,{maxWidth:400});
   txt(cv,fix?(Number.isFinite(fix.speedKmh)?Math.round(fix.speedKmh)+' КМ/Ч':'СКОРОСТЬ Н/Д')+' · ТОЧНОСТЬ '+(Number.isFinite(fix.accuracyM)?Math.round(fix.accuracyM)+' М':'Н/Д'):'ПРЕДУПРЕЖДЕНИЯ ЖДУТ КООРДИНАТ',P.x+22,P.y+317,18,C.muted,{maxWidth:400});
-  txt(cv,refreshStatus,P.x+22,P.y+P.h-27,17,refreshError?C.red:C.muted,{maxWidth:400});
+  const installedDate=new Date(Number(database.revision)*1000);
+  const dateLabel=Number(database.revision)>0&&Number.isFinite(installedDate.getTime())?installedDate.toISOString().slice(0,10).split('-').reverse().join('.'):'НЕ УКАЗАНА';
+  txt(cv,'ДАТА БАЗЫ: '+dateLabel,P.x+22,P.y+P.h-55,20,C.text,{maxWidth:400});
+  if(refreshBusy){
+   const baseline=P.y+P.h-25,phase=Math.floor((monotonicMs()-refreshStartedAt)/300)%4;
+   txt(cv,'ОБНОВЛЕНИЕ',P.x+22,baseline,18,C.muted,{maxWidth:170});
+   // Fixed dot positions: disappear left to right, then all three return.
+   for(let i=0;i<3;i++)if(i>=phase)cv.circle(P.x+150+i*12,baseline-2,2,C.muted);
+  }else txt(cv,refreshStatus,P.x+22,P.y+P.h-25,17,refreshError?C.red:C.muted,{maxWidth:400});
  }
  function drawAlertBanner(cv){
   // Suppress only the central overlay; retain live warning state, voice and HUD/KOMBI.
@@ -302,7 +310,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  function renderSafe(){
   renderQueued=true;
   if(renderRunning||renderTimer)return;
-  const frameMs=view==='MAP'&&mapPulseVisible?100:500;
+  const frameMs=view==='MAP'&&(mapPulseVisible||refreshBusy)?100:500;
   const delay=Math.max(0,frameMs-(Date.now()-lastRenderAt));
   renderTimer=setTimeout(()=>{
    renderTimer=null;
@@ -358,7 +366,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   backgroundNotification.update(live&&notificationPolicy.destination()==='system'?activeAlert:null,fix&&fix.speedKmh);
  }
 
- async function refresh(){if(refreshInFlight)return refreshInFlight;refreshBusy=true;refreshError=false;refreshStatus='Проверка обновлений...';renderSafe();refreshInFlight=store.refresh((state)=>{refreshStatus=state;renderSafe();}).then(r=>{database=r.database;if(r.updated){cameraIndex=database;displayCache=null;radarCamera=null;index=0;roadGuidance.reset();mapcamWarnings.reset();notificationSession.clear();clearLiveAlerts();refreshStatus='Обновлено · '+new Date(database.revision*1000).toISOString().slice(0,10);refreshError=false;}else if(r.error){refreshStatus='Ошибка: '+String(r.error).slice(0,42);refreshError=true;}else{refreshStatus=r.message||'База актуальна · '+new Date(database.revision*1000).toISOString().slice(0,10);refreshError=false;}renderSafe();return r;}).catch(e=>{refreshStatus='Ошибка: '+String(e&&e.message||e).slice(0,42);refreshError=true;log.warn('DB refresh '+e);renderSafe();return {error:String(e)};}).then(r=>{refreshBusy=false;refreshInFlight=null;renderSafe();return r;});return refreshInFlight;}
+ async function refresh(){if(refreshInFlight)return refreshInFlight;refreshBusy=true;refreshStartedAt=monotonicMs();refreshError=false;refreshStatus='Проверка обновлений...';renderSafe();refreshInFlight=store.refresh((state)=>{refreshStatus=state;renderSafe();}).then(r=>{database=r.database;if(r.updated){cameraIndex=database;displayCache=null;radarCamera=null;index=0;roadGuidance.reset();mapcamWarnings.reset();notificationSession.clear();clearLiveAlerts();refreshStatus='База обновлена';refreshError=false;}else if(r.error){refreshStatus='Ошибка: '+String(r.error).slice(0,42);refreshError=true;}else{refreshStatus=r.message||'База актуальна';refreshError=false;}renderSafe();return r;}).catch(e=>{refreshStatus='Ошибка: '+String(e&&e.message||e).slice(0,42);refreshError=true;log.warn('DB refresh '+e);renderSafe();return {error:String(e)};}).then(r=>{refreshBusy=false;refreshInFlight=null;renderSafe();return r;});return refreshInFlight;}
  const CAMERA_TYPES=['Камера скорости','Контроль светофора','Скорость + светофор'];
  function drawTabs(cv,active){
   style.drawNav(cv,active);
@@ -368,7 +376,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  }
  function drawActionLegend(cv,mode){
   const items=mode==='ADD'?['ЛИМИТ −','ЛИМИТ +','ТИП','НАПРАВЛЕНИЕ','СОХРАНИТЬ']:
-   mode==='MAP'?['НАЗАД','ВПЕРЁД','МАСШТАБ','ОБНОВИТЬ']:
+   mode==='MAP'?['НАЗАД','ВПЕРЁД','МАСШТАБ','ОБНОВИТЬ БД']:
    mode==='SETTINGS'?(warningSettings?['НАЗАД','ВПЕРЁД','ДИСПЛЕИ']:['НАЗАД','ВПЕРЁД','УВЕДОМЛЕНИЯ']):
    ['НАЗАД','ВПЕРЁД','УДАЛИТЬ','ПОДТВЕРДИТЬ','ДОБАВИТЬ'];
   const mapRow=mode==='MAP',centered=mapRow||mode==='ADD'||mode==='MY'||mode==='SETTINGS',gap=mapRow?10:12,rowWidth=mapRow?MAP.w:style.content.w,width=centered?(rowWidth-gap*(items.length-1))/items.length:207;
@@ -500,5 +508,5 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  const backgroundTimer=setInterval(()=>{if(fix&&!mapcamFreshFix(fix,Date.now())){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}syncBackgroundNotification();},250);
  if(ctx.app&&typeof ctx.app.on==='function')ctx.app.on('shutdown',()=>{clearInterval(backgroundTimer);gps.stop();clearLiveAlerts();});
  renderSafe();refresh();setInterval(refresh,REFRESH_INTERVAL_MS);ctx.loop('MAIN',10,()=>{if(fix&&Date.now()-fix.timeMs>3000){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}renderSafe();});
- log.info('SpeedCAM 0.9.32 started; MapCam sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
+ log.info('SpeedCAM 0.9.33 started; MapCam sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
 }});
