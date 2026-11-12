@@ -24,8 +24,12 @@ jobs:
           python bmw-speed-camera-warning/tools/build_local.py --out release0929 --cache .build-cache
           python bmw-speed-camera-warning/tools/pack_voice.py --out release0929
       - name: Compare all package files and run release checks
-        run: python .release/verify_and_package0929.py
+        run: |
+          python -m pip install --disable-pip-version-check imageio-ffmpeg==0.8.1
+          export FFMPEG="$(python -c 'import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())')"
+          python .release/verify_and_package0929.py
       - name: Publish verified application and voice service
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .release/publish0929.py
+
