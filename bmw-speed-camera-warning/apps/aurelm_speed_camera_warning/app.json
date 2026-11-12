@@ -1,7 +1,7 @@
 {
   "id": "aurelm_speed_camera_warning",
   "title": "SpeedCAM",
-  "description": "Гибрид MapCam + еСтрелка по России: компактная база, названия комплексов и предупреждения KOMBI/HUD.",
+  "description": "База камер по России: компактная база, названия комплексов и предупреждения KOMBI/HUD.",
   "version": "0.9.33",
   "vendor": "Andrug05",
   "loggingId": "SCAM",
@@ -86,7 +86,7 @@
     },
     {
       "key": "mapcam_voice",
-      "label": "MapCam: голос",
+      "label": "Голос уведомлений",
       "type": "choice",
       "default": "always",
       "options": [
@@ -106,7 +106,7 @@
     },
     {
       "key": "mapcam_excess",
-      "label": "MapCam: порог превышения",
+      "label": "Порог превышения",
       "type": "choice",
       "default": "0",
       "options": [
@@ -130,13 +130,13 @@
     },
     {
       "key": "mapcam_distance",
-      "label": "MapCam: дистанция",
+      "label": "Дистанция уведомлений",
       "type": "choice",
       "default": "0",
       "options": [
         [
           "0",
-          "Из базы MapCam"
+          "Из базы"
         ],
         [
           "500",
