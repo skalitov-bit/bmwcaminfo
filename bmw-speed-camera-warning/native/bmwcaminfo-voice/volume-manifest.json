@@ -1,0 +1,434 @@
+{
+  "audio/volume-10/strelka.m4a": {
+    "volume": 10,
+    "source": "strelka.m4a",
+    "rmsRatio": 0.09985,
+    "sha256": "4a787f6c7237222723091a5c95c5babf9c2ad64f342427a32446819357d5b704"
+  },
+  "audio/volume-20/strelka.m4a": {
+    "volume": 20,
+    "source": "strelka.m4a",
+    "rmsRatio": 0.19971,
+    "sha256": "fea9872a28df95385ef0966e3c3a56f06d878e0bd5aeca9f27d62c0fb95828a8"
+  },
+  "audio/volume-30/strelka.m4a": {
+    "volume": 30,
+    "source": "strelka.m4a",
+    "rmsRatio": 0.29938,
+    "sha256": "26338394d585a8b7e5efa4bda1803c6f3c7b8ed116d004a4b986e2f8bbffebed"
+  },
+  "audio/volume-40/strelka.m4a": {
+    "volume": 40,
+    "source": "strelka.m4a",
+    "rmsRatio": 0.3992,
+    "sha256": "126973219dd007abc987ceedda5e18555cab7cbecfb0091443bc170909d59358"
+  },
+  "audio/volume-50/strelka.m4a": {
+    "volume": 50,
+    "source": "strelka.m4a",
+    "rmsRatio": 0.49781,
+    "sha256": "3c816a92176fe96ac8aa6d6746a364dda18cf90e5d53e17a0eb4ebb8be9a12c3"
+  },
+  "audio/volume-60/strelka.m4a": {
+    "volume": 60,
+    "source": "strelka.m4a",
+    "rmsRatio": 0.59737,
+    "sha256": "84d64df15e08ed102c0306ffaf2592a6c6bd16d9d46f49283ed39b891d231abd"
+  },
+  "audio/volume-70/strelka.m4a": {
+    "volume": 70,
+    "source": "strelka.m4a",
+    "rmsRatio": 0.69781,
+    "sha256": "4df33033eaee81bd0c87c1cc416af4309133c8227981b86d729faa04d4291b2c"
+  },
+  "audio/volume-80/strelka.m4a": {
+    "volume": 80,
+    "source": "strelka.m4a",
+    "rmsRatio": 0.79805,
+    "sha256": "75fdf5494d80890a4d2cd7f492168aeb2b660af878e8063328647852f925cb5f"
+  },
+  "audio/volume-90/strelka.m4a": {
+    "volume": 90,
+    "source": "strelka.m4a",
+    "rmsRatio": 0.89737,
+    "sha256": "168573c47443a42f22c00cf96af8ea0fb71461d6eb840acf7836850ba9b4bc62"
+  },
+  "audio/volume-10/strelka-200.m4a": {
+    "volume": 10,
+    "source": "strelka-200.m4a",
+    "rmsRatio": 0.09967,
+    "sha256": "dcfb045d53bc88b028cf081d9f4ecd007437e3d72da016d4933e597f5734b597"
+  },
+  "audio/volume-20/strelka-200.m4a": {
+    "volume": 20,
+    "source": "strelka-200.m4a",
+    "rmsRatio": 0.1991,
+    "sha256": "e67cdb535cbbf781d173ee984176982ace259a22202915d983496c9df69b6f08"
+  },
+  "audio/volume-30/strelka-200.m4a": {
+    "volume": 30,
+    "source": "strelka-200.m4a",
+    "rmsRatio": 0.29916,
+    "sha256": "6be8b2172853667fffd0ed87e5de0915befcf0112cb0ca1670b9ce5a7bc0471a"
+  },
+  "audio/volume-40/strelka-200.m4a": {
+    "volume": 40,
+    "source": "strelka-200.m4a",
+    "rmsRatio": 0.39937,
+    "sha256": "fc9aaa584528251c30c32851959d8fbe79dff9806ec88bdae26c5b9f68c90355"
+  },
+  "audio/volume-50/strelka-200.m4a": {
+    "volume": 50,
+    "source": "strelka-200.m4a",
+    "rmsRatio": 0.49756,
+    "sha256": "074b06d760e1887a1612889dcb9f59096953b44ed730ee0a47cf9e78c4f13053"
+  },
+  "audio/volume-60/strelka-200.m4a": {
+    "volume": 60,
+    "source": "strelka-200.m4a",
+    "rmsRatio": 0.59769,
+    "sha256": "fd3352e09224bc5d16f58fe1d30c1cf28ffb0c402cb6b4100edbda849b2cdcbc"
+  },
+  "audio/volume-70/strelka-200.m4a": {
+    "volume": 70,
+    "source": "strelka-200.m4a",
+    "rmsRatio": 0.69769,
+    "sha256": "2ad89077aa9df2a600edcda120afaced3ed2d461e80bec6157e7c433c90ab1dc"
+  },
+  "audio/volume-80/strelka-200.m4a": {
+    "volume": 80,
+    "source": "strelka-200.m4a",
+    "rmsRatio": 0.79722,
+    "sha256": "0b52db0c3ebe28ab05f80842bc00ba039ea45ec2b50385515ffbc5db867d8eb1"
+  },
+  "audio/volume-90/strelka-200.m4a": {
+    "volume": 90,
+    "source": "strelka-200.m4a",
+    "rmsRatio": 0.89571,
+    "sha256": "6d84725e20f9e396dea0d4ea4b6128df551bc4e00d16e130b2d4b58b15bc89d0"
+  },
+  "audio/volume-10/avtodoria.m4a": {
+    "volume": 10,
+    "source": "avtodoria.m4a",
+    "rmsRatio": 0.10003,
+    "sha256": "2184a644be76617fb37d2a591c662093c6ef9e72836dce5ffb87627f22f27478"
+  },
+  "audio/volume-20/avtodoria.m4a": {
+    "volume": 20,
+    "source": "avtodoria.m4a",
+    "rmsRatio": 0.19973,
+    "sha256": "4df125ae58832ca2c700535b45ffdd0ddd21678078aa27c5b8c07c5e12a0574f"
+  },
+  "audio/volume-30/avtodoria.m4a": {
+    "volume": 30,
+    "source": "avtodoria.m4a",
+    "rmsRatio": 0.2991,
+    "sha256": "6c3f3d25ea68e328fee2c1590ac0f39bef9795d141e7882ecff97ea17f7dff29"
+  },
+  "audio/volume-40/avtodoria.m4a": {
+    "volume": 40,
+    "source": "avtodoria.m4a",
+    "rmsRatio": 0.39887,
+    "sha256": "320299a577a88acc2c014d172adad1ecabf9cb33349d1e263db8fe0fe872f4a6"
+  },
+  "audio/volume-50/avtodoria.m4a": {
+    "volume": 50,
+    "source": "avtodoria.m4a",
+    "rmsRatio": 0.4985,
+    "sha256": "2f0f2d23c7a0a6029399bce3c8a93ef4c544fdaf7fcbdb42961d8651315888a5"
+  },
+  "audio/volume-60/avtodoria.m4a": {
+    "volume": 60,
+    "source": "avtodoria.m4a",
+    "rmsRatio": 0.59823,
+    "sha256": "3c4854709074e893ec57d0e53e6612c9acc7e5acfec8a259c6f96d368aba5fe2"
+  },
+  "audio/volume-70/avtodoria.m4a": {
+    "volume": 70,
+    "source": "avtodoria.m4a",
+    "rmsRatio": 0.69846,
+    "sha256": "e4510807da8abdda24089bb0c753a9568a647f0963199e606a3f65f9464dc62d"
+  },
+  "audio/volume-80/avtodoria.m4a": {
+    "volume": 80,
+    "source": "avtodoria.m4a",
+    "rmsRatio": 0.79728,
+    "sha256": "99af5fdc85fb5e373012da9b2fa9fe0b81ae53f671f30245f1b85f25b974f7ff"
+  },
+  "audio/volume-90/avtodoria.m4a": {
+    "volume": 90,
+    "source": "avtodoria.m4a",
+    "rmsRatio": 0.89685,
+    "sha256": "2f6515540cbc413770213310a551cb9ef1d0af8dc7c0042aea98e1ada94d7e8e"
+  },
+  "audio/volume-10/avtodoria-200.m4a": {
+    "volume": 10,
+    "source": "avtodoria-200.m4a",
+    "rmsRatio": 0.09972,
+    "sha256": "4171252c56e40a6009515dad436dbba8c644d62bb0308a22bb24014b6e678e8a"
+  },
+  "audio/volume-20/avtodoria-200.m4a": {
+    "volume": 20,
+    "source": "avtodoria-200.m4a",
+    "rmsRatio": 0.19956,
+    "sha256": "ae82c3687f558ece848c0b67e2b458b93eec56e3e3e25d684802ea90ade1d563"
+  },
+  "audio/volume-30/avtodoria-200.m4a": {
+    "volume": 30,
+    "source": "avtodoria-200.m4a",
+    "rmsRatio": 0.29908,
+    "sha256": "eea1ea04458ffc0ed08c65fdcb46faa4eecef8a5837ed4d6c82b97a3a02cc308"
+  },
+  "audio/volume-40/avtodoria-200.m4a": {
+    "volume": 40,
+    "source": "avtodoria-200.m4a",
+    "rmsRatio": 0.39826,
+    "sha256": "e594ebf3b099c585cdc58c2215192593f38a2978060c73cdc1bba579aea1cac8"
+  },
+  "audio/volume-50/avtodoria-200.m4a": {
+    "volume": 50,
+    "source": "avtodoria-200.m4a",
+    "rmsRatio": 0.49834,
+    "sha256": "a8a396b9933ce213a82baf7f81db503940f67ffb63cb491158f2f7df52bf4553"
+  },
+  "audio/volume-60/avtodoria-200.m4a": {
+    "volume": 60,
+    "source": "avtodoria-200.m4a",
+    "rmsRatio": 0.59782,
+    "sha256": "0fc3c491bad54408f1ae1e135fa069343663a7e5bb2bd5edad9c90eae6110361"
+  },
+  "audio/volume-70/avtodoria-200.m4a": {
+    "volume": 70,
+    "source": "avtodoria-200.m4a",
+    "rmsRatio": 0.69798,
+    "sha256": "9aab90b8ff363b14a1ff60566f9dcf67a8ec69d751b963204c074afb2c35862b"
+  },
+  "audio/volume-80/avtodoria-200.m4a": {
+    "volume": 80,
+    "source": "avtodoria-200.m4a",
+    "rmsRatio": 0.7969,
+    "sha256": "0760292bf3462ff6b689d4532064eb00d758ce6a42270cb38a65575d58d52451"
+  },
+  "audio/volume-90/avtodoria-200.m4a": {
+    "volume": 90,
+    "source": "avtodoria-200.m4a",
+    "rmsRatio": 0.8958,
+    "sha256": "cd3c2be0f7d76f65b8754afe810b7fd5b77121953bec189051f97b8c473ef616"
+  },
+  "audio/volume-10/avtodoria-average.m4a": {
+    "volume": 10,
+    "source": "avtodoria-average.m4a",
+    "rmsRatio": 0.09982,
+    "sha256": "187e7b865a8eacf8ecdb6e8b50876e9bc8b642dff765f58a3fc0c607684f28f0"
+  },
+  "audio/volume-20/avtodoria-average.m4a": {
+    "volume": 20,
+    "source": "avtodoria-average.m4a",
+    "rmsRatio": 0.19948,
+    "sha256": "036d7d6e5f7d37b51a793b43d45c8bb63714776811aa3c3f31a7d3fc3ae80e99"
+  },
+  "audio/volume-30/avtodoria-average.m4a": {
+    "volume": 30,
+    "source": "avtodoria-average.m4a",
+    "rmsRatio": 0.29928,
+    "sha256": "7d9964d96f9aa21609b9bb7ea61f81333a4efa19c2f447a31f6ccfff525d0d20"
+  },
+  "audio/volume-40/avtodoria-average.m4a": {
+    "volume": 40,
+    "source": "avtodoria-average.m4a",
+    "rmsRatio": 0.3988,
+    "sha256": "555c50d440756b14ea803c2dea6c0f1c54bbc9e5d26162ee9f4956062a09392f"
+  },
+  "audio/volume-50/avtodoria-average.m4a": {
+    "volume": 50,
+    "source": "avtodoria-average.m4a",
+    "rmsRatio": 0.49827,
+    "sha256": "bd7b4308ee071ef897c0a22d7acabca3ca26b58e063b15058c8f0c0145f3042e"
+  },
+  "audio/volume-60/avtodoria-average.m4a": {
+    "volume": 60,
+    "source": "avtodoria-average.m4a",
+    "rmsRatio": 0.59759,
+    "sha256": "7f0528d709b8ba39722ad96101ce48c489430c5c4fe3afd57893fea2eaa0e516"
+  },
+  "audio/volume-70/avtodoria-average.m4a": {
+    "volume": 70,
+    "source": "avtodoria-average.m4a",
+    "rmsRatio": 0.69786,
+    "sha256": "e1ebdd06cda011120cb3a5d33881b20fafc31badc48843acbe0da5e2d11c0e63"
+  },
+  "audio/volume-80/avtodoria-average.m4a": {
+    "volume": 80,
+    "source": "avtodoria-average.m4a",
+    "rmsRatio": 0.79717,
+    "sha256": "048dc5e172822d5ae0bc58a8c77d813d7558cf387c260426ba8eb644bdeed525"
+  },
+  "audio/volume-90/avtodoria-average.m4a": {
+    "volume": 90,
+    "source": "avtodoria-average.m4a",
+    "rmsRatio": 0.89684,
+    "sha256": "9315f72174c5081bea7a812cd8c63bc8981121321c2fe26367d6d62776aa856e"
+  },
+  "audio/volume-10/avtodoria-average-200.m4a": {
+    "volume": 10,
+    "source": "avtodoria-average-200.m4a",
+    "rmsRatio": 0.09973,
+    "sha256": "bd9e64ed277f1983cd9c0744e96155e7c4a12b1d95d55413facbe06a77f6f103"
+  },
+  "audio/volume-20/avtodoria-average-200.m4a": {
+    "volume": 20,
+    "source": "avtodoria-average-200.m4a",
+    "rmsRatio": 0.19948,
+    "sha256": "79d62f45223bb004ab13fdc6f83e7b2d70e80d39096a527ac6358adcf523f86c"
+  },
+  "audio/volume-30/avtodoria-average-200.m4a": {
+    "volume": 30,
+    "source": "avtodoria-average-200.m4a",
+    "rmsRatio": 0.29911,
+    "sha256": "f6a762235962abf2200cc0916acfac54fb2141322b27e16889a93f76bb63ab1b"
+  },
+  "audio/volume-40/avtodoria-average-200.m4a": {
+    "volume": 40,
+    "source": "avtodoria-average-200.m4a",
+    "rmsRatio": 0.39852,
+    "sha256": "f9fcb2d7cee28a917ce35307a8972c3639d5c8f9eecc8994c4b70e21842f1ac9"
+  },
+  "audio/volume-50/avtodoria-average-200.m4a": {
+    "volume": 50,
+    "source": "avtodoria-average-200.m4a",
+    "rmsRatio": 0.49744,
+    "sha256": "1fc40843e8da736059f0577ce8a1605ab36d022b72f5a0e27c2910791beb9bd7"
+  },
+  "audio/volume-60/avtodoria-average-200.m4a": {
+    "volume": 60,
+    "source": "avtodoria-average-200.m4a",
+    "rmsRatio": 0.59781,
+    "sha256": "1e0e62c196e65c2a3b902c94e3c9f65d77a0c49fdc401bd35851b814115e7e25"
+  },
+  "audio/volume-70/avtodoria-average-200.m4a": {
+    "volume": 70,
+    "source": "avtodoria-average-200.m4a",
+    "rmsRatio": 0.69816,
+    "sha256": "03ff85bd8fd88f578f2c7e62148910def4790321c8cba5799f57aa82bdd23576"
+  },
+  "audio/volume-80/avtodoria-average-200.m4a": {
+    "volume": 80,
+    "source": "avtodoria-average-200.m4a",
+    "rmsRatio": 0.79714,
+    "sha256": "d6c7658e156a87fd97777ca78d4e3cb389f7602878ec52393faa4e99292c3c52"
+  },
+  "audio/volume-90/avtodoria-average-200.m4a": {
+    "volume": 90,
+    "source": "avtodoria-average-200.m4a",
+    "rmsRatio": 0.89657,
+    "sha256": "e422fbdeeecf5cc708ea52a9c6eac81833146f98ee7481608d91436bf0d52e76"
+  },
+  "audio/volume-10/camera-500.m4a": {
+    "volume": 10,
+    "source": "camera-500.m4a",
+    "rmsRatio": 0.09984,
+    "sha256": "c9d9b666967c6d13aa845ebb9f93bb813ced7f7cf7dc29046ae46b28239c0da2"
+  },
+  "audio/volume-20/camera-500.m4a": {
+    "volume": 20,
+    "source": "camera-500.m4a",
+    "rmsRatio": 0.19951,
+    "sha256": "ec86f793975e67f0cb13cf267d3301f512be87670e0372967a6ba980d2c090af"
+  },
+  "audio/volume-30/camera-500.m4a": {
+    "volume": 30,
+    "source": "camera-500.m4a",
+    "rmsRatio": 0.29932,
+    "sha256": "976059d5cdddd6ab6c1c3d9a8e94c50176986859ff8486ebf737310947bd1e6b"
+  },
+  "audio/volume-40/camera-500.m4a": {
+    "volume": 40,
+    "source": "camera-500.m4a",
+    "rmsRatio": 0.39903,
+    "sha256": "ecb9f0a4e90bbd45eb363894b821bc6802b3b9ffb4fb2b983406bf6f77455f52"
+  },
+  "audio/volume-50/camera-500.m4a": {
+    "volume": 50,
+    "source": "camera-500.m4a",
+    "rmsRatio": 0.49796,
+    "sha256": "8ef2388280cda3770d29b514095af7728f3619389f80a8b581e49380ee9852e9"
+  },
+  "audio/volume-60/camera-500.m4a": {
+    "volume": 60,
+    "source": "camera-500.m4a",
+    "rmsRatio": 0.59813,
+    "sha256": "90dea52952c3191eb803e07901ac5779d04c041875468b79e3c6f71dcd9c8925"
+  },
+  "audio/volume-70/camera-500.m4a": {
+    "volume": 70,
+    "source": "camera-500.m4a",
+    "rmsRatio": 0.69798,
+    "sha256": "ff5417f39730f085080a4f00fddcb85c672dcf08fdbbe7fbc9236fa8b66232a8"
+  },
+  "audio/volume-80/camera-500.m4a": {
+    "volume": 80,
+    "source": "camera-500.m4a",
+    "rmsRatio": 0.7977,
+    "sha256": "34d4efb3b51299d84d53815b914260857e2670df8d6540bbbeae084c869e0c44"
+  },
+  "audio/volume-90/camera-500.m4a": {
+    "volume": 90,
+    "source": "camera-500.m4a",
+    "rmsRatio": 0.89653,
+    "sha256": "485b2e7da0c81ba533e0f2aa1f110b38e7ff04c68f02aa613793f886f18661ae"
+  },
+  "audio/volume-10/camera-200.m4a": {
+    "volume": 10,
+    "source": "camera-200.m4a",
+    "rmsRatio": 0.09974,
+    "sha256": "4eb0a0b41116d04de1a3d4cbace01f3ebf158909f506d901cf2603a790b5af9e"
+  },
+  "audio/volume-20/camera-200.m4a": {
+    "volume": 20,
+    "source": "camera-200.m4a",
+    "rmsRatio": 0.19933,
+    "sha256": "b801a16df22ad9532bdd98a122e2ec5fb1d54ead840c452cba51444adbefafdf"
+  },
+  "audio/volume-30/camera-200.m4a": {
+    "volume": 30,
+    "source": "camera-200.m4a",
+    "rmsRatio": 0.29887,
+    "sha256": "045b25693dcf3a28424ef1517a5fd840b0628c3841681a8ae8b5b7e4c43e3606"
+  },
+  "audio/volume-40/camera-200.m4a": {
+    "volume": 40,
+    "source": "camera-200.m4a",
+    "rmsRatio": 0.39796,
+    "sha256": "7e43ef7f2eb3dbb3bdb22a787c79721fb67aaddefc08a38352bef8bd4bc30005"
+  },
+  "audio/volume-50/camera-200.m4a": {
+    "volume": 50,
+    "source": "camera-200.m4a",
+    "rmsRatio": 0.49821,
+    "sha256": "b3dac58c271bd9714b42b56d2723a0014802529205483e9db5c61733c047ebe9"
+  },
+  "audio/volume-60/camera-200.m4a": {
+    "volume": 60,
+    "source": "camera-200.m4a",
+    "rmsRatio": 0.59887,
+    "sha256": "84d88a242807e6fe4c69ba303b497ae2777ab2815d7081e7ba6a226b48b8513b"
+  },
+  "audio/volume-70/camera-200.m4a": {
+    "volume": 70,
+    "source": "camera-200.m4a",
+    "rmsRatio": 0.69801,
+    "sha256": "bcef9e4f7af399b12c28c6218445b9bf62a836a8e82faef7c7b13c4e5082ce3c"
+  },
+  "audio/volume-80/camera-200.m4a": {
+    "volume": 80,
+    "source": "camera-200.m4a",
+    "rmsRatio": 0.7966,
+    "sha256": "58e9d304a4e1f5bc04a1616742f52ec13b5d368dfbc521c50de9115f041771eb"
+  },
+  "audio/volume-90/camera-200.m4a": {
+    "volume": 90,
+    "source": "camera-200.m4a",
+    "rmsRatio": 0.89649,
+    "sha256": "401d07bef773f1d94137ded0feceb58ff2bd428878cd4b6d31977c95490b6381"
+  }
+}

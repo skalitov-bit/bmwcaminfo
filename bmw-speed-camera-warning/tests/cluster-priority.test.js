@@ -17,7 +17,7 @@ class Socket extends EventEmitter{
  destroy(){this.emit('close');}
  hello(){
   this.emit('connect');
-  const body=Buffer.from(JSON.stringify({ev:'hello',proto:1,backend:'id7',targets:'panel:1920x720,hud:800x480'}));
+  const body=Buffer.from(JSON.stringify({ev:'hello',proto:1,backend:'id7',targets:'map:1088x480,panel:1920x720,hud:800x480'}));
   const packet=Buffer.alloc(5+body.length);packet.writeUInt32LE(body.length+1,0);packet[4]=0x4a;body.copy(packet,5);
   this.emit('data',packet);
  }
@@ -36,15 +36,20 @@ const output=new outputModule.exports.CameraClusterOutput({mode:'both',now:()=>0
 sockets[0].hello();
 function checkLayers(socket,visible){
  const layers=socket.messages.filter(m=>m.op==='layer');assert.strictEqual(layers.length,4);
- for(const target of ['panel','hud']){
+ assert(!layers.some(m=>m.target==='panel'),'Never claim the whole-cluster popup that hides the OEM right widget');
+ for(const target of ['map','hud']){
   const pair=layers.filter(m=>m.target===target);assert.strictEqual(pair.length,2);
   const card=pair[0],ring=pair[1];
   assert.strictEqual(card.w,420);assert.strictEqual(ring.w,84);
   for(const layer of pair){
    assert.strictEqual(layer.class,'alert');assert.strictEqual(layer.z,1000);
    assert.strictEqual(layer.contend,1);assert.strictEqual(layer.yield,0);
+   assert.strictEqual(layer.guide_hold,0,'Neither card nor ring may suppress the OEM maneuver box');
+   assert(layer.x>=0&&layer.y>=0&&layer.x+layer.w<=(target==='map'?1088:800)&&layer.y+layer.h<=480,'Layer stays inside its target');
   }
-  assert.strictEqual(card.exclusive,1);assert.strictEqual(ring.exclusive,0);
+  assert.strictEqual(card.exclusive,0,'Priority must not hide unrelated lower layers');assert.strictEqual(ring.exclusive,0);
+  assert.strictEqual(card.x,target==='map'?334:190);assert.strictEqual(card.y,182);
+  assert.strictEqual(ring.x,card.x+315);assert.strictEqual(ring.y,card.y+17);
   assert.strictEqual(card.visible,visible?1:0);
   assert.strictEqual(ring.visible,0,'Ring starts hidden and cannot suppress its own card');
  }
@@ -72,4 +77,13 @@ output.setMode('hud');sockets[2].hello();
 assert.strictEqual(sockets[2].messages.filter(m=>m.op==='layer').length,2);
 output.show({camera:{id:'next',limit:60},distanceM:200,speedKmh:81,type:'speeding'});
 output.close();assert.strictEqual(timers.size,0,'Close cancels alert, blink and reconnect timers');
-console.log('PASS: actual wire messages for HUD/panel, alert z=1000, exclusive card, non-exclusive ring above card, contend/yield, hidden startup, reconnect replay, mode change and cleanup. No physical MGU assertion.');
+// Standalone KOMBI mode must use the same path, including after a mode change.
+const kombi=new outputModule.exports.CameraClusterOutput({mode:'kombi',now:()=>0});
+sockets[3].hello();
+assert(sockets[3].messages.filter(m=>m.op==='layer').every(m=>m.target==='map'&&m.guide_hold===0&&m.exclusive===0));
+kombi.show({camera:{id:'kombi',limit:60},distanceM:200,speedKmh:81,type:'speeding'});
+kombi.setMode('off');
+assert.strictEqual(timers.size,0);assert.strictEqual(kombi.cr,null);
+kombi.setMode('both');sockets[4].hello();checkLayers(sockets[4],false);
+kombi.close();assert.strictEqual(timers.size,0);
+console.log('PASS: KOMBI uses map, never panel; card/ring non-exclusive, guide_hold=0, alert z=1000, bounds, reconnect replay, both/kombi/hud/off modes and cleanup. No physical MGU assertion.');

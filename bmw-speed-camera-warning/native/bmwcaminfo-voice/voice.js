@@ -96,13 +96,16 @@ VoiceService.prototype.waitAvailable = async function () {
     this.ccAvailable + ', MediaPlayer=' + this.mpAvailable + ')');
 };
 
-VoiceService.prototype.play = async function (file) {
+VoiceService.prototype.play = async function (file, volume) {
   if (!ALLOWED[file]) throw new Error('Unsupported voice asset');
+  if(volume===undefined)volume=100;
+  if(typeof volume!=='number'||!Number.isFinite(volume)||volume<0||volume>100||volume%10!==0)throw new Error('Invalid voice volume');
+  if(volume===0)return {ok:true,muted:true};
   var self = this;
   var task = this.queue.then(async function () {
     await self.waitAvailable();
-    var audio = path.join(ROOT, 'audio', file);
-    if (!fs.existsSync(audio)) throw new Error('Voice asset missing: ' + audio);
+    var audio = volume===100?path.join(ROOT,'audio',file):path.join(ROOT,'audio','volume-'+volume,file);
+    if (!fs.existsSync(audio)) throw new Error((volume===100?'Voice asset missing: ':'Volume asset missing: ') + audio);
     try {
       var existing = await self.cc.getValue('listOfMainConnections');
       self.previousConnections = (Array.isArray(existing) ? existing : []).filter(function (c) {
@@ -228,6 +231,8 @@ var server = net.createServer(function (socket) {
         reply(socket, { ok: true, ready: voice.ready, ccAvailable: voice.ccAvailable, mpAvailable: voice.mpAvailable, lastError: voice.lastError });
       } else if (request.action === 'play' && ALLOWED[request.file]) {
         voice.play(request.file).then(function (result) { reply(socket, result); });
+      } else if (request.action === 'play-volume' && ALLOWED[request.file]) {
+        voice.play(request.file,request.volume===undefined?null:request.volume).then(function(result){reply(socket,result);},function(error){reply(socket,{ok:false,error:error.message});});
       } else {
         reply(socket, { ok: false, error: 'Unknown action or audio file' });
       }

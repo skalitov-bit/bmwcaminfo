@@ -95,8 +95,15 @@ async function run(){
     tapHandler(980,180);await settle();assert.strictEqual(settings.camera_display,'both','Display tile selects KOMBI + HUD');
     buttons.BTN_ZOOM();await settle();save('05-warning-settings');
     const voiceBefore=settings.mapcam_voice;
-    tapHandler(280,140);tapHandler(400,136);await settle();assert.strictEqual(settings.mapcam_voice,voiceBefore,'Padding and row gaps must not change settings');
-    tapHandler(400,130);await settle();assert.strictEqual(settings.mapcam_voice,'speeding','Warning row remains clickable');
+    tapHandler(280,140);tapHandler(400,130);await settle();assert.strictEqual(settings.mapcam_voice,voiceBefore,'Padding and row gaps must not change settings');
+    tapHandler(400,110);await settle();assert.strictEqual(settings.mapcam_voice,'speeding','Warning row remains clickable');
+    tapHandler(1400,150);await settle();assert.strictEqual(settings.notification_volume,'80','Volume minus selects the fourth of five levels');
+    tapHandler(1500,150);await settle();assert.strictEqual(settings.notification_volume,'100');
+    tapHandler(1500,150);assert.strictEqual(settings.notification_volume,'100','Volume maximum clamps');
+    for(let i=0;i<11;i++)tapHandler(1400,150);
+    assert.strictEqual(settings.notification_volume,'20','Volume minimum clamps at the first of five levels');
+    for(let i=0;i<2;i++)tapHandler(1500,150);
+    await settle();save('14-volume-settings');
     settings.mapcam_voice='always';
     tapHandler(100,50);await settle();
     texts.length=0;tapHandler(100,116);await settle();assert.strictEqual(texts.length,0,'Sidebar gap does not switch pages');
@@ -114,11 +121,11 @@ async function run(){
     await new Promise(resolve=>setTimeout(resolve,30));
     buttons.BTN_ZOOM();await new Promise(resolve=>setTimeout(resolve,30));
     assert(texts.some(t=>t.includes('УВЕДОМЛЕНИЯ')));
-    buttons.BTN_REFRESH();assert.strictEqual(settings.mapcam_voice,'always','Removed button 4 must not change settings');tapHandler(400,130);assert.strictEqual(settings.mapcam_voice,'speeding');
-    buttons.BTN_CAM_NEXT();tapHandler(400,174);assert.strictEqual(settings.mapcam_excess,'10');
+    buttons.BTN_REFRESH();assert.strictEqual(settings.mapcam_voice,'always','Removed button 4 must not change settings');tapHandler(400,110);assert.strictEqual(settings.mapcam_voice,'speeding');
+    buttons.BTN_CAM_NEXT();tapHandler(400,196);assert.strictEqual(settings.mapcam_excess,'10');
     buttons.BTN_CAM_NEXT();tapHandler(400,230);assert.strictEqual(settings.mapcam_distance,'500');
-    tapHandler(400,265);assert.strictEqual(settings.auto_monitor,'off');
-    tapHandler(400,265);assert.strictEqual(settings.auto_monitor,'on');
+    tapHandler(400,284);assert.strictEqual(settings.auto_monitor,'off');
+    tapHandler(400,284);assert.strictEqual(settings.auto_monitor,'on');
     tapHandler(400,315);assert.strictEqual(settings.central_notifications,'foreground');
     tapHandler(400,315);assert.strictEqual(settings.central_notifications,'off');
     tapHandler(400,315);assert.strictEqual(settings.central_notifications,'always');
@@ -243,6 +250,9 @@ async function run(){
       texts.length=0;await press('engineering-back');assert(!texts.includes('ИНЖЕНЕРНОЕ МЕНЮ'),'Joystick back exits engineering');
       assert.strictEqual(nativeButtonState.BTN_CAM_PREV,true,'Settings actions restore on leaving engineering');
       if(!pageTargets.some(t=>t.key==='warning-setting-auto_monitor'))await press('action-BTN_ZOOM');
+      const volumeBefore=Number(settings.notification_volume);
+      await press('volume-down');assert.strictEqual(Number(settings.notification_volume),volumeBefore-20,'Joystick decreases volume');
+      await press('volume-up');assert.strictEqual(Number(settings.notification_volume),volumeBefore,'Joystick increases volume');
       for(const key of ['auto_monitor','central_notifications','radar_no_duplicate']){
         const before=settings[key];await press('warning-setting-'+key);
         assert.notStrictEqual(settings[key],before,'Joystick changes '+key);

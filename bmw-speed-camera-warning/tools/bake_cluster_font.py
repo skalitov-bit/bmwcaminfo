@@ -11,7 +11,7 @@ def bake(font_path, output):
     size=192
     font=ImageFont.truetype(str(font_path),size)
     font.set_variation_by_axes([600,100])
-    chars='ABCDEFGHIJKLMNOPQRSTUVWXYZАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ0123456789 /+.:-*?'
+    chars='ABCDEFGHIJKLMNOPQRSTUVWXYZАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ0123456789 /+.:-*?%'
     raw=bytearray();glyphs={}
     for char in chars:
         x0,y0,x1,y1=font.getbbox(char,anchor='ls')

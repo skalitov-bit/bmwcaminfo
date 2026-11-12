@@ -5,10 +5,15 @@ const W=420,H=116,S=4,IW=W*S,IH=H*S;
 const RING_SIZE=84,RING_PIXELS=RING_SIZE*S;
 const ALERT_RED=[211,44,54,255]; // Same red as the speed-limit sign (#D32C36).
 // cluster-render PROTOCOL v1: alert is above overlay; z is bounded to 1000.
-// Equal-priority layers use creation order: create the non-exclusive ring AFTER
-// the exclusive card, so it cannot suspend the card while flashing.
+// Equal-priority layers use creation order: create the ring AFTER the card.
+// Keep both non-exclusive: priority must not suspend unrelated display layers.
 // This is priority within cluster-render, not an override of BMW slot locks.
-const ALERT_LAYER={klass:'alert',z:1000,contend:true,yield:false};
+const ALERT_LAYER={klass:'alert',z:1000,exclusive:false,contend:true,yield:false,guide_hold:false};
+// panel (DCSM 0x203) activates a whole-cluster popup and can blank the OEM
+// right information widget even with transparent pixels. Use the central map
+// slot (0x100) for KOMBI; never fall back to panel. guide_hold=0 preserves the
+// stock maneuver box while our map layer is wanted. This needs on-car testing.
+const OUTPUT_RECT={map:{x:334,y:182},hud:{x:190,y:182}};
 const clusterText=require('./cluster-text');
 const suppliedCameraIcon=require('./camera-icon');
 const {PULSE,pulseOpacity,monotonicMs}=require('./ring-pulse');
@@ -72,15 +77,15 @@ class CameraClusterOutput{
  }
  _makeLayers(){
   if(!this.cr||!this.cr.ready)return;
-  const targets=this.mode==='both'?['panel','hud']:[this.mode==='hud'?'hud':'panel'];
+  const targets=this.mode==='both'?['map','hud']:[this.mode==='hud'?'hud':'map'];
   targets.forEach(target=>{
-   const hud=target==='hud';
+   const pos=OUTPUT_RECT[target];
    if(!this.layers[target]){
-   const ref=this.cr.image(Object.assign({},ALERT_LAYER,{target,exclusive:true,x:hud?190:750,y:hud?182:302,w:W,h:H,iw:IW,ih:IH,sampling:'bilinear',visible:false,opacity:1}));
-   if(ref){this.layers[target]=ref;this.log('CLUSTER_RENDER_LAYER_CREATED target='+target+' ref='+ref+' x='+(hud?190:750)+' y='+(hud?182:302)+' size='+W+'x'+H+' class=alert z=1000 exclusive=1 contend=1 yield=0');}else this.log('CLUSTER_RENDER_LAYER_CREATE_FAILED target='+target);
+   const ref=this.cr.image(Object.assign({},ALERT_LAYER,{target,x:pos.x,y:pos.y,w:W,h:H,iw:IW,ih:IH,sampling:'bilinear',visible:false,opacity:1}));
+   if(ref){this.layers[target]=ref;this.log('CLUSTER_RENDER_LAYER_CREATED target='+target+' ref='+ref+' x='+pos.x+' y='+pos.y+' size='+W+'x'+H+' class=alert z=1000 exclusive=0 contend=1 yield=0 guide_hold=0');}else this.log('CLUSTER_RENDER_LAYER_CREATE_FAILED target='+target);
    }
    if(this.layers[target]&&!this.rings[target]){
-    const ref=this.cr.image(Object.assign({},ALERT_LAYER,{target,exclusive:false,x:(hud?190:750)+315,y:(hud?182:302)+17,w:RING_SIZE,h:RING_SIZE,iw:RING_PIXELS,ih:RING_PIXELS,sampling:'bilinear',visible:false,opacity:0}));
+    const ref=this.cr.image(Object.assign({},ALERT_LAYER,{target,x:pos.x+315,y:pos.y+17,w:RING_SIZE,h:RING_SIZE,iw:RING_PIXELS,ih:RING_PIXELS,sampling:'bilinear',visible:false,opacity:0}));
     if(ref){this.rings[target]=ref;this.cr.pixels(ref,null,makeRing());}
    }
   });

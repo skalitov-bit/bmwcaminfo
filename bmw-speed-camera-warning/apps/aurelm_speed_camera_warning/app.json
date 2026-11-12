@@ -2,7 +2,7 @@
   "id": "aurelm_speed_camera_warning",
   "title": "SpeedCAM",
   "description": "База камер по России: компактная база, названия комплексов и предупреждения KOMBI/HUD.",
-  "version": "0.9.33",
+  "version": "0.9.36",
   "vendor": "Andrug05",
   "loggingId": "SCAM",
   "iconGlyph": "camera",
@@ -221,6 +221,34 @@
         [
           "off",
           "Выключен"
+        ]
+      ]
+    },
+    {
+      "key": "notification_volume",
+      "label": "Громкость уведомлений",
+      "type": "choice",
+      "default": "100",
+      "options": [
+        [
+          "20",
+          "Тихо"
+        ],
+        [
+          "40",
+          "Умеренно"
+        ],
+        [
+          "60",
+          "Средне"
+        ],
+        [
+          "80",
+          "Громко"
+        ],
+        [
+          "100",
+          "Максимум"
         ]
       ]
     }

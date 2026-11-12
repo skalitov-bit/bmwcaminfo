@@ -48,7 +48,14 @@ mgu.run({async start(ctx){
  if(typeof ctx.hideButton==='function')ACTION_IDS.forEach(id=>ctx.hideButton(id));
  if(!database.cities[city])city='russia';
  const localStore=new LocalCameraStore(dataDir);let localCameras=localStore.load(),addScreenActive=false,captureFixes=[],cameraDraft=null,captureStatus='Ожидание GPS...',cameraLimit=60,cameraType=0,cameraDirection='forward',gpsTrack=[];
- const gps=new BmwGps(),roadGuidance=new RoadGuidanceWarnings([]),voice=new CameraVoiceAlerts({assetDir:__dirname,log:(m)=>log.warn(m)});
+ // Migrate the old percentage setting without re-enabling muted notifications.
+ const VOLUME_LEVELS=['20','40','60','80','100'];
+ const savedVolume=settings.get('notification_volume');
+ if(savedVolume!==undefined&&savedVolume!==null&&savedVolume!==''&&Number(savedVolume)===0)settings.set('mapcam_voice','off');
+ const volumeNumber=savedVolume===undefined||savedVolume===null||savedVolume===''||!Number.isFinite(Number(savedVolume))?100:Number(savedVolume);
+ const migratedVolume=VOLUME_LEVELS.reduce((best,value)=>Math.abs(Number(value)-volumeNumber)<Math.abs(Number(best)-volumeNumber)?value:best,VOLUME_LEVELS[0]);
+ if(String(savedVolume)!==migratedVolume)settings.set('notification_volume',migratedVolume);
+ const gps=new BmwGps(),roadGuidance=new RoadGuidanceWarnings([]),voice=new CameraVoiceAlerts({assetDir:__dirname,getVolume:()=>settings.get('notification_volume'),log:(m)=>log.warn(m)});
  const clusterOutput=new CameraClusterOutput({mode:cameraDisplayMode,log:(m)=>log.info(m)});let refreshInFlight=null,refreshBusy=false,refreshStartedAt=0,refreshError=false,refreshStatus='База готова';
  const mapcamOptions=()=>({voice:String(settings.get('mapcam_voice')||'always'),excessKmh:Number(settings.get('mapcam_excess')||0),distanceM:Number(settings.get('mapcam_distance')||0),repeat200:settings.get('mapcam_repeat200')!=='off'});
  const mapcamWarnings=new MapcamWarnings(mapcamOptions());
@@ -56,8 +63,10 @@ mgu.run({async start(ctx){
  const notificationSession=new NotificationSession(voice,mapcamOptions);
  localCameras.forEach(c=>{if(c.road)roadGuidance.zones[c.id]=prepare({id:c.id,lat:c.lat,lon:c.lon,roads:[{id:'user-road-'+c.id,pts:c.road.pts,camM:c.road.camM,dir:c.direction==='forward'?1:0}]});});
  let warningSettings=false,warningSettingIndex=0,settingsTaps=0,lastSettingsTap=0;
+ const WARNING_ROW_STEP=44,WARNING_ROW_HEIGHT=40;
  const warningRows=[
   {key:'mapcam_voice',label:'Голос',values:['always','speeding','off'],labels:['Каждая камера','При превышении','Выключен']},
+  {key:'notification_volume',label:'Громкость',values:VOLUME_LEVELS,labels:['Тихо','Умеренно','Средне','Громко','Максимум']},
   {key:'mapcam_excess',label:'Порог превышения',values:['0','10','18','20'],labels:['Лимит камеры','Лимит + 10 км/ч','Лимит + 18 км/ч','Лимит + 20 км/ч']},
   {key:'mapcam_distance',label:'Дистанция',values:['0','500','700','1000','2000'],labels:['Из базы','500 м','700 м','1000 м','2000 м']},
   {key:'auto_monitor',label:'Автозапуск контроля',values:['on','off'],labels:['Включён','После открытия SpeedCAM']},
@@ -67,18 +76,20 @@ mgu.run({async start(ctx){
  ];
  function warningValue(r){const value=String(settings.get(r.key)||r.values[0]);return Math.max(0,r.values.indexOf(value));}
  function changeWarningSetting(){const r=warningRows[warningSettingIndex];settings.set(r.key,r.values[(warningValue(r)+1)%r.values.length]);if(r.key.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());roadGuidance.configure(mapcamOptions());clearLiveAlerts();}else syncBackgroundNotification();renderSafe();}
+ function changeVolume(delta){const r=warningRows.find(r=>r.key==='notification_volume');const next=Math.max(0,Math.min(r.values.length-1,warningValue(r)+delta));settings.set(r.key,r.values[next]);renderSafe();}
  function clearLiveAlerts(){activeAlert=null;alertUntil=0;backgroundNotification.clear();clusterOutput.clear();notificationSession.suspend();}
  function drawWarningSettings(){
   const cv=ctx.canvas(W,H).clear(C.bg);style.heading(cv,'УВЕДОМЛЕНИЯ','ГИБРИД · РОССИЯ');
   cv.roundRect(266,74,1314,398,10,C.panel);
-  warningRows.forEach((r,i)=>{const y=88+i*51,on=i===warningSettingIndex;
-   cv.roundRect(288,y,1270,46,8,on?'#251318':'#19212a');
-   if(on)cv.strokeRoundRect(288,y,1270,46,8,2,C.red);
-   txt(cv,r.label,310,y+31,23,C.text,{maxWidth:570});txt(cv,r.labels[warningValue(r)],900,y+31,23,C.text,{maxWidth:630});
+  warningRows.forEach((r,i)=>{const y=88+i*WARNING_ROW_STEP,on=i===warningSettingIndex;
+   cv.roundRect(288,y,1270,WARNING_ROW_HEIGHT,8,on?'#251318':'#19212a');
+   if(on)cv.strokeRoundRect(288,y,1270,WARNING_ROW_HEIGHT,8,2,C.red);
+   txt(cv,r.label,310,y+28,21,C.text,{maxWidth:570});if(r.key!=='notification_volume')txt(cv,r.labels[warningValue(r)],900,y+28,21,C.text,{maxWidth:630});
+   if(r.key==='notification_volume'){for(let step=0;step<5;step++){const h=8+step*5;cv.roundRect(900+step*38,y+34-h,26,h,2,step<=warningValue(r)?C.red:'#3d4854');}for(const b of [{x:1370,t:'−'},{x:1470,t:'+'}]){cv.roundRect(b.x,y,70,WARNING_ROW_HEIGHT,6,'#303a46');txt(cv,b.t,b.x+35,y+29,28,C.text,{align:'center'});}}
   });
   txt(cv,'ФОНОВЫЙ БАННЕР: '+({unavailable:'НЕДОСТУПЕН',unverified:'ТРЕБУЕТ ПРОВЕРКИ НА MGU',requested:'ЗАПРОШЕН',visible:'ПОКАЗ ПОДТВЕРЖДЁН',hidden:'СКРЫТ',error:'ОШИБКА СВЯЗИ'}[backgroundNotification.status]||'ОЖИДАНИЕ'),290,458,17,C.muted,{maxWidth:1250});
   drawTabs(cv,'SETTINGS');drawActionLegend(cv,'SETTINGS');
-  warningRows.forEach((r,i)=>pageTarget(cv,288,88+i*51,1270,46,()=>{warningSettingIndex=i;changeWarningSetting();},'warning-setting-'+r.key));
+  warningRows.forEach((r,i)=>{const y=88+i*WARNING_ROW_STEP;pageTarget(cv,288,y,r.key==='notification_volume'?1060:1270,WARNING_ROW_HEIGHT,()=>{warningSettingIndex=i;changeWarningSetting();},'warning-setting-'+r.key);if(r.key==='notification_volume'){pageTarget(cv,1370,y,70,WARNING_ROW_HEIGHT,()=>{warningSettingIndex=i;changeVolume(-1);},'volume-down');pageTarget(cv,1470,y,70,WARNING_ROW_HEIGHT,()=>{warningSettingIndex=i;changeVolume(1);},'volume-up');}});
   return ui.image('MAIN_GFX',cv);
  }
  const cameras=()=>{
@@ -417,8 +428,8 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
    if(cameraButton){changeSelectedCamera(cameraButton.step);return;}
   }
   if(view==='SETTINGS'&&warningSettings&&x>=288&&x<1558){
-   const row=Math.floor((y-88)/51);
-   if(row>=0&&row<warningRows.length&&y<88+row*51+46){warningSettingIndex=row;changeWarningSetting();}return;
+   const row=Math.floor((y-88)/WARNING_ROW_STEP);
+   if(row>=0&&row<warningRows.length&&y<88+row*WARNING_ROW_STEP+WARNING_ROW_HEIGHT){warningSettingIndex=row;if(warningRows[row].key==='notification_volume'&&x>=1370){if(x<1440)changeVolume(-1);else if(x>=1470&&x<1540)changeVolume(1);}else changeWarningSetting();}return;
   }
   if(view==='SETTINGS'&&!warningSettings&&y>=142&&y<246){
    const column=Math.floor((x-290)/319);
@@ -502,11 +513,11 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  bindAction('BTN_ZOOM',()=>{if(view==='RADAR')return;if(view==='ENGINEERING'){return;}if(view==='SETTINGS'){warningSettings=!warningSettings;renderSafe();return;}if(view==='ADD'){cameraType=(cameraType+1)%CAMERA_TYPES.length;renderSafe();}else if(view==='MY'){if(localCameras.length){deletePending=true;renderSafe();}}else{changeZoom(1,true);}});
  bindAction('BTN_REFRESH',()=>{if(view==='ENGINEERING'){return;}if(view==='SETTINGS')return;if(view==='ADD'){cameraDirection=cameraDirection==='forward'?'both':'forward';renderSafe();}else if(view==='MY'){removeSelectedCamera();}else refresh();});
  bindAction('BTN_VOICE_TEST',()=>{if(view==='MAP'||view==='SETTINGS')return;if(view==='ADD'){saveLocalCamera();return;}if(view==='MY'){deletePending=false;beginAddCamera();view='ADD';renderSafe();return;}testCameraOutputs();});
- settings.onChange(k=>{if(['auto_monitor','central_notifications','radar_no_duplicate'].includes(k)){if(k==='auto_monitor'&&!notificationPolicy.monitoring()){radarCamera=null;mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}syncBackgroundNotification();renderSafe();return;}if(k.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());roadGuidance.configure(mapcamOptions());clearLiveAlerts();renderSafe();return;}if(k==='city'){city=String(settings.get('city')||'russia');index=0;roadGuidance.reset();renderSafe();}else if(k==='camera_display'){cameraDisplayMode=String(settings.get('camera_display')||'kombi');clusterOutput.setMode(cameraDisplayMode);renderSafe();}});
+ settings.onChange(k=>{if(k==='notification_volume'){renderSafe();return;}if(['auto_monitor','central_notifications','radar_no_duplicate'].includes(k)){if(k==='auto_monitor'&&!notificationPolicy.monitoring()){radarCamera=null;mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}syncBackgroundNotification();renderSafe();return;}if(k.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());roadGuidance.configure(mapcamOptions());clearLiveAlerts();renderSafe();return;}if(k==='city'){city=String(settings.get('city')||'russia');index=0;roadGuidance.reset();renderSafe();}else if(k==='camera_display'){cameraDisplayMode=String(settings.get('camera_display')||'kombi');clusterOutput.setMode(cameraDisplayMode);renderSafe();}});
  gps.on('change',gpsChanged);gps.start();ui.onVisible((n,v)=>{if(n==='MAIN'){mainScreenVisible=!!v;notificationPolicy.setVisible(v);syncBackgroundNotification();if(v)renderSafe();}});
  // This timer is independent of ctx.loop(), which stops when MAIN is hidden.
  const backgroundTimer=setInterval(()=>{if(fix&&!mapcamFreshFix(fix,Date.now())){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}syncBackgroundNotification();},250);
  if(ctx.app&&typeof ctx.app.on==='function')ctx.app.on('shutdown',()=>{clearInterval(backgroundTimer);gps.stop();clearLiveAlerts();});
  renderSafe();refresh();setInterval(refresh,REFRESH_INTERVAL_MS);ctx.loop('MAIN',10,()=>{if(fix&&Date.now()-fix.timeMs>3000){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}renderSafe();});
- log.info('SpeedCAM 0.9.33 started; camera sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
+ log.info('SpeedCAM 0.9.36 started; camera sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
 }});

@@ -36,6 +36,7 @@ class CameraVoiceAlerts {
     this.lastError = null;
     this.generation = 0;
     this.pending = 0;
+    this.getVolume = options.getVolume || function () { return 100; };
   }
 
   camera(stage, relevant, camera) {
@@ -81,6 +82,10 @@ class CameraVoiceAlerts {
   }
 
   _request(file) {
+    const raw=this.getVolume(), number=raw===undefined||raw===null||raw===''?100:Number(raw);
+    const volume=Number.isFinite(number)?Math.max(0,Math.min(100,Math.round(number/10)*10)):100;
+    // Mute must not acquire an audio route or interrupt music.
+    if(volume===0)return Promise.resolve({ok:true,muted:true});
     return new Promise((resolve, reject) => {
       let settled = false;
       let buffer = '';let sent=false;
@@ -96,7 +101,9 @@ class CameraVoiceAlerts {
       const timer = setTimeout(() => finish(new Error('BMW voice service timeout (35 s)')), 35000);
       socket.setEncoding('utf8');
       socket.on('connect', () => {
-        sent=true;socket.write(JSON.stringify({ action: 'play', file: file }) + '\n');
+        // Older services ignore extra fields on play. A separate action prevents
+        // them from playing at full volume when a quieter level was requested.
+        sent=true;socket.write(JSON.stringify(volume===100?{action:'play',file:file}:{action:'play-volume',file:file,volume:volume}) + '\n');
       });
       socket.on('data', (chunk) => {
         buffer += chunk;
@@ -105,6 +112,9 @@ class CameraVoiceAlerts {
         let result;
         try { result = JSON.parse(buffer.slice(0, end)); }
         catch (error) { finish(new Error('Invalid response from BMW voice service')); return; }
+        if(volume<100&&result&&result.error==='Unknown action or audio file'){
+          result={ok:false,error:'Для регулировки громкости установите звуковой компонент 0.1.11'};
+        }
         finish(null, result);
       });
       socket.on('error', (error) => {
