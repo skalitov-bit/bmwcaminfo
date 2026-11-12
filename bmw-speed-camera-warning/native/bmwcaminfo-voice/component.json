@@ -1,10 +1,10 @@
 {
   "id": "bmwcaminfo-voice",
   "kind": "tool",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "license": "MIT",
   "title": "BMW Camera Voice Service",
-  "description": "Camera voice notifications with independent 0–100% volume and audio route restoration",
+  "description": "Camera voice and adaptive overspeed beeper with independent notification volume",
   "requires": {
     "mgu-deploy": "0.7.0"
   },
@@ -426,6 +426,66 @@
     {
       "path": "audio/volume-90/camera-200.m4a",
       "from": "audio/volume-90/camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "beeper.js",
+      "from": "beeper.js",
+      "mode": "0644"
+    },
+    {
+      "path": "beeper-manifest.json",
+      "from": "beeper-manifest.json",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/beeper-21.m4a",
+      "from": "audio/volume-10/beeper-21.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/beeper-21.m4a",
+      "from": "audio/volume-20/beeper-21.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/beeper-21.m4a",
+      "from": "audio/volume-30/beeper-21.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/beeper-21.m4a",
+      "from": "audio/volume-40/beeper-21.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/beeper-21.m4a",
+      "from": "audio/volume-50/beeper-21.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/beeper-21.m4a",
+      "from": "audio/volume-60/beeper-21.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/beeper-21.m4a",
+      "from": "audio/volume-70/beeper-21.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/beeper-21.m4a",
+      "from": "audio/volume-80/beeper-21.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/beeper-21.m4a",
+      "from": "audio/volume-90/beeper-21.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/beeper-21.m4a",
+      "from": "audio/beeper-21.m4a",
       "mode": "0644"
     }
   ],

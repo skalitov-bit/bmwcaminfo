@@ -8,6 +8,7 @@ const {BmwGps}=require('./gps');
 const {RoadGuidanceWarnings,prepare}=require('./road-guidance');
 const {LocalCameraStore}=require('./local-camera-store');
 const {CameraVoiceAlerts}=require('./voice-alert');
+const {OverspeedBeeper,beepState}=require('./overspeed-beeper');
 const {CameraClusterOutput}=require('./cluster-output');
 const {MapcamWarnings,freshFix:mapcamFreshFix}=require('./mapcam-warnings');
 const {category,hudLabels}=require('./camera-label');
@@ -63,6 +64,8 @@ mgu.run({async start(ctx){
  const mapcamWarnings=new MapcamWarnings(mapcamOptions());
  roadGuidance.configure(mapcamOptions());
  const notificationSession=new NotificationSession(voice,mapcamOptions);
+ const beeper=new OverspeedBeeper({log:m=>log.warn(m)});
+ function syncBeeper(){beeper.update(beepState(notificationSession.current,fix,Date.now(),notificationPolicy.monitoring(),voice.pending>0||notificationSession.busy,settings.get('notification_volume')));}
  localCameras.forEach(c=>{if(c.road)roadGuidance.zones[c.id]=prepare({id:c.id,lat:c.lat,lon:c.lon,roads:[{id:'user-road-'+c.id,pts:c.road.pts,camM:c.road.camM,dir:c.direction==='forward'?1:0}]});});
  let warningSettings=false,warningSettingIndex=0,settingsTaps=0,lastSettingsTap=0;
  const WARNING_ROW_STEP=44,WARNING_ROW_HEIGHT=40;
@@ -79,7 +82,7 @@ mgu.run({async start(ctx){
  function warningValue(r){const value=String(settings.get(r.key)||r.values[0]);return Math.max(0,r.values.indexOf(value));}
  function changeWarningSetting(){const r=warningRows[warningSettingIndex];settings.set(r.key,r.values[(warningValue(r)+1)%r.values.length]);if(r.key.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());roadGuidance.configure(mapcamOptions());clearLiveAlerts();}else syncBackgroundNotification();renderSafe();}
  function changeVolume(delta){const r=warningRows.find(r=>r.key==='notification_volume');const next=Math.max(0,Math.min(r.values.length-1,warningValue(r)+delta));settings.set(r.key,r.values[next]);renderSafe();}
- function clearLiveAlerts(){activeAlert=null;alertUntil=0;backgroundNotification.clear();clusterOutput.clear();notificationSession.suspend();}
+ function clearLiveAlerts(){beeper.stop();activeAlert=null;alertUntil=0;backgroundNotification.clear();clusterOutput.clear();notificationSession.suspend();}
  function drawWarningSettings(){
   const cv=ctx.canvas(W,H).clear(C.bg);style.heading(cv,'УВЕДОМЛЕНИЯ','ГИБРИД · РОССИЯ');
   cv.roundRect(266,74,1314,398,0,C.panel);
@@ -386,6 +389,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   syncBackgroundNotification();
  }
  function syncBackgroundNotification(){
+  syncBeeper();
   notificationPolicy.view=view;
   const live=activeAlert&&Date.now()<alertUntil&&mapcamFreshFix(fix,Date.now());
   backgroundNotification.update(live&&notificationPolicy.destination()==='system'?activeAlert:null,fix&&fix.speedKmh);
@@ -531,11 +535,11 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  bindAction('BTN_ZOOM',()=>{if(view==='RADAR')return;if(view==='ENGINEERING'){return;}if(view==='SETTINGS'){warningSettings=!warningSettings;renderSafe();return;}if(view==='ADD'){cameraType=(cameraType+1)%CAMERA_TYPES.length;renderSafe();}else if(view==='MY'){if(localCameras.length){deletePending=true;renderSafe();}}else{changeZoom(1,true);}});
  bindAction('BTN_REFRESH',()=>{if(view==='ENGINEERING'){return;}if(view==='SETTINGS')return;if(view==='ADD'){cameraDirection=cameraDirection==='forward'?'both':'forward';renderSafe();}else if(view==='MY'){removeSelectedCamera();}else refresh();});
  bindAction('BTN_VOICE_TEST',()=>{if(view==='MAP'||view==='SETTINGS')return;if(view==='ADD'){saveLocalCamera();return;}if(view==='MY'){deletePending=false;beginAddCamera();view='ADD';renderSafe();return;}testCameraOutputs();});
- settings.onChange(k=>{if(k==='notification_volume'){renderSafe();return;}if(['auto_monitor','central_notifications','radar_no_duplicate'].includes(k)){if(k==='auto_monitor'&&!notificationPolicy.monitoring()){radarCamera=null;mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}syncBackgroundNotification();renderSafe();return;}if(k.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());roadGuidance.configure(mapcamOptions());clearLiveAlerts();renderSafe();return;}if(k==='city'){city=String(settings.get('city')||'russia');index=0;roadGuidance.reset();renderSafe();}else if(k==='camera_display'){cameraDisplayMode=String(settings.get('camera_display')||'kombi');clusterOutput.setMode(cameraDisplayMode);renderSafe();}});
+ settings.onChange(k=>{if(k==='notification_volume'){syncBeeper();renderSafe();return;}if(['auto_monitor','central_notifications','radar_no_duplicate'].includes(k)){if(k==='auto_monitor'&&!notificationPolicy.monitoring()){radarCamera=null;mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}syncBackgroundNotification();renderSafe();return;}if(k.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());roadGuidance.configure(mapcamOptions());clearLiveAlerts();renderSafe();return;}if(k==='city'){city=String(settings.get('city')||'russia');index=0;roadGuidance.reset();renderSafe();}else if(k==='camera_display'){cameraDisplayMode=String(settings.get('camera_display')||'kombi');clusterOutput.setMode(cameraDisplayMode);renderSafe();}});
  gps.on('change',gpsChanged);gps.start();ui.onVisible((n,v)=>{if(n==='MAIN'){mainScreenVisible=!!v;notificationPolicy.setVisible(v);syncBackgroundNotification();if(v)renderSafe();}});
  // This timer is independent of ctx.loop(), which stops when MAIN is hidden.
  const backgroundTimer=setInterval(()=>{if(fix&&!mapcamFreshFix(fix,Date.now())){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}syncBackgroundNotification();},250);
  if(ctx.app&&typeof ctx.app.on==='function')ctx.app.on('shutdown',()=>{clearInterval(backgroundTimer);gps.stop();clearLiveAlerts();});
  renderSafe();refresh();setInterval(refresh,REFRESH_INTERVAL_MS);ctx.loop('MAIN',10,()=>{if(fix&&Date.now()-fix.timeMs>3000){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}renderSafe();});
- log.info('SpeedCAM 0.9.39 started; camera sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
+ log.info('SpeedCAM 0.9.40 started; camera sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
 }});

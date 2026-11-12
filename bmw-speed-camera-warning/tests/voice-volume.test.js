@@ -25,7 +25,7 @@ class Socket extends EventEmitter{
  }).catch(e=>this.emit('data',JSON.stringify({ok:false,error:e.message})+'\n'));}
 }
 const moduleObject={exports:{}};
-vm.runInNewContext(fs.readFileSync(path.join(base,'voice-alert.js'),'utf8'),{module:moduleObject,require:n=>n==='net'?{createConnection:()=>{connections++;const s=new Socket();setImmediate(()=>s.emit('connect'));return s;}}:require(n),setTimeout,clearTimeout});
+vm.runInNewContext(fs.readFileSync(path.join(base,'voice-alert.js'),'utf8'),{module:moduleObject,require:n=>n==='net'?{createConnection:()=>{connections++;const s=new Socket();setImmediate(()=>s.emit('connect'));return s;}}:require(require.resolve(n,{paths:[base]})),setTimeout,clearTimeout});
 async function run(){
  assert(require(path.join(base,'cluster-text')).hasGlyph('%'),'Volume percent must not render as a missing glyph');
  const voice=new moduleObject.exports.CameraVoiceAlerts({getVolume:()=>level});

@@ -1,0 +1,42 @@
+{
+  "audio/volume-10/beeper-21.m4a": {
+    "volume": 10,
+    "sha256": "a66a2c9e11c1fffd16ef8c024530bf145289f4f490739bbf21765eee4e3c387e"
+  },
+  "audio/volume-20/beeper-21.m4a": {
+    "volume": 20,
+    "sha256": "810b0884b10f13caf2faf19f001a68173ad9fed217d8b42d6b43e3b390587912"
+  },
+  "audio/volume-30/beeper-21.m4a": {
+    "volume": 30,
+    "sha256": "beb5c72227446df3417ad3fc5a034008893210fce3c4f972e44c31fba88e115c"
+  },
+  "audio/volume-40/beeper-21.m4a": {
+    "volume": 40,
+    "sha256": "b12f79fc38ee67927a9fad14e2cdaac14eba74574b5d3ffae92b4d6928c91fbd"
+  },
+  "audio/volume-50/beeper-21.m4a": {
+    "volume": 50,
+    "sha256": "676eef141d2ff9f979b868bda9850718dee2b5143a1a7622641702dd3be2745d"
+  },
+  "audio/volume-60/beeper-21.m4a": {
+    "volume": 60,
+    "sha256": "7c39461d93cab973a7c04039cfa953ca0f478e8e9111506ce693905f60fbf4a1"
+  },
+  "audio/volume-70/beeper-21.m4a": {
+    "volume": 70,
+    "sha256": "8db500a128cd1927c2c94344be78f13b8b90a079c5bf21413c1487ab12b0f780"
+  },
+  "audio/volume-80/beeper-21.m4a": {
+    "volume": 80,
+    "sha256": "9dd7390456fbcf637f521e01191ec5e8bd90cce465e154012c75852a041c548f"
+  },
+  "audio/volume-90/beeper-21.m4a": {
+    "volume": 90,
+    "sha256": "df7c60a19103d31f885b9411184c9e48b1a879f00c8ac215d17f1c8acc9a2c5a"
+  },
+  "audio/beeper-21.m4a": {
+    "volume": 100,
+    "sha256": "916b9cce6ffaa7b1a8f8a48e5e9b6bc6aa96d619dd780a96be1f068bcb7bb5e1"
+  }
+}

@@ -102,27 +102,12 @@ VoiceService.prototype.play = async function (file, volume) {
   if(typeof volume!=='number'||!Number.isFinite(volume)||volume<0||volume>100||volume%10!==0)throw new Error('Invalid voice volume');
   if(volume===0)return {ok:true,muted:true};
   var self = this;
+  this.speechPending=(this.speechPending||0)+1;
   var task = this.queue.then(async function () {
     await self.waitAvailable();
     var audio = volume===100?path.join(ROOT,'audio',file):path.join(ROOT,'audio','volume-'+volume,file);
     if (!fs.existsSync(audio)) throw new Error((volume===100?'Voice asset missing: ':'Volume asset missing: ') + audio);
-    try {
-      var existing = await self.cc.getValue('listOfMainConnections');
-      self.previousConnections = (Array.isArray(existing) ? existing : []).filter(function (c) {
-        return c && c.sinkID === SINK_ID && c.sourceID !== SRC_ID;
-      });
-      log('audio routes before voice: ' + JSON.stringify(self.previousConnections));
-    } catch (routeError) {
-      self.previousConnections = [];
-      self.previousPlayerState = null;
-      log('could not inspect existing audio routes: ' + routeError.message);
-    }
-    var connected = await self.cc.callMethod('connect', { sourceID: SRC_ID, sinkID: SINK_ID }, 7000);
-    log('connect: ' + JSON.stringify(connected));
-    if (!connected || (connected.amError !== 'E_OK' && connected.amError !== 'E_ALREADY_EXISTS')) {
-      throw new Error('BMW audio route failed: ' + JSON.stringify(connected));
-    }
-    self.connectionId = connected.mainConnectionID;
+    await self.connectAudio();
     try {
       var result = await self.mp.callMethod('playFile', { path: audio, languageCode: LANG }, 7000);
       log('playFile: ' + JSON.stringify(result));
@@ -140,7 +125,28 @@ VoiceService.prototype.play = async function (file, volume) {
     log('PLAY_FAILED: ' + (error && error.stack || error));
     return { ok: false, error: self.lastError };
   });
+  this.queue=this.queue.then(function(result){self.speechPending--;return result;});
   return this.queue;
+};
+
+VoiceService.prototype.connectAudio = async function () {
+    try {
+      var existing = await this.cc.getValue('listOfMainConnections');
+      this.previousConnections = (Array.isArray(existing) ? existing : []).filter(function (c) {
+        return c && c.sinkID === SINK_ID && c.sourceID !== SRC_ID;
+      });
+      log('audio routes before voice: ' + JSON.stringify(this.previousConnections));
+    } catch (routeError) {
+      this.previousConnections = [];
+      this.previousPlayerState = null;
+      log('could not inspect existing audio routes: ' + routeError.message);
+    }
+    var connected = await this.cc.callMethod('connect', { sourceID: SRC_ID, sinkID: SINK_ID }, 7000);
+    log('connect: ' + JSON.stringify(connected));
+    if (!connected || (connected.amError !== 'E_OK' && connected.amError !== 'E_ALREADY_EXISTS')) {
+      throw new Error('BMW audio route failed: ' + JSON.stringify(connected));
+    }
+    this.connectionId = connected.mainConnectionID;
 };
 
 VoiceService.prototype.release = async function () {
@@ -202,6 +208,7 @@ VoiceService.prototype.restorePreviousAudio = async function () {
 };
 
 var voice = new VoiceService();
+var beeper = new (require('./beeper').Beeper)(voice);
 
 function reply(socket, payload) {
   try { socket.write(JSON.stringify(payload) + '\n'); } catch (e) {}
@@ -209,6 +216,8 @@ function reply(socket, payload) {
 
 var server = net.createServer(function (socket) {
   socket.setEncoding('utf8');
+  socket.on('close',function(){beeper.clear(socket);});
+  socket.on('error',function(){beeper.clear(socket);});
   var buffer = '';
   socket.on('data', function (chunk) {
     buffer += chunk;
@@ -227,7 +236,9 @@ var server = net.createServer(function (socket) {
         reply(socket, { ok: false, error: 'Invalid JSON' });
         continue;
       }
-      if (request.action === 'status') {
+      if (request.action === 'beeper') {
+        try { reply(socket,beeper.set(request,socket)); } catch(error) { reply(socket,{ok:false,error:error.message}); }
+      } else if (request.action === 'status') {
         reply(socket, { ok: true, ready: voice.ready, ccAvailable: voice.ccAvailable, mpAvailable: voice.mpAvailable, lastError: voice.lastError });
       } else if (request.action === 'play' && ALLOWED[request.file]) {
         voice.play(request.file).then(function (result) { reply(socket, result); });
@@ -253,6 +264,7 @@ server.on('error', function (error) {
 });
 
 process.on('SIGTERM', function () {
+  beeper.state=null;
   voice.release().then(function () { server.close(function () { process.exit(0); }); });
 });
 process.on('uncaughtException', function (error) {

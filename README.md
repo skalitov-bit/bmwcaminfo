@@ -1,6 +1,6 @@
 # SpeedCAM
 
-В версии 0.9.39: визуальные уведомления о постах ДПС и единый приоритет камер контроля скорости на всех дисплеях.
+В версии 0.9.40: бипер превышения скорости более 20 км/ч с учащением при приближении к камере. Для работы нужен звуковой компонент 0.1.12. Голосовые записи сохранены.
 
 Приложение уведомлений о камерах для BMW MGU ID7.
 
@@ -18,7 +18,7 @@
 
 Для установки используйте файл `.mgu` из последнего релиза. Там же находятся исходники, инструкция, результаты проверок и контрольные суммы.
 
-[Текущие исходники](https://github.com/skalitov-bit/bmwcaminfo/tree/release/0.9.39-update-status/bmw-speed-camera-warning) · [Инструкция и ограничения](https://github.com/skalitov-bit/bmwcaminfo/blob/release/0.9.39-update-status/bmw-speed-camera-warning/INTEGRATION_RU.txt)
+[Текущие исходники](https://github.com/skalitov-bit/bmwcaminfo/tree/release/0.9.40-overspeed-beeper/bmw-speed-camera-warning) · [Инструкция и ограничения](https://github.com/skalitov-bit/bmwcaminfo/blob/release/0.9.40-overspeed-beeper/bmw-speed-camera-warning/INTEGRATION_RU.txt)
 
 Сборки проверяются на ПК и в эмуляторе. Работа фоновых окон, автозапуска после сна и аппаратного вывода HUD/KOMBI требует проверки на реальном MGU.
 

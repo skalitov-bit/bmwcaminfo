@@ -20,6 +20,7 @@ const ctx={dataDir:tmp,canvas:()=>native?new native.Recorder(1600,520):previewDi
     ui:{visible:(id,on)=>{nativeButtonState[id]=on;},enabled:()=>{},image:(id,image)=>{images++;pageTargets=image.targets||[];lastCanvas=native?native.play(image.words(),new Canvas(1600,520)):image;},onClick:(k,fn)=>{buttons[k]=fn;},isVisible:()=>true,onVisible:fn=>{visibleHandler=fn;}}};
 let nextRefreshFailure=null,activeStore,pulseTime=0,voiceTests=0,voiceWarnings=0,clusterWarnings=0,centralWarnings=0;
 const systemPopupCalls=[];
+let beeperState=null,backgroundTick;
 class TestPopupTransport {
  constructor(){this.available=true;}
  paint(e){systemPopupCalls.push('paint:'+e.camera.id);return Promise.resolve();}
@@ -44,6 +45,7 @@ class Voice {cancel(){}camera(stage,relevant,camera){assert(camera&&camera.id,'V
 let lastClusterCamera=null,lastCentralCamera=null;
 class Cluster {setMode(){}show(e){clusterWarnings++;lastClusterCamera=e.camera.id;}clear(){}sync(){}}
 const replacements={
+    './overspeed-beeper':Object.assign({},appRequire('./overspeed-beeper'),{OverspeedBeeper:class{update(s){beeperState=s;}stop(){beeperState=null;}}}),
     './background-notification':Object.assign({},appRequire('./background-notification'),{RhmiPopupTransport:TestPopupTransport}),
     './central-alert':{drawCentralAlert:(...args)=>{centralWarnings++;lastCentralCamera=args[1].camera.id;return appRequire('./central-alert').drawCentralAlert(...args);}},
     './ring-pulse':Object.assign({},appRequire('./ring-pulse'),{monotonicMs:()=>pulseTime}),
@@ -54,7 +56,7 @@ const replacements={
     './voice-alert':{CameraVoiceAlerts:Voice},'./cluster-output':{CameraClusterOutput:Cluster}
 };
 vm.runInNewContext(fs.readFileSync(file,'utf8'),{require:n=>replacements[n]||appRequire(n),
-    __dirname:path.dirname(path.resolve(file)),console,Buffer,process,setTimeout:fn=>setTimeout(fn,0),setInterval:()=>0}, {filename:file});
+    __dirname:path.dirname(path.resolve(file)),console,Buffer,process,setTimeout:fn=>setTimeout(fn,0),setInterval:(fn,ms)=>{if(ms===250)backgroundTick=fn;return 0;}}, {filename:file});
 async function run(){
     await startPromise;await activeStore.pending;await new Promise(resolve=>setTimeout(resolve,30));
     assert(images>0,'Initial app screen must render: '+warnings.join('\n'));
@@ -324,6 +326,13 @@ async function run(){
     assert.strictEqual(lastClusterCamera,'priority-speed','HUD/KOMBI dispatch the speed camera');save('speed-priority');
     tapHandler(100,50);await settle();assert.strictEqual(lastCentralCamera,'priority-speed','Central banner uses the same priority');
     visibleHandler('MAIN',false);await settle();assert(systemPopupCalls.includes('paint:priority-speed'),'Background popup uses speed priority');
+    gpsHandler({fix:Object.assign(priorityFix(450,Date.now()),{speedKmh:81}),state:'fix'});await settle();backgroundTick();
+    assert(beeperState&&beeperState.cameraId==='priority-speed','Beeper works with the central app hidden');
+    assert.strictEqual(beeperState.intervalMs,1500);
+    gpsHandler({fix:Object.assign(priorityFix(440,Date.now()),{speedKmh:80}),state:'fix'});await settle();backgroundTick();
+    assert.strictEqual(beeperState,null,'Beeper stops at exactly +20');
+    gpsHandler({fix:Object.assign(priorityFix(430,Date.now()),{speedKmh:81}),state:'fix'});await settle();backgroundTick();assert(beeperState);
+    gpsHandler({state:'lost',fix:null});assert.strictEqual(beeperState,null,'GPS loss stops beeper immediately');
     visibleHandler('MAIN',true);await settle();
     activeStore.current.near=oldNear;activeStore.current.nearWarnings=oldNearWarnings;
     assert(!warnings.some(w=>/UI_RENDER_FAILED|render:|ReferenceError|TypeError/.test(w)),warnings.join('\n'));
