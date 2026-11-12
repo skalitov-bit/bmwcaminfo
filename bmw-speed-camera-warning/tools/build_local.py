@@ -92,6 +92,7 @@ def build(out, cache):
     # Include the project licence and camera/OSM attribution in both installation formats.
     blobs['source/LICENSE']= (ROOT.parent/'LICENSE').read_bytes()
     blobs['source/DATA-NOTICE.txt']=(ROOT/'DATA-NOTICE.txt').read_bytes()
+    blobs['source/licenses/RobotoCondensed-OFL.txt']=(ROOT/'assets/fonts/RobotoCondensed-OFL.txt').read_bytes()
     out.mkdir(parents=True,exist_ok=True)
     manifest={}
     for extension in ('mgu','tgz'):

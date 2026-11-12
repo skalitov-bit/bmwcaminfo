@@ -1,0 +1,7 @@
+Roboto Condensed variable font (upright), Google Fonts.
+Source: https://github.com/google/fonts/tree/main/ofl/robotocondensed
+Downloaded: 2026-11-12
+Original filename: RobotoCondensed[wght].ttf
+License: SIL Open Font License 1.1; see RobotoCondensed-OFL.txt.
+SpeedCAM renders offline glyphs baked at weight 500 (Medium).
+The generated cluster-font.json records the source file SHA-256 and weight.

@@ -19,7 +19,7 @@ function getFont(){
   }
   glyphs[ch]=[gx,gy,g[1],g[2],g[3],g[4],g[5]];
  }
- font={size:spec.size/2,atlasW:width,atlasH:height,alpha,glyphs,cacheKey:'bmw-hud-0911-96'};return font;
+ font={size:spec.size/2,atlasW:width,atlasH:height,alpha,glyphs,cacheKey:'speedcam-font-'+spec.sha256+'-'+spec.weight};return font;
 }
 function commands(cv,f,family,rects,color){
  const record=require('./kit/record'),id=record.atlasId(f,family);cv.atlases.add(id);

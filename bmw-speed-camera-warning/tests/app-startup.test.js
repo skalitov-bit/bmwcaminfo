@@ -106,7 +106,7 @@ async function run(){
     await settle();save('14-volume-settings');
     settings.mapcam_voice='always';
     tapHandler(100,50);await settle();
-    texts.length=0;tapHandler(100,116);await settle();assert.strictEqual(texts.length,0,'Sidebar gap does not switch pages');
+    texts.length=0;tapHandler(100,20);await settle();assert.strictEqual(texts.length,0,'Area above sidebar does not switch pages');
     buttons.BTN_ZOOM(); // map zoom still works
     // Leave warning settings on the display page for subsequent controller checks.
     tapHandler(100,459);buttons.BTN_ZOOM();tapHandler(100,50);await settle();

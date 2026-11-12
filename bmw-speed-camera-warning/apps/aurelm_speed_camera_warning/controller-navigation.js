@@ -17,6 +17,23 @@ function install(display){
   }
   return original.call(this,direction,here);
  };
+ // Replace the kit's rounded page-focus outline with the app's selection style.
+ // Keep the original chrome for system tabs, sheets and native controls.
+ const drawChrome=display._drawChrome;
+ if(typeof drawChrome==='function')display._drawChrome=function(recorder){
+  const focusKey=this.focusKey,pressed=this.pressed;
+  const targets=this.sheet?[]:(this.pageTargets||[]);
+  const focused=targets.find(p=>'tgt:'+p.key===focusKey);
+  const pressedTarget=Date.now()-this.pressedT<300&&targets.find(p=>'tgt:'+p.key===pressed);
+  try{
+   if(focused)this.focusKey=null;
+   if(pressedTarget)this.pressed=null;
+   drawChrome.call(this,recorder);
+  }finally{this.focusKey=focusKey;this.pressed=pressed;}
+  const style=require('./screen-style');
+  if(pressedTarget&&pressedTarget!==focused)style.drawSelection(recorder,pressedTarget.x,pressedTarget.y,pressedTarget.w,pressedTarget.h,true);
+  if(focused)style.drawSelection(recorder,focused.x,focused.y,focused.w,focused.h,true);
+ };
  display.cameraNavigationInstalled=true;return true;
 }
 module.exports={install};

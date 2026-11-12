@@ -38,12 +38,12 @@ mgu.run({async start(ctx){
  const presentImage=ui.image.bind(ui);
  ui.image=(name,cv)=>{if(name==='MAIN_GFX'){
   drawAlertBanner(cv);
-  if(!mapcamFreshFix(fix,Date.now())){cv.roundRect(1060,12,520,40,6,C.bg);style.text(cv,gpsHealth(fix,Date.now()),1566,40,18,C.yellow,{align:'right',maxWidth:495});}
+  if(!mapcamFreshFix(fix,Date.now())){cv.roundRect(1060,12,520,40,0,C.bg);style.text(cv,gpsHealth(fix,Date.now()),1566,40,18,C.yellow,{align:'right',maxWidth:495});}
  }return presentImage(name,cv);};
  const actionHandlers=Object.create(null);let nativeButtonView=null;
  require('./controller-navigation').install(ctx.display);
  function bindAction(id,fn){actionHandlers[id]=fn;ui.onClick(id,fn);}
- function pageTarget(cv,x,y,w,h,run,key){if(cv.recording===true&&typeof cv.target==='function')cv.target(x,y,w,h,run,key,8);}
+ function pageTarget(cv,x,y,w,h,run,key){if(cv.recording===true&&typeof cv.target==='function')cv.target(x,y,w,h,run,key,0);}
  // The page owns these controls in the GPU layout; keep native HMI buttons as fallback.
  if(typeof ctx.hideButton==='function')ACTION_IDS.forEach(id=>ctx.hideButton(id));
  if(!database.cities[city])city='russia';
@@ -80,12 +80,18 @@ mgu.run({async start(ctx){
  function clearLiveAlerts(){activeAlert=null;alertUntil=0;backgroundNotification.clear();clusterOutput.clear();notificationSession.suspend();}
  function drawWarningSettings(){
   const cv=ctx.canvas(W,H).clear(C.bg);style.heading(cv,'УВЕДОМЛЕНИЯ','ГИБРИД · РОССИЯ');
-  cv.roundRect(266,74,1314,398,10,C.panel);
+  cv.roundRect(266,74,1314,398,0,C.panel);
   warningRows.forEach((r,i)=>{const y=88+i*WARNING_ROW_STEP,on=i===warningSettingIndex;
-   cv.roundRect(288,y,1270,WARNING_ROW_HEIGHT,8,on?'#251318':'#19212a');
-   if(on)cv.strokeRoundRect(288,y,1270,WARNING_ROW_HEIGHT,8,2,C.red);
+   if(on)style.drawSelection(cv,288,y,1270,WARNING_ROW_HEIGHT);
+   else cv.roundRect(288,y,1270,WARNING_ROW_HEIGHT,0,'#111214');
    txt(cv,r.label,310,y+28,21,C.text,{maxWidth:570});if(r.key!=='notification_volume')txt(cv,r.labels[warningValue(r)],900,y+28,21,C.text,{maxWidth:630});
-   if(r.key==='notification_volume'){for(let step=0;step<5;step++){const h=8+step*5;cv.roundRect(900+step*38,y+34-h,26,h,2,step<=warningValue(r)?C.red:'#3d4854');}for(const b of [{x:1370,t:'−'},{x:1470,t:'+'}]){cv.roundRect(b.x,y,70,WARNING_ROW_HEIGHT,6,'#303a46');txt(cv,b.t,b.x+35,y+29,28,C.text,{align:'center'});}}
+   if(r.key==='notification_volume'){
+    for(let step=0;step<5;step++){
+     const h=8+step*5,x=900+step*38;
+     cv.fillRect(x,y+34-h,26,h,step<=warningValue(r)?C.red:'#24262a');
+    }
+    for(const b of [{x:1370,t:'−'},{x:1470,t:'+'}]){cv.roundRect(b.x,y,70,WARNING_ROW_HEIGHT,0,'#24262a');txt(cv,b.t,b.x+35,y+29,28,C.text,{align:'center'});}
+   }
   });
   txt(cv,'ФОНОВЫЙ БАННЕР: '+({unavailable:'НЕДОСТУПЕН',unverified:'ТРЕБУЕТ ПРОВЕРКИ НА MGU',requested:'ЗАПРОШЕН',visible:'ПОКАЗ ПОДТВЕРЖДЁН',hidden:'СКРЫТ',error:'ОШИБКА СВЯЗИ'}[backgroundNotification.status]||'ОЖИДАНИЕ'),290,458,17,C.muted,{maxWidth:1250});
   drawTabs(cv,'SETTINGS');drawActionLegend(cv,'SETTINGS');
@@ -123,7 +129,7 @@ mgu.run({async start(ctx){
   cv.circle(x,y,sel?13:10,'#071019');cv.circle(x,y,sel?8+3*pulse:7,C.red);cv.circle(x,y,2.8,'#fff');
  }
  function drawMap(cv){
-  cv.roundRect(MAP.x,MAP.y,MAP.w,MAP.h,14,'#0d1219');
+  cv.roundRect(MAP.x,MAP.y,MAP.w,MAP.h,0,'#040506');
   const center=fix?{lat:fix.lat,lon:fix.lon}:(city==='mari-el'?{lat:56.58,lon:48.05}:{lat:56.630,lon:47.928}),scale=.145*zoom*(city==='mari-el'?.045:1);
   for(let x=MAP.x+40;x<MAP.x+MAP.w;x+=80)ln(cv,[x,MAP.y+8],[x,MAP.y+MAP.h-8],1,C.grid);
   for(let y=MAP.y+30;y<MAP.y+MAP.h;y+=60)ln(cv,[MAP.x+8,y],[MAP.x+MAP.w-8,y],1,C.grid);
@@ -138,7 +144,7 @@ mgu.run({async start(ctx){
   // Draw selection last so nearby cameras cannot hide its pulse.
   if(selectedPoint)pin(cv,selectedPoint[0],selectedPoint[1],true);
   if(fix){const p=xy(fix.lat,fix.lon,center,scale);cv.circle(p[0],p[1],17,'#303a46');cv.circle(p[0],p[1],9,C.blue);const h=(fix.headingDeg||0)*Math.PI/180;cv.line(p[0],p[1],p[0]+Math.sin(h)*25,p[1]-Math.cos(h)*25,4,'#fff');}
-  cv.strokeRoundRect(MAP.x,MAP.y,MAP.w,MAP.h,14,1,'#303a46');
+  cv.strokeRoundRect(MAP.x,MAP.y,MAP.w,MAP.h,0,1,'#303a46');
   txt(cv,'МАСШТАБ '+String(zoom)+'×',MAP.x+18,MAP.y+25,15,C.muted);
   txt(cv,'На карте: '+mapped().length+' · Россия: '+(database.cities.russia||[]).length,MAP.x+MAP.w-18,MAP.y+25,15,C.text,{align:'right'});
  }
@@ -150,8 +156,8 @@ mgu.run({async start(ctx){
  function drawZoomButtons(cv){
   ZOOM_BUTTONS.forEach(b=>{
    const enabled=b.step>0?zoomIndex<ZOOM_STEPS.length-1:zoomIndex>0;
-   cv.roundRect(b.x,b.y,b.w,b.h,9,C.panel);
-   cv.strokeRoundRect(b.x,b.y,b.w,b.h,9,2,enabled?'#a9becf':'#303a46');
+   cv.roundRect(b.x,b.y,b.w,b.h,0,C.panel);
+   cv.strokeRoundRect(b.x,b.y,b.w,b.h,0,2,enabled?'#a9becf':'#303a46');
    const x=b.x+b.w/2,y=b.y+b.h/2,color=enabled?C.text:'#56616d';
    cv.line(x-13,y,x+13,y,4,color);
    if(b.step>0)cv.line(x,y-13,x,y+13,4,color);
@@ -169,14 +175,14 @@ mgu.run({async start(ctx){
   CAMERA_BUTTONS.forEach(b=>{
    const enabled=count>0&&(b.step<0?index>0:index<count-1);
    const color=enabled?C.text:'#56616d',x=b.x+b.w/2,y=b.y+b.h/2;
-   cv.roundRect(b.x,b.y,b.w,b.h,9,C.panel);
-   cv.strokeRoundRect(b.x,b.y,b.w,b.h,9,2,enabled?'#a9becf':'#303a46');
+   cv.roundRect(b.x,b.y,b.w,b.h,0,C.panel);
+   cv.strokeRoundRect(b.x,b.y,b.w,b.h,0,2,enabled?'#a9becf':'#303a46');
    cv.line(x-b.step*6,y-12,x+b.step*6,y,4,color);
    cv.line(x+b.step*6,y,x-b.step*6,y+12,4,color);
   });
  }
  function drawPanel(cv){
-  cv.roundRect(P.x,P.y,P.w,P.h,10,C.panel);const c=selected();
+  cv.roundRect(P.x,P.y,P.w,P.h,0,C.panel);const c=selected();
   txt(cv,'ВЫБРАННАЯ КАМЕРА',P.x+22,P.y+32,19,C.muted,{maxWidth:400});
   if(c){const labels=hudLabels(c);
    cameraIcon.drawCanvas(cv,P.x+24,P.y+56,54,45,[245,249,252]);
@@ -220,11 +226,13 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  function drawSettings(){
   if(warningSettings)return drawWarningSettings();
   const cv=ctx.canvas(W,H).clear(C.bg);style.heading(cv,'НАСТРОЙКИ','ВЫВОД ПРЕДУПРЕЖДЕНИЙ');
-  cv.roundRect(266,74,1314,398,10,C.panel);
+  cv.roundRect(266,74,1314,398,0,C.panel);
   txt(cv,'ВЫБЕРИТЕ ДИСПЛЕЙ',290,116,24,C.muted,{maxWidth:1230});
   [['kombi','KOMBI'],['hud','HUD'],['both','KOMBI + HUD'],['off','ВЫКЛ.']].forEach((entry,i)=>{
-   const x=290+i*319,on=cameraDisplayMode===entry[0];cv.roundRect(x,142,295,104,8,on?'#251318':'#19212a');
-   cv.strokeRoundRect(x,142,295,104,8,on?2:1,on?C.red:'#303a46');txt(cv,entry[1],x+147,195,30,on?C.text:C.muted,{align:'center',maxWidth:260});
+   const x=290+i*319,on=cameraDisplayMode===entry[0];
+   if(on)style.drawSelection(cv,x,142,295,104);
+   else{cv.roundRect(x,142,295,104,0,'#111214');cv.strokeRoundRect(x,142,295,104,0,1,'#303a46');}
+   txt(cv,entry[1],x+147,195,30,on?C.text:C.muted,{align:'center',maxWidth:260});
    if(on)txt(cv,'ВЫБРАНО',x+147,225,16,C.text,{align:'center',maxWidth:260});
   });
   txt(cv,'ТЕКУЩИЙ РЕЖИМ: '+displayModeLabel(cameraDisplayMode),290,296,25,C.text,{maxWidth:1230});
@@ -236,7 +244,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  function drawEngineering(){
   const cv=ctx.canvas(W,H).clear(C.bg),mem=process.memoryUsage(),wc=database.warningCache;
   style.heading(cv,'ИНЖЕНЕРНОЕ МЕНЮ','SPEEDCAM 0.9.29');
-  cv.roundRect(266,74,650,274,10,C.panel);cv.roundRect(936,74,644,274,10,C.panel);
+  cv.roundRect(266,74,650,274,0,C.panel);cv.roundRect(936,74,644,274,0,C.panel);
   const age=fix&&Number.isFinite(fix.timeMs)?Math.max(0,Date.now()-fix.timeMs):null;
   const left=[
    'GPS: '+(fix?'ЕСТЬ КООРДИНАТЫ':'НЕТ КООРДИНАТ'),
@@ -257,7 +265,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   left.forEach((s,i)=>txt(cv,s,288,112+i*42,21,C.text,{maxWidth:606}));
   right.forEach((s,i)=>txt(cv,s,958,112+i*42,21,C.text,{maxWidth:600}));
   [['ТЕСТ ГОЛОСА И ДИСПЛЕЕВ',266,650],['НАЗАД В НАСТРОЙКИ',936,644]].forEach(([label,x,w])=>{
-   cv.roundRect(x,366,w,64,8,C.panel);cv.strokeRoundRect(x,366,w,64,8,2,'#a9becf');txt(cv,label,x+w/2,406,23,C.text,{align:'center',maxWidth:w-40});
+   cv.roundRect(x,366,w,64,0,C.panel);cv.strokeRoundRect(x,366,w,64,0,2,'#a9becf');txt(cv,label,x+w/2,406,23,C.text,{align:'center',maxWidth:w-40});
   });
   txt(cv,Date.now()<alertUntil?lastAlert:'ДИАГНОСТИКА ОБНОВЛЯЕТСЯ АВТОМАТИЧЕСКИ',288,455,16,C.muted,{maxWidth:1260});
   drawTabs(cv,'SETTINGS');
@@ -280,7 +288,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  function drawRadar(){
   const cv=ctx.canvas(W,H).clear(C.bg);
   style.heading(cv,'РАДАР','КАМЕРА ПО ХОДУ ДВИЖЕНИЯ');
-  cv.roundRect(266,74,1314,436,12,C.panel);
+  cv.roundRect(266,74,1314,436,0,C.panel);
   const valid=mapcamFreshFix(fix,Date.now()),hit=valid?radarCamera:null;
   if(!hit){
    cameraIcon.drawCanvas(cv,863,122,120,99,[169,190,207]);
@@ -321,7 +329,8 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  function renderSafe(){
   renderQueued=true;
   if(renderRunning||renderTimer)return;
-  const frameMs=view==='MAP'&&(mapPulseVisible||refreshBusy)?100:500;
+  const bannerVisible=mainScreenVisible&&notificationPolicy.destination()==='canvas'&&activeAlert&&Date.now()<alertUntil;
+  const frameMs=bannerVisible||view==='MAP'&&(mapPulseVisible||refreshBusy)?100:500;
   const delay=Math.max(0,frameMs-(Date.now()-lastRenderAt));
   renderTimer=setTimeout(()=>{
    renderTimer=null;
@@ -391,7 +400,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
    mode==='SETTINGS'?(warningSettings?['НАЗАД','ВПЕРЁД','ДИСПЛЕИ']:['НАЗАД','ВПЕРЁД','УВЕДОМЛЕНИЯ']):
    ['НАЗАД','ВПЕРЁД','УДАЛИТЬ','ПОДТВЕРДИТЬ','ДОБАВИТЬ'];
   const mapRow=mode==='MAP',centered=mapRow||mode==='ADD'||mode==='MY'||mode==='SETTINGS',gap=mapRow?10:12,rowWidth=mapRow?MAP.w:style.content.w,width=centered?(rowWidth-gap*(items.length-1))/items.length:207;
-  items.forEach((label,i)=>{const x=(mapRow?MAP.x:266)+i*(width+gap);cv.roundRect(x,ACTION_BAR.y,width,ACTION_BAR.h,6,C.panel);txt(cv,(i+1)+'  '+label,centered?x+width/2:x+14,ACTION_BAR.baseline,17,C.muted,{align:centered?'center':'left',maxWidth:width-28});
+  items.forEach((label,i)=>{const x=(mapRow?MAP.x:266)+i*(width+gap);cv.roundRect(x,ACTION_BAR.y,width,ACTION_BAR.h,0,C.panel);txt(cv,(i+1)+'  '+label,centered?x+width/2:x+14,ACTION_BAR.baseline,17,C.muted,{align:centered?'center':'left',maxWidth:width-28});
    if(label!=='—')pageTarget(cv,x,ACTION_BAR.y,width,ACTION_BAR.h,()=>{settingsTaps=0;lastSettingsTap=0;const run=actionHandlers[ACTION_IDS[i]];if(run)run();},'action-'+ACTION_IDS[i]);
   });
  }
@@ -455,7 +464,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  }
  function drawAddCamera(){
   const cv=ctx.canvas(W,H).clear(C.bg);style.heading(cv,'ДОБАВИТЬ КАМЕРУ','ЛОКАЛЬНОЕ СОХРАНЕНИЕ');
-  cv.roundRect(266,74,1314,398,10,C.panel);
+  cv.roundRect(266,74,1314,398,0,C.panel);
   txt(cv,'КООРДИНАТЫ GPS',290,113,21,C.muted,{maxWidth:1230});
   txt(cv,cameraDraft?cameraDraft.lat.toFixed(6)+' , '+cameraDraft.lon.toFixed(6):'ОЖИДАНИЕ GPS',290,156,31,cameraDraft?C.text:C.yellow,{maxWidth:1230});
   txt(cv,captureStatus,290,192,20,C.muted,{maxWidth:1230});
@@ -472,7 +481,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  }
  let localCameraIndex=0,deletePending=false;
  function drawMyCameras(){
-  const cv=ctx.canvas(W,H).clear(C.bg);style.heading(cv,'МОИ КАМЕРЫ','СОХРАНЕНО: '+localCameras.length);cv.roundRect(266,74,1314,398,10,C.panel);
+  const cv=ctx.canvas(W,H).clear(C.bg);style.heading(cv,'МОИ КАМЕРЫ','СОХРАНЕНО: '+localCameras.length);cv.roundRect(266,74,1314,398,0,C.panel);
   if(!localCameras.length){
    cameraIcon.drawCanvas(cv,880,124,86,71,[245,249,252]);
    txt(cv,'ПОКА НЕТ СОХРАНЁННЫХ КАМЕР',923,265,34,C.text,{align:'center',maxWidth:1180});
@@ -488,7 +497,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
    txt(cv,c.road?'ДОРОЖНАЯ ПРИВЯЗКА: ЕСТЬ':'ДОРОЖНАЯ ПРИВЯЗКА: НЕТ',290,328,24,C.muted,{maxWidth:1230});
    txt(cv,'ДОБАВЛЕНА ВРУЧНУЮ',290,408,19,C.muted,{maxWidth:1230});
   }
-  if(deletePending){cv.roundRect(326,165,1194,190,12,'#251318');cv.strokeRoundRect(326,165,1194,190,12,2,C.red);txt(cv,'УДАЛИТЬ ЭТУ КАМЕРУ?',923,232,34,C.text,{align:'center',maxWidth:1120});txt(cv,'4 — ПОДТВЕРДИТЬ УДАЛЕНИЕ ЛОКАЛЬНОЙ ЗАПИСИ',923,289,23,C.muted,{align:'center',maxWidth:1120});}
+  if(deletePending){cv.roundRect(326,165,1194,190,0,'#1d0d10');cv.strokeRoundRect(326,165,1194,190,0,2,C.red);txt(cv,'УДАЛИТЬ ЭТУ КАМЕРУ?',923,232,34,C.text,{align:'center',maxWidth:1120});txt(cv,'4 — ПОДТВЕРДИТЬ УДАЛЕНИЕ ЛОКАЛЬНОЙ ЗАПИСИ',923,289,23,C.muted,{align:'center',maxWidth:1120});}
   drawTabs(cv,'MY');drawActionLegend(cv,'MY');return ui.image('MAIN_GFX',cv);
  }
  function renderMyCamerasSafe(){Promise.resolve().then(drawMyCameras).catch(e=>log.warn('my cameras render: '+e));}
@@ -519,5 +528,5 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  const backgroundTimer=setInterval(()=>{if(fix&&!mapcamFreshFix(fix,Date.now())){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}syncBackgroundNotification();},250);
  if(ctx.app&&typeof ctx.app.on==='function')ctx.app.on('shutdown',()=>{clearInterval(backgroundTimer);gps.stop();clearLiveAlerts();});
  renderSafe();refresh();setInterval(refresh,REFRESH_INTERVAL_MS);ctx.loop('MAIN',10,()=>{if(fix&&Date.now()-fix.timeMs>3000){mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}renderSafe();});
- log.info('SpeedCAM 0.9.36 started; camera sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
+ log.info('SpeedCAM 0.9.37 started; camera sectors and control paths; GPS accuracy <15 m; KOMBI/HUD mode='+cameraDisplayMode);
 }});

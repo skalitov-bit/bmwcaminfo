@@ -69,7 +69,7 @@ class BackgroundNotification {
    this.dismissed=this.key;await this.transport.close();this.opened=false;this.status='hidden';return;
   }
   if(this.dismissed===wanted.key)return;
-  if(this.opened&&this.now()-this.lastPaint<750)return;
+  if(this.opened&&this.now()-this.lastPaint<250)return;
   await this.transport.paint(wanted.event,wanted.speed);this.lastPaint=this.now();
   if(!this.desired||this.desired.generation!==wanted.generation)return;
   if(!this.opened){

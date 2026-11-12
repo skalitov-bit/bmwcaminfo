@@ -4,6 +4,8 @@
 
 [Скачать последнюю версию](https://github.com/skalitov-bit/bmwcaminfo/releases/latest) · [База камер](https://github.com/skalitov-bit/speedcam-db/releases/latest)
 
+- Интерфейс Roboto Condensed: чёрный фон, прямоугольные плитки и красный градиент выделения.
+- Единый баннер с движущимся вправо градиентом и светлым значением превышения.
 - Карта камер, полноэкранный радар и пользовательские точки.
 - Тип контроля, модель комплекса, ограничение скорости и расстояние до камеры.
 - Уведомления на центральном дисплее, HUD и приборной панели, голосовые подсказки.
@@ -14,7 +16,7 @@
 
 Для установки используйте файл `.mgu` из последнего релиза. Там же находятся исходники, инструкция, результаты проверок и контрольные суммы.
 
-[Текущие исходники](https://github.com/skalitov-bit/bmwcaminfo/tree/release/0.9.36-volume-steps/bmw-speed-camera-warning) · [Инструкция и ограничения](https://github.com/skalitov-bit/bmwcaminfo/blob/release/0.9.36-volume-steps/bmw-speed-camera-warning/INTEGRATION_RU.txt)
+[Текущие исходники](https://github.com/skalitov-bit/bmwcaminfo/tree/release/0.9.37-graphite-ui/bmw-speed-camera-warning) · [Инструкция и ограничения](https://github.com/skalitov-bit/bmwcaminfo/blob/release/0.9.37-graphite-ui/bmw-speed-camera-warning/INTEGRATION_RU.txt)
 
 Сборки проверяются на ПК и в эмуляторе. Работа фоновых окон, автозапуска после сна и аппаратного вывода HUD/KOMBI требует проверки на реальном MGU.
 
