@@ -1,6 +1,7 @@
 'use strict';
 // Independent implementation of the verified MC85 point/section rules.
 // No Android runtime, MapCam executable code or inferred OSM roads are used.
+const {warningRange,isSpeeding}=require('./notification-rules');
 const R=6371000, DEG=Math.PI/180, M=111320;
 const SECTION_TYPES=[1,2,3,4,11,13,16];
 function diff(a,b){return Math.abs((a-b+540)%360-180);}
@@ -45,9 +46,13 @@ function projectPath(path,fix,heading){
   if(!hit||lateral<hit.lateral)hit={lateral,along,end,distanceM:Math.max(0,path.total-along)};
  });return hit;
 }
-function pointHit(camera,fix,heading,width,range){
+function pointHit(camera,fix,heading,width,range,maxRange=2000){
  const d=distance(fix,camera);
- if(d>Math.min(2000,range)||diff(heading,bearing(fix,camera))>width/2)return null;
+ const delta=diff(heading,bearing(fix,camera));
+ if(d>Math.min(maxRange,range)||delta>width/2)return null;
+ // Conservative corridor around the measured approach; this is not lane matching.
+ const lateral=d*Math.sin(delta*DEG),corridor=50+2*Math.min(15,fix.accuracyM||0)+Math.min(60,d*.05);
+ if(lateral>corridor)return null;
  const dt=camera.mapcamDirectionType;
  if(dt===3)return null; // Reserved direction: never guess an orientation.
  if(dt===1||dt===2){
@@ -60,7 +65,7 @@ function pointHit(camera,fix,heading,width,range){
 }
 class MapcamWarnings{
  constructor(options){this.options=Object.assign({distanceM:0,excessKmh:0,voice:'always',hours:false},options||{});
-  this.cooldown=Object.create(null);this.reset();}
+  this.reset();}
  configure(options){Object.assign(this.options,options);this.reset();}
  reset(){this.states=Object.create(null);this.previous=null;this.heading=null;this.paths=Object.create(null);}
  // Loss of GPS clears live control. Rejoining a section starts a partial observation.
@@ -87,7 +92,7 @@ class MapcamWarnings{
    let state=this.states[id];
    const canEnter=fix.speedKmh>15&&moved>0.01;
    if(!state&&!canEnter)return;
-   const range=o.distanceM>0?o.distanceM:(c.mapcamWarningDistanceM>0?c.mapcamWarningDistanceM:2000);
+   const range=warningRange(c,o,fix.speedKmh);
    let path=null,hit=null;
    if(SECTION_TYPES.indexOf(c.mapcamTypeCode)>=0&&Array.isArray(c.mapcamPath)&&c.mapcamPath.length>=2){
     path=this.paths[id]||(this.paths[id]=pathSegments(c));
@@ -101,15 +106,17 @@ class MapcamWarnings{
     // Keep a rear-facing control active briefly after passing the camera.
     if(state&&(state.phase==='point'||state.phase==='rear')&&state.distanceM<120&&
        d<150&&diff(this.heading,bearing(fix,c))>150){
-     if(c.mapcamControlDirection>0&&d<100){state.phase='rear';state.distanceM=d;state.lastSeenAt=now;seen[id]=true;return;}
+     if(c.mapcamControlDirection>0&&d<100){state.phase='rear';state.distanceM=d;state.lastSeenAt=now;state.speedKmh=fix.speedKmh;state.speeding=isSpeeding(c,fix.speedKmh,o,state.speeding,false);seen[id]=true;return;}
      finish();return;
     }
     hit=pointHit(c,fix,this.heading,Number.isFinite(width)?width:60,range);
    }
    if(!hit)return;
+   // Two consistent positions are required. Allow the first to be just outside entry distance.
+   if(!state&&!section&&!pointHit(c,previous,this.heading,Number.isFinite(width)?width:60,range+250,2250))return;
    if(!state){state=this.states[id]={camera:c,phase:section?'section':'point',width:c.mapcamAngleDeg,
       startedAt:fix.timeMs,lastSeenAt:now,distanceM:hit.distanceM,travelledM:0,averageKmh:null,
-      partialSection:!!section&&hit.along>70,voiceSent:false,speedingAlerted:false};}
+      partialSection:!!section&&hit.along>70,speedingAlerted:false};}
    else if(section&&state.phase!=='section'){
     state.phase='section';state.startedAt=fix.timeMs;state.travelledM=0;state.partialSection=hit.along>70;state.averageKmh=null;
    }else if(section){
@@ -123,7 +130,7 @@ class MapcamWarnings{
    const useAverage=section&&path.total>=300;
    state.useAverage=!!useAverage;
    state.speedKmh=useAverage?state.averageKmh:fix.speedKmh;
-   const speeding=c.camera_family!=='dummy'&&(!c.averageControl||useAverage)&&Number.isFinite(c.limit)&&Number.isFinite(state.speedKmh)&&state.speedKmh>=c.limit+o.excessKmh;
+   const speeding=isSpeeding(c,state.speedKmh,o,state.speeding,useAverage);
    state.speeding=speeding;
    function event(type,voice){return {type,stage:1,camera:c,distanceM:Math.round(state.distanceM),
     phase:state.phase,speedKmh:Number.isFinite(state.speedKmh)?Math.round(state.speedKmh):null,
@@ -131,20 +138,13 @@ class MapcamWarnings{
     limitKmh:c.limit,excessKmh:Number.isFinite(state.speedKmh)&&c.limit?Math.round(state.speedKmh-c.limit):null,
     voice:!!voice,speeding,thresholdM:range};}
    if(!state.visualSent){events.push(event('camera',false));state.visualSent=true;}
-   if(canEnter&&!state.voiceSent&&(o.voice==='always'||o.voice==='speeding'&&speeding)){
-    state.voiceSent=true;
-    if(!this.cooldown[id]||now-this.cooldown[id]>=1200000){
-     this.cooldown[id]=now;events.push(event('voice',true));
-    }
-   }
    if(canEnter&&speeding&&!state.speedingAlerted){events.push(event('speeding',false));state.speedingAlerted=true;}
    if(!speeding)state.speedingAlerted=false;
    function finish(){events.push({type:'end',camera:c,distanceM:-1,phase:'end',voice:false});}
   });
   Object.keys(this.states).forEach(id=>{if(!seen[id])delete this.states[id];});
-  // Avoid retaining geometry/cooldown for every camera encountered over a long run.
+  // Keep geometry only for active controls.
   Object.keys(this.paths).forEach(id=>{if(!this.states[id])delete this.paths[id];});
-  Object.keys(this.cooldown).forEach(id=>{if(now-this.cooldown[id]>=1200000)delete this.cooldown[id];});
   return events;
  }
 }

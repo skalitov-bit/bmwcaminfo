@@ -1,17 +1,17 @@
 'use strict';
 // Road-matched camera approach, adapted from istt1899/bmw-kaluga-cameras.
 // Uses bundled OSM road geometry only; OSM maxspeed tags are never read.
+const {warningRange,isSpeeding}=require('./notification-rules');
 const EARTH_M = 111320;
 const MAX_FIX_AGE_MS = 3000;
 const MAX_ACCURACY_M = 15;
-const MIN_ENTRY_SPEED_KMH = 8;
+const MIN_ENTRY_SPEED_KMH = 15;
 const MIN_TRACK_SPEED_KMH = 3;
 const MAX_HEADING_DELTA_DEG = 32;
 const FIRST_WARNING_M = 500;
 const FAST_WARNING_M = 700;
 const SECOND_WARNING_M = 200;
 const FAST_SPEED_KMH = 90;
-const SPEEDING_TOLERANCE_KMH = 18;
 
 function angle(x, y) { return (Math.atan2(x, y) * 180 / Math.PI + 360) % 360; }
 function diff(a, b) { return Math.abs((a - b + 540) % 360 - 180); }
@@ -42,7 +42,7 @@ function project(road, x, y) {
 function candidate(zone, fix, rangeM, tracking) {
     if (!Number.isFinite(fix.accuracyM) || fix.accuracyM <= 0 || fix.accuracyM > MAX_ACCURACY_M ||
         !Number.isFinite(fix.headingDeg) || fix.headingDeg < 0 || fix.headingDeg >= 360 ||
-        !Number.isFinite(fix.speedKmh) || fix.speedKmh < (tracking ? MIN_TRACK_SPEED_KMH : MIN_ENTRY_SPEED_KMH)) return null;
+        !Number.isFinite(fix.speedKmh) || (tracking ? fix.speedKmh < MIN_TRACK_SPEED_KMH : fix.speedKmh <= MIN_ENTRY_SPEED_KMH)) return null;
     const dx = (fix.lon - zone.lon) * EARTH_M * Math.cos(zone.lat * Math.PI / 180);
     const dy = (fix.lat - zone.lat) * EARTH_M;
     if (Math.hypot(dx, dy) > rangeM + 25) return null;
@@ -66,7 +66,7 @@ function candidate(zone, fix, rangeM, tracking) {
 function freshFix(fix, now) {
     return !!fix && [fix.lat, fix.lon, fix.speedKmh, fix.headingDeg, fix.accuracyM, fix.timeMs, now].every(Number.isFinite) &&
         Math.abs(fix.lat) <= 90 && Math.abs(fix.lon) <= 180 && fix.accuracyM > 0 &&
-        fix.accuracyM <= MAX_ACCURACY_M && fix.headingDeg >= 0 && fix.headingDeg < 360 &&
+        fix.accuracyM < MAX_ACCURACY_M && fix.headingDeg >= 0 && fix.headingDeg < 360 &&
         now - fix.timeMs <= MAX_FIX_AGE_MS && fix.timeMs <= now + 500;
 }
 function plausible(previous, next, fix, dt) {
@@ -74,13 +74,20 @@ function plausible(previous, next, fix, dt) {
         Math.abs(previous.distanceM - next.distanceM) <= Math.max(8, fix.speedKmh / 3.6 * dt * 2 + 6);
 }
 class RoadGuidanceWarnings {
-    constructor(zones) {
+    constructor(zones,options) {
+        this.options=Object.assign({excessKmh:0,distanceM:0},options||{});
         this.zones = Object.create(null);
         (zones || []).forEach(z => { if (z && typeof z.id === 'string') this.zones[z.id] = prepare(z); });
         this.prior = Object.create(null);
         this.states = Object.create(null);
         this.lastTime = null;
         this.lastSource = null;
+    }
+    configure(options) { Object.assign(this.options,options);this.reset(); }
+    preview(camera,fix,range) {
+        const zone=this.zones[camera.id];
+        if(!zone||!freshFix(fix,fix.timeMs)||Math.abs(camera.lat-zone.lat)>.0000001||Math.abs(camera.lon-zone.lon)>.0000001)return null;
+        return candidate(zone,fix,range,null);
     }
     update(fix, cameras, now) {
         now = Number.isFinite(now) ? now : Date.now();
@@ -105,7 +112,7 @@ class RoadGuidanceWarnings {
             if (previousState && now - previousState.lastSeenAt > 5000) {
                 delete this.states[id]; previousState = null;
             }
-            const range = fix.speedKmh > FAST_SPEED_KMH ? FAST_WARNING_M : FIRST_WARNING_M;
+            const range = warningRange(camera,this.options,fix.speedKmh);
             let next = candidate(zone, fix, range, previousState);
             if (previousState && fresh && (!next || !plausible(previousState, next, fix, dt))) {
                 delete this.states[id]; previousState = null;
@@ -132,6 +139,7 @@ class RoadGuidanceWarnings {
                     sign: next.sign, dir: next.dir, distanceM: next.distanceM, lastSeenAt: now };
             }
             if (!state) return;
+            state.camera=camera;state.phase='point';state.speedKmh=fix.speedKmh;state.useAverage=false;
             state.lastSeenAt = now;
             state.way = next.way; state.sign = next.sign; state.dir = next.dir;
             state.distanceM = next.distanceM;
@@ -146,13 +154,13 @@ class RoadGuidanceWarnings {
                     camera, speedKmh: Math.round(fix.speedKmh), roadConfirmed: true, way: next.way });
             }
             const limit = camera.limit;
-            if (!state.speedingAlerted && typeof limit === 'number' && Number.isFinite(limit) &&
-                fix.speedKmh >= limit + SPEEDING_TOLERANCE_KMH && next.distanceM <= range) {
-                state.speedingAlerted = true;
-                events.push({ type: 'speeding', stage: state.stage, distanceM: d, camera,
-                    speedKmh: Math.round(fix.speedKmh), limitKmh: limit, roadName: null,
-                    limitSource: 'camera', excessKmh: Math.round(fix.speedKmh-limit), roadConfirmed: true });
+            state.speeding=isSpeeding(camera,fix.speedKmh,this.options,state.speeding,false);
+            if(state.speeding&&!state.speedingAlerted){
+                state.speedingAlerted=true;
+                events.push({type:'speeding',stage:state.stage,distanceM:d,camera,speedKmh:fix.speedKmh,
+                    limitKmh:limit,limitSource:'camera',excessKmh:fix.speedKmh-limit,roadConfirmed:true});
             }
+            if(!state.speeding)state.speedingAlerted=false;
         });
         Object.keys(this.states).forEach(id => { if (!seen[id]) delete this.states[id]; });
         return events;

@@ -43,7 +43,7 @@ use. Records are read by block offset. At most 8 blocks, 1024 decoded records,
 and 128 KiB of their expanded binary sizes are cached. These are cache bounds,
 NOT a bound on total Node/UI RAM. Temporary decompression is bounded at 256 KiB.
 The map's 25km view retains only the nearest requested 500 warning objects.
-The monitoring query covers all matching warning objects within 2.1km.
+The monitoring query covers all matching warning objects within 4.2km.
 
 All 313682 hybrid rows remain in the file. Warning records are fixed/mobile
 cameras, dummies and weight-control points. Road-only hazards are retained as

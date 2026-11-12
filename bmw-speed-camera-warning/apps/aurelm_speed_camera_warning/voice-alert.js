@@ -43,47 +43,47 @@ class CameraVoiceAlerts {
     return this._send(cameraVoiceFile(stage, camera), relevant, generic);
   }
 
+  cameraResult(stage,relevant,camera) {
+    const generic=stage===2?FILES[2]:FILES[1];
+    return this._send(cameraVoiceFile(stage,camera),relevant,generic,true);
+  }
+
   test() {
     return this._send(FILES[1]);
   }
 
   cancel() { this.generation++; }
 
-  _send(file, relevant, fallback) {
-    if(this.pending>=2)return Promise.resolve(false);
+  _send(file, relevant, fallback, detailed) {
+    const output=r=>detailed?r:r.ok===true;
+    if(this.pending>=2)return Promise.resolve(output({ok:false,skipped:true}));
     this.pending++;
     const generation=this.generation,created=Date.now();
-    const expired = () => generation!==this.generation||Date.now()-created>8000||(relevant&&!relevant());
-    const task = this.queue.then(async () => {
-      if(expired())return {ok:true,skipped:true};
-      const result = await this._request(file);
-      if (fallback && file !== fallback && unsupportedAsset(result)) {
-        if(expired())return {ok:true,skipped:true};
+    const expired=()=>generation!==this.generation||Date.now()-created>8000||(relevant&&!relevant());
+    const task=this.queue.then(async()=>{
+      if(expired())return {ok:false,skipped:true};
+      let result=await this._request(file);
+      if(fallback&&file!==fallback&&unsupportedAsset(result)){
+        if(expired())return {ok:false,skipped:true};
         this.log('BMW voice service: model recording unavailable; using generic warning');
-        return this._request(fallback);
+        result=await this._request(fallback);
       }
-      return result;
-    }).then((result) => {
-      if(result&&result.skipped)return false;
-      if (!result || result.ok !== true) {
-        throw new Error(result && result.error ? result.error : 'BMW voice service rejected the request');
-      }
-      this.lastError = null;
-      this.log('BMW voice service: ' + (result.message || 'playback accepted'));
-      return true;
-    });
-    this.queue = task.catch((error) => {
-      this.lastError = error && error.message ? error.message : String(error);
-      this.log('BMW VOICE SERVICE ERROR: ' + this.lastError);
-      return false;
+      if(result&&result.ok){this.lastError=null;return {ok:true};}
+      this.lastError=result&&result.error||'BMW voice service rejected request';
+      this.log('BMW VOICE SERVICE ERROR: '+this.lastError);
+      return {ok:false,retryable:!!unsupportedAsset(result)};
+    }).catch(error=>{
+      this.lastError=error&&error.message||String(error);this.log('BMW VOICE SERVICE ERROR: '+this.lastError);
+      return {ok:false,retryable:error&&error.retryable===true};
     }).then(result=>{this.pending--;return result;});
-    return this.queue;
+    this.queue=task;
+    return task.then(output);
   }
 
   _request(file) {
     return new Promise((resolve, reject) => {
       let settled = false;
-      let buffer = '';
+      let buffer = '';let sent=false;
       const socket = net.createConnection(SOCKET);
       const finish = (error, result) => {
         if (settled) return;
@@ -96,7 +96,7 @@ class CameraVoiceAlerts {
       const timer = setTimeout(() => finish(new Error('BMW voice service timeout (35 s)')), 35000);
       socket.setEncoding('utf8');
       socket.on('connect', () => {
-        socket.write(JSON.stringify({ action: 'play', file: file }) + '\n');
+        sent=true;socket.write(JSON.stringify({ action: 'play', file: file }) + '\n');
       });
       socket.on('data', (chunk) => {
         buffer += chunk;
@@ -108,9 +108,9 @@ class CameraVoiceAlerts {
         finish(null, result);
       });
       socket.on('error', (error) => {
-        if (error && error.code === 'ENOENT') finish(new Error('BMW voice service is not installed or not running'));
-        else if (error && error.code === 'EACCES') finish(new Error('Access denied to BMW voice service socket'));
-        else finish(new Error('BMW voice service connection failed: ' + (error.message || error)));
+        const message=error&&error.code==='ENOENT'?'BMW voice service is not installed or not running':
+          error&&error.code==='EACCES'?'Access denied to BMW voice service socket':'BMW voice service connection failed';
+        finish(Object.assign(new Error(message),{retryable:!sent}));
       });
       socket.on('close', () => {
         if (!settled) finish(new Error('BMW voice service closed connection without a response'));

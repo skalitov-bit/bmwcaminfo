@@ -2,7 +2,7 @@
   "id": "aurelm_speed_camera_warning",
   "title": "SpeedCAM",
   "description": "Гибрид MapCam + еСтрелка по России: компактная база, названия комплексов и предупреждения KOMBI/HUD.",
-  "version": "0.9.29",
+  "version": "0.9.32",
   "vendor": "Andrug05",
   "loggingId": "SCAM",
   "iconGlyph": "camera",
@@ -205,6 +205,22 @@
         [
           "off",
           "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "mapcam_repeat200",
+      "label": "Повтор за 200 м",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включён"
+        ],
+        [
+          "off",
+          "Выключен"
         ]
       ]
     }

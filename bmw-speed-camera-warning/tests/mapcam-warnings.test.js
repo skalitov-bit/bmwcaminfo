@@ -14,7 +14,7 @@ function pair(c,options,a,b){const w=new MapcamWarnings(options);w.update(a,[c],
 test('First fix silent, configured database distance and speed limit',()=>{
  const c=camera(),w=new MapcamWarnings();assert.deepStrictEqual(w.update(fix(0,-520,1000),[c],1000),[]);
  const events=w.update(fix(0,-500,2000),[c],2000);
- assert(events.some(e=>e.type==='camera'));assert(events.some(e=>e.type==='voice'));
+ assert(events.some(e=>e.type==='camera'));assert(!events.some(e=>e.type==='voice'),'Voice is coordinated after choosing the visual priority');
  assert(events.some(e=>e.type==='speeding'&&e.limitKmh===60));
  assert(!w.update(fix(0,-480,3000),[c],3000).some(e=>e.type==='voice'));
 });
@@ -46,11 +46,16 @@ test('Duplicate/out-of-order, stale GPS and implausible jumps',()=>{
  assert(!w.update(b,[c],6000).length);assert.strictEqual(Object.keys(w.states).length,0);
  assert(!pair(c,{},fix(0,-900,1000),fix(0,-100,2000)).events.length);
 });
-test('Voice settings and unknown limits',()=>{
- assert(!pair(camera(),{voice:'off'},fix(0,-510,1000),fix(0,-490,2000)).events.some(e=>e.voice));
- assert(!pair(camera(),{voice:'speeding',excessKmh:18},fix(0,-510,1000,77),fix(0,-490,2000,77)).events.some(e=>e.voice));
- assert(pair(camera(),{voice:'speeding',excessKmh:18},fix(0,-510,1000,78),fix(0,-490,2000,78)).events.some(e=>e.voice));
- assert(!pair(camera({limit:null}),{voice:'speeding'},fix(0,-510,1000),fix(0,-490,2000)).events.some(e=>e.voice||e.type==='speeding'));
+test('Strict speed thresholds, hysteresis and unknown limits',()=>{
+ for(const excess of [0,10,18,20]){
+  const speed=60+excess;
+  assert(!pair(camera(),{excessKmh:excess},fix(0,-510,1000,speed),fix(0,-490,2000,speed)).events.some(e=>e.type==='speeding'));
+  const {w,events}=pair(camera(),{excessKmh:excess},fix(0,-510,1000,speed+1),fix(0,-490,2000,speed+1));
+  assert(events.some(e=>e.type==='speeding'));
+  w.update(fix(0,-470,3000,speed),[camera()],3000);assert.strictEqual(w.states['mapcam-1'].speeding,excess>0);
+  w.update(fix(0,-450,4000,speed-2),[camera()],4000);assert(!w.states['mapcam-1'].speeding);
+ }
+ assert(!pair(camera({limit:null}),{},fix(0,-510,1000),fix(0,-490,2000)).events.some(e=>e.type==='speeding'));
 });
 test('Point passage and rear control',()=>{
  for(const rear of [0,1]){
@@ -63,10 +68,14 @@ test('Point passage and rear control',()=>{
   }else{assert(e.some(x=>x.type==='end'));assert(!w.states[c.id]);}
  }
 });
-test('20 minute repeat filter survives suspend/reset but expires',()=>{
+test('No camera cooldown remains in the detection engine',()=>{
  const c=camera(),w=new MapcamWarnings();
- const pass=t=>{w.reset();w.update(fix(0,-510,t),[c],t);return w.update(fix(0,-490,t+1000),[c],t+1000);};
- assert(pass(1000).some(e=>e.voice));assert(!pass(10000).some(e=>e.voice));assert(pass(1202000).some(e=>e.voice));
+ for(const t of [1000,10000]){w.reset();w.update(fix(0,-510,t),[c],t);assert(w.update(fix(0,-490,t+1000),[c],t+1000).some(e=>e.type==='camera'));}
+ assert(!('cooldown' in w));
+});
+test('Parallel road rejection and consecutive approach confirmation',()=>{
+ assert(!pair(camera(),{},fix(160,-420,1000),fix(160,-400,2000)).events.length);
+ assert(pair(camera(),{},fix(30,-420,1000),fix(25,-400,2000)).events.some(e=>e.type==='camera'),'A gentle bend must remain detectable');
 });
 const route=[coord(0,0),coord(0,1000)].map(p=>[p.lat,p.lon]);
 test('Section entry, distance to end, measured mean, stops and exit',()=>{

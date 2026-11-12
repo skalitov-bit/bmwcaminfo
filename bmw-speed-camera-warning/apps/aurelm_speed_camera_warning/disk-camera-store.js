@@ -4,10 +4,17 @@ const {ensureDirectory}=require('./camera-store');
 const {openCatalog,readManifest,validateManifest,MANIFEST,INDEX,RECORDS}=require('./camera-catalog');
 const BASE_URL='https://raw.githubusercontent.com/skalitov-bit/bmwcaminfo/main/bmw-speed-camera-warning/data/';
 const POINTER='camera-catalog-active.json';
+const {CHANNEL_URL,validateChannel}=require('./database-channel');
+function allowedUrl(parsed){
+    if(parsed.protocol!=='https:'||parsed.auth||(parsed.port&&parsed.port!=='443'))return false;
+    if(parsed.hostname==='raw.githubusercontent.com')return true;
+    if(parsed.hostname==='github.com')return /^\/skalitov-bit\/speedcam-db\/releases\/(?:latest\/download\/channel\.json|download\/db-[0-9]+-[a-f0-9]{12}\/(?:channel\.json|hybrid-index-v1\.bin|hybrid-records-v1\.bin))$/.test(parsed.pathname);
+    return parsed.hostname==='release-assets.githubusercontent.com'&&parsed.pathname.startsWith('/github-production-release-asset/');
+}
 function fetchResource(requestUrl,destination,maxBytes,request,redirects){
     return new Promise((resolve,reject)=>{
         const parsed=url.parse(requestUrl);
-        if(parsed.protocol!=='https:'||parsed.hostname!=='raw.githubusercontent.com'){reject(new Error('CAMERA_DB_URL_NOT_ALLOWED'));return;}
+        if(!allowedUrl(parsed)){reject(new Error('CAMERA_DB_URL_NOT_ALLOWED'));return;}
         let settled=false,response=null,output=null,ended=false,bytes=0,chunks=[],timer;
         function fail(error){
             if(settled)return;settled=true;clearTimeout(timer);
@@ -92,9 +99,9 @@ class CameraStore{
         const status=typeof onStatus==='function'?onStatus:function(){};let next=null,staging=null;
         try{
             if(!this.current)throw new Error('CAMERA_DB_NOT_LOADED');
-            if(this.hybrid&&this.current.manifest.updateChannel==='bundled')return {updated:false,database:this.current,source:this.source,message:'Гибридная база обновляется с приложением'};
             status('Проверка версии базы...');this.memory('manifest');
-            const m=validateManifest(JSON.parse(await fetchResource(BASE_URL+MANIFEST,null,16384,this.request,0)));
+            const channel=this.hybrid?validateChannel(JSON.parse(await fetchResource(CHANNEL_URL,null,32768,this.request,0))):null;
+            const m=channel?channel.manifest:validateManifest(JSON.parse(await fetchResource(BASE_URL+MANIFEST,null,16384,this.request,0)));
             if(m.revision<this.current.revision)throw new Error('CAMERA_DB_OLDER_REVISION');
             if(m.revision===this.current.revision){
                 if(m.contentHash!==this.current.contentHash)throw new Error('CAMERA_DB_REVISION_CONFLICT');
@@ -103,7 +110,7 @@ class CameraStore{
             ensureDirectory(this.dataDir);this.cleanup();staging=path.join(this.dataDir,this.prefix+'staging');ensureDirectory(staging);
             for(const key of ['index','records']){
                 status(key==='index'?'Загрузка индекса...':'Загрузка базы на диск...');
-                await fetchResource(BASE_URL+m[key].file,path.join(staging,m[key].file),m[key].bytes,this.request,0);
+                await fetchResource(channel?channel.files[key]:BASE_URL+m[key].file,path.join(staging,m[key].file),m[key].bytes,this.request,0);
                 this.memory(key+' downloaded');
             }
             fs.writeFileSync(path.join(staging,MANIFEST),JSON.stringify(m),'utf8');

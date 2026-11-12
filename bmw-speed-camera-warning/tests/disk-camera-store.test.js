@@ -33,7 +33,7 @@ async function run(){
     assert.strictEqual(s.current.recordsFor('mari-el').length,manifest.cityCounts['mari-el']);assert.strictEqual(s.current.recordsFor('yoshkar-ola').length,manifest.cityCounts['yoshkar-ola']);
     const nearby=s.current.near({lat:55.75,lon:37.62},25000,500);assert(nearby.length>0&&nearby.length<=500);
     assert(s.current.cache.size<=512&&s.current.cacheBytes<=2*1048576);memory('cold + nearby map');
-    let r=await s.refresh();assert(!r.updated&&!r.error);assert.deepStrictEqual(requests,[MANIFEST]);
+    let r=await s.refresh();assert(!r.updated&&!r.error,JSON.stringify(r.error));assert.deepStrictEqual(requests,[MANIFEST]);
     assert(!fs.existsSync(path.join(tmp,POINTER)),'Same revision must not create duplicate cache');
     served.revision++;requests=[];
     const pair=await Promise.all([s.refresh(),s.refresh()]);r=pair[0];assert(r.updated&&!r.error,JSON.stringify(r.error));
