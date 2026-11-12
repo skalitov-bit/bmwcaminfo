@@ -183,6 +183,6 @@ def convert(archive_path, root=ROOT):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('archive', nargs='?', type=Path, default=ROOT.parent/'BMW MapCam.zip')
+    parser.add_argument('archive', nargs='?', type=Path, default=ROOT.parent/'CameraData.zip')
     args = parser.parse_args()
     convert(args.archive)

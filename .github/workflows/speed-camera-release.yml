@@ -18,7 +18,7 @@ on:
     branches: [main]
     paths:
       - "bmw-speed-camera-warning/**"
-      - "BMW MapCam.zip"
+      - "CameraData.zip"
       - ".github/workflows/speed-camera-release.yml"
 
 permissions:
@@ -71,9 +71,9 @@ jobs:
           git checkout HEAD -- bmw-speed-camera-warning/data/camera-db.json
           git checkout HEAD -- bmw-speed-camera-warning/apps/aurelm_speed_camera_warning/camera-db.json
 
-      - name: Import verified MapCam Russia export
+      - name: Import verified camera database
         run: |
-          python3 bmw-speed-camera-warning/tools/import_mapcam.py "BMW MapCam.zip"
+          python3 bmw-speed-camera-warning/tools/import_mapcam.py "CameraData.zip"
           # Imported databases are consumed directly by this build.
           # Do not push generated data from the runner: concurrent builds can race
           # and create rebase conflicts in camera-db.json.
@@ -299,5 +299,5 @@ jobs:
               "release/${APP_ID}@${APP_VERSION}.mgu" \
               --repo "$GITHUB_REPOSITORY" \
               --title "BMW Speed Camera Warning ${APP_VERSION}" \
-              --notes "BMW MGU ID7 camera warnings using MapCam sectors, directions and control paths across Russia. GPS accuracy must be <15 m. Includes section distance, observed average speed and configurable warnings. See INTEGRATION_RU.txt for compatibility limits. Voice warnings use BMW MediaPlayer; the app includes a manual voice test button."
+              --notes "BMW MGU ID7 camera warnings using camera sectors, directions and control paths across Russia. GPS accuracy must be <15 m. Includes section distance, observed average speed and configurable warnings. See INTEGRATION_RU.txt for compatibility limits. Voice warnings use BMW MediaPlayer; the app includes a manual voice test button."
           fi
