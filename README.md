@@ -1,6 +1,6 @@
 # SpeedCAM
 
-В версии 0.9.81: приглушение музыки при поддержке прошивки, восстановление громкости и отдельный тестовый профиль Converter с нативным микшером. Звуковой сервис 0.1.43. Эффект на реальном MGU требует проверки.
+В версии 0.9.84: микшер голоса и бипера, экспериментальный PulseAudio + Overlay. Звуковой сервис 0.1.46. PulseAudio требует проверки на реальном MGU.
 
 Приложение уведомлений о камерах для BMW MGU ID7.
 
@@ -22,7 +22,7 @@
 
 Для графики добавьте источник `cauliflowermossgrape/idrive7-apps`: `idrive7-renderd >= 2.1.18` и `mgu-inputgate >= 1.1.0`. Сохранены PNG-резерв, ALSA Converter + Overlay и M4A + Overlay.
 
-[Исходники текущего релиза](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.81/SpeedCAM_0.9.81_Source.zip) · [Установка и ограничения](bmw-speed-camera-warning/MGU_STORE_RU.txt)
+[Исходники текущего релиза](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.84/SpeedCAM_0.9.84_Source.zip) · [Установка и ограничения](bmw-speed-camera-warning/MGU_STORE_RU.txt)
 
 Сборки проверяются на ПК и в эмуляторе. Условная дорога строится по траектории, это не полная дорожная карта. Неточный GPS всё ещё может приводить к выбору камеры соседней дороги. Автоматическое системное окно поверх CarPlay отключено. Работа автозапуска после сна и аппаратного вывода HUD/KOMBI требует проверки на реальном MGU.
 
