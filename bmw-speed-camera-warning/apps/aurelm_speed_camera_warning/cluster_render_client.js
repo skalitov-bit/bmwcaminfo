@@ -50,7 +50,7 @@ const FRAME_T = 0x46;   /* 'F' */
 const MESH_T = 0x4d;    /* 'M' */
 const MAX_DIRTY = 16;
 const BACKOFF_MS = [250, 500, 1000, 2000];
-const SET_KEYS = ['klass', 'z', 'x', 'y', 'w', 'h', 'visible', 'exclusive', 'prewarm', 'contend', 'guide_hold',
+const SET_KEYS = ['klass', 'z', 'x', 'y', 'w', 'h', 'visible', 'exclusive', 'prewarm', 'contend', 'guide_hold', 'yield',
     'opacity', 'rotate', 'sx', 'sy', 'px', 'py'];
 const MESH_KEYS = ['projection', 'fov', 'ortho_h', 'near', 'far', 'cx', 'cy', 'cz', 'crx', 'cry', 'crz'];
 const UNIFORM_WIDTH = { float: 1, vec2: 2, vec3: 3, vec4: 4, mat4: 16 };
@@ -70,7 +70,10 @@ function jsonMessage(obj) {
 /* A frame message: u32 ref, u64 id, u16 rect count, rects, pixels. */
 function frameMessage(ref, id, rects, pixels) {
     const head = 14 + rects.length * 8;
-    const body = Buffer.alloc(head + pixels.length);
+    const packet = Buffer.allocUnsafe(5 + head + pixels.length);
+    packet.writeUInt32LE(1 + head + pixels.length, 0);
+    packet[4] = FRAME_T;
+    const body = packet.slice(5);
     body.writeUInt32LE(ref >>> 0, 0);
     body.writeUInt32LE(id % 0x100000000, 4);
     body.writeUInt32LE(Math.floor(id / 0x100000000), 8);
@@ -82,7 +85,30 @@ function frameMessage(ref, id, rects, pixels) {
         body.writeUInt16LE(r.h, 20 + i * 8);
     });
     pixels.copy(body, head);
-    return message(FRAME_T, body);
+    return packet;
+}
+
+// Pack dirty rows straight into the final message. The packet owns its bytes:
+// later image updates must not change data queued in a backpressured socket.
+function imageMessage(ref, rects, image, iw, bpp) {
+    if (!rects.length) return frameMessage(ref, 0, rects, image);
+    let size = 0;
+    rects.forEach(r => { size += r.w * r.h * bpp; });
+    const head = 14 + rects.length * 8, packet = Buffer.allocUnsafe(5 + head + size);
+    packet.writeUInt32LE(1 + head + size, 0); packet[4] = FRAME_T;
+    packet.writeUInt32LE(ref >>> 0, 5); packet.writeUInt32LE(0, 9); packet.writeUInt32LE(0, 13);
+    packet.writeUInt16LE(rects.length, 17);
+    let off = 5 + head;
+    rects.forEach((r, i) => {
+        packet.writeUInt16LE(r.x, 19 + i * 8); packet.writeUInt16LE(r.y, 21 + i * 8);
+        packet.writeUInt16LE(r.w, 23 + i * 8); packet.writeUInt16LE(r.h, 25 + i * 8);
+        const bytes = r.w * bpp;
+        for (let y = 0; y < r.h; y++) {
+            const start = ((r.y + y) * iw + r.x) * bpp;
+            image.copy(packet, off, start, start + bytes); off += bytes;
+        }
+    });
+    return packet;
 }
 
 /* A mesh message: u32 ref, part, vertices, indices, u8 mask, then the
@@ -239,23 +265,11 @@ class ClusterRender extends EventEmitter {
         this.layers.forEach((l, ref) => {
             if (this.blocked || (l.kind !== 'image' && l.kind !== 'asset') || !(l.whole || l.dirty.length)) return;
             const rects = l.whole ? [] : l.dirty;
-            let px;
-            if (l.whole) {
-                px = l.image;
-            } else {
-                const parts = [];
-                rects.forEach((r) => {
-                    for (let y = 0; y < r.h; y++) {
-                        const start = ((r.y + y) * l.iw + r.x) * l.bpp;
-                        parts.push(l.image.slice(start, start + r.w * l.bpp));
-                    }
-                });
-                px = Buffer.concat(parts);
-            }
+            const packet = imageMessage(ref, rects, l.image, l.iw, l.bpp);
             l.whole = false;
             l.dirty = [];
             l.dirtyBytes = 0;
-            if (!this.sock.write(frameMessage(ref, 0, rects, px))) this.blocked = true;
+            if (!this.sock.write(packet)) this.blocked = true;
         });
         for (const ref of Array.from(this.pendingFrames.keys())) {
             if (this.blocked) break;
@@ -331,7 +345,7 @@ class ClusterRender extends EventEmitter {
     }
 
     /* opts: target, klass, z, x, y, w, h, visible, exclusive, prewarm,
-     * contend, guide_hold, opacity, rotate, sx, sy, px, py, then per kind (see
+     * contend, guide_hold, yield, opacity, rotate, sx, sy, px, py, then per kind (see
      * PROTOCOL.md); an image's iw and ih default to its w and h; an
      * effect's time: true takes u_time from the renderer's clock. A mesh's:
      * projection, fov, ortho_h, near, far and its camera cx, cy, cz, crx,

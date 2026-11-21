@@ -1,0 +1,11 @@
+{
+  "source": "https://github.com/cauliflowermossgrape/idrive7-apps",
+  "requires": {
+    "idrive7-renderd": "2.1.18",
+    "mgu-inputgate": "1.1.0"
+  },
+  "socket": "/run/mgu-renderd/renderd.sock",
+  "protocol": "mgu-render/1",
+  "fallback": "PNG",
+  "checkedOn": "2026-11-15"
+}

@@ -1,0 +1,9 @@
+'use strict';
+const assert=require('assert');
+const {volumeCapabilities,COMMAND}=require('../native/bmwcaminfo-voice/audio-schema');
+const sample={interfaces:{[COMMAND]:{serviceId:1,version:{major:1,minor:0},methods:{setVolume:{methodId:5,inputs:[{name:'volume',dataRef:'Volume'}]},setMainSourceSoundProperty:{methodId:6,inputs:[{name:'property',dataRef:'Property'}]},getPersonalData:{methodId:9}}},'com.bmw.contacts':{methods:{getVolume:{methodId:2}}}},datatypes:{Volume:{type:'typedef',dataRef:'Int16'},Property:{type:'struct',members:[{name:'type',dataRef:'PropertyType'},{name:'value',dataRef:'Volume'}]},PropertyType:{type:'enum',items:{KNOWN_DB_OFFSET:1}},Unrelated:{secret:'not-an-audio-declaration'}}};
+const result=volumeCapabilities(JSON.stringify(sample));assert(result.readOnly);assert.strictEqual(result.knobIsolationConfirmed,false);assert.deepStrictEqual(Object.keys(result.interfaces),[COMMAND]);assert.equal(Object.keys(result.interfaces[COMMAND].methods).length,2);assert.equal(Object.keys(result.datatypes).length,3);assert(!JSON.stringify(result).includes('secret'));assert(!result.interfaces[COMMAND].methods.getPersonalData);
+const cycle={interfaces:{[COMMAND]:{methods:{setVolume:{inputs:[{dataRef:'A'}]}}}},datatypes:{A:{type:'typedef',dataRef:'B'},B:{type:'typedef',dataRef:'A'}}};assert.equal(Object.keys(volumeCapabilities(JSON.stringify(cycle)).datatypes).length,2);
+assert.throws(()=>volumeCapabilities('broken'));assert(!Object.keys(volumeCapabilities('{}').interfaces).length);
+sample.datatypes.PropertyType.items.long='x'.repeat(50000);assert.throws(()=>volumeCapabilities(JSON.stringify(sample)),/48 KiB/);
+console.log('PASS read-only volume capability report: audio-only interfaces, transitive declarations, cyclic references bounded, size guard, no unsupported independence claim.');

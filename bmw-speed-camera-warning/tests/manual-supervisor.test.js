@@ -1,0 +1,15 @@
+'use strict';
+const assert=require('assert'),EventEmitter=require('events');
+const {Supervisor}=require('../apps/aurelm_speed_camera_warning/process-supervisor');
+const kids=[],timers=[],envs=[];let exits=0;
+const s=new Supervisor('app',{fork:(f,a,o)=>{const c=new EventEmitter();c.connected=true;c.send=m=>{c.sent=m;};c.kill=()=>{};kids.push(c);envs.push(o.env);return c;},setTimeout:(f,ms)=>{const t={f,ms};timers.push(t);return t;},clearTimeout:t=>{t.cancelled=true;},log:()=>{},done:()=>exits++});
+s.start();const first=s.child;
+first.emit('message',{speedcamLifecycle:1,event:'park'});assert.equal(first.sent.event,'stop');
+first.emit('message',{speedcamLifecycle:1,event:'shutdown'});assert(!s.stopping,'Intentional replacement is not OEM shutdown');
+first.emit('close',0);assert.equal(kids.length,2);assert.equal(envs[1].SPEEDCAM_GATE_ONLY,'1');assert.equal(exits,0);assert.equal(s.restarts,0);
+const gate=s.child;gate.emit('close',1);assert.equal(kids.length,2);const retry=timers[timers.length-1];retry.f();assert.equal(envs[2].SPEEDCAM_GATE_ONLY,'1','Gate crash never starts monitoring');
+const resumed=s.child;resumed.emit('message',{speedcamLifecycle:1,event:'resume',entryUuid:'tile'});resumed.emit('message',{speedcamLifecycle:1,event:'shutdown'});resumed.emit('close',0);
+assert.equal(envs[3].SPEEDCAM_USER_RESUME,'1');assert.equal(envs[3].SPEEDCAM_RESUME_ENTRY,'tile');assert.equal(envs[3].SPEEDCAM_GATE_ONLY,'0');
+s.child.emit('close',1);timers[timers.length-1].f();assert.equal(envs[4].SPEEDCAM_USER_RESUME,'0','Resume token one-shot');assert.equal(exits,0);
+s.child.emit('message',{speedcamLifecycle:1,event:'shutdown'});assert(s.stopping);s.child.emit('close',0);assert.equal(exits,1);
+console.log('PASS worker park/resume replacement, single worker, gate crash recovery, one-shot resume and OEM stop');

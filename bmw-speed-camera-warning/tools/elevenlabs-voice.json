@@ -1,0 +1,9 @@
+{
+  "voice_id": "ycbyWsnf4hqZgdpKHqiU",
+  "model_id": "eleven_v4",
+  "output_format": "pcm_24000",
+  "voice_settings": {
+    "stability": 0.8,
+    "similarity_boost": 0.75
+  }
+}

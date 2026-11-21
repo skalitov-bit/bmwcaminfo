@@ -147,3 +147,10 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Local build inputs and output; never commit credentials or private downloads.
+.ci-cache/
+ci-output/
+**/__pycache__/
+*.pyc
+**/.env

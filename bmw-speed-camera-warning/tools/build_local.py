@@ -22,7 +22,7 @@ def build(out, cache):
     for item in inputs['inputs']:
         p=cache/item['name']
         if not p.exists():
-            req=urllib.request.Request(item['url'],headers={'User-Agent':'BMWCamInfo-local-build/0.9.1'})
+            req=urllib.request.Request(item['url'],headers={'User-Agent':'BMWCamInfo-local-build/0.9.3'})
             raw=urllib.request.urlopen(req,timeout=60).read()
             if hashlib.sha256(raw).hexdigest()!=item['sha256']:raise ValueError('Download hash mismatch: '+item['name'])
             p.write_bytes(raw)
@@ -31,13 +31,23 @@ def build(out, cache):
     builder=importlib.util.module_from_spec(spec)
     sys.path.insert(0,str(cache))
     spec.loader.exec_module(builder)
-    from pack_camera_catalog import pack
-    pack(ROOT)
+    hybrid=(APP/'hybrid-manifest-v1.json').exists()
+    if not hybrid:
+        from pack_camera_catalog import pack
+        pack(ROOT)
     app=json.loads((APP/'app.json').read_text(encoding='utf-8'))
-    db=json.loads((APP/'camera-db.json').read_text(encoding='utf-8'))
-    if db.get('datasetId')!='mapcam-rus-v2' or db.get('warningSchemaVersion')!=1:
+    db=json.loads((APP/('hybrid-manifest-v1.json' if hybrid else 'camera-db.json')).read_text(encoding='utf-8'))
+    if db.get('datasetId')!=('hybrid-rus-v1' if hybrid else 'mapcam-rus-v2') or db.get('warningSchemaVersion')!=1:
         raise ValueError('Import a compatible MapCam database before building')
+    if hybrid:
+        for key in ('records','index'):
+            raw=(APP/db[key]['file']).read_bytes()
+            if len(raw)!=db[key]['bytes'] or hashlib.sha256(raw).hexdigest()!=db[key]['sha256']:raise ValueError('Hybrid catalog checksum mismatch')
     xml,ui,strings,state_ids=builder.build_ui(app)
+    from responsive_layout import patch_layout
+    xml=patch_layout(xml,ui,app)
+    from notification_layout import add_notification_layout
+    xml=add_notification_layout(xml,ui)
     builder.unicode_resources(ui,strings)
     blobs={};modes={}
     with tarfile.open(cache/'upstream.mgu','r:gz') as t:
@@ -47,16 +57,54 @@ def build(out, cache):
             if m.isfile():blobs[m.name]=t.extractfile(m).read();modes[m.name]=m.mode
     def put_json(name,value):blobs[name]=json.dumps(value,ensure_ascii=False,indent=1).encode('utf-8')
     pkg=json.loads(blobs['source/package.json'])
-    pkg.update(version=app['version'],description=app['description'])
+    pkg.update(version=app['version'],description=app['description'],productName=app['title'])
+    start_type=app.get('mguAppStartType','manually')
+    if start_type not in ('autostart','lum','manually'):
+        raise ValueError('Invalid mguAppStartType')
+    pkg['mguAppStartType']=start_type
     pkg['oapAppSettings'].update(maxDiskUsage=app['maxDiskUsage'],memoryThresholdKB=app['memoryKB'])
     put_json('source/package.json',pkg)
-    meta=json.loads(blobs['meta.json']);meta['version']=app['version'];put_json('meta.json',meta)
+    meta=json.loads(blobs['meta.json']);meta.update(version=app['version'],title=app['title'])
+    # Preserve the pinned platform/GPS permissions; add only declared signals.
+    signal_manifest=builder.manifest_for(json.loads(json.dumps(app)))
+    manifest=json.loads(blobs['source/manifest.json'])
+    for iface, fields in app.get('signals',{}).items():
+        manifest['proxies'][iface]=signal_manifest['proxies'][iface]
+        if isinstance(fields,dict) and fields.get('_optional'):
+            meta.setdefault('optional',{})[iface]=fields['_optional']
+    put_json('source/manifest.json',manifest)
+    put_json('meta.json',meta)
     lock=json.loads(blobs['source/npm-shrinkwrap.json']);lock['version']=app['version'];put_json('source/npm-shrinkwrap.json',lock)
+    legacy_files={'camera-db.json','camera-records-v1.jsonl','camera-index-v1.json','camera-manifest-v1.json'}
+    if hybrid:
+        for filename in legacy_files:blobs.pop('source/javascript/'+filename,None)
     for p in APP.iterdir():
-        if p.is_file() and p.suffix in ('.js','.json','.jsonl') and p.name not in ('app.json','camera-db.json'):
+        if p.is_file() and p.suffix in ('.js','.json','.jsonl','.bin') and p.name not in ('app.json','camera-db.json') and not (hybrid and p.name in legacy_files):
             blobs['source/javascript/'+('app.js' if p.name=='main.js' else p.name)]=p.read_bytes()
     blobs.pop('source/javascript/camera-db.json',None)
-    rt={k:app.get(k) for k in ('id','title','version','screens','settings','config','startWidget')}
+    # Replace the template launcher icon with this application's own artwork.
+    icon_path=APP/'icon.png'
+    if icon_path.exists():
+        icon_name=app['id']+'_icon.png'
+        icon_data=icon_path.read_bytes()
+        for location in ('rhmiData/resources/', 'source/rhmiData/variantGroups/Common/images/'):
+            blobs[location+icon_name]=icon_data
+    from native_header import patch_display
+    blobs['source/javascript/kit/display.js']=patch_display(blobs['source/javascript/kit/display.js'])
+    import render_recovery
+    blobs['source/javascript/kit/display.js']=render_recovery.patch_display(blobs['source/javascript/kit/display.js'])
+    blobs['source/javascript/kit/renderd.js']=render_recovery.patch_renderd(blobs['source/javascript/kit/renderd.js'])
+    blobs['source/javascript/kit/mgu.js']=render_recovery.patch_mgu(blobs['source/javascript/kit/mgu.js'])
+    import lifecycle_recovery
+    blobs['source/javascript/kit/mgu.js']=lifecycle_recovery.patch_mgu(blobs['source/javascript/kit/mgu.js'])
+    blobs['source/javascript/speedcam-main.js']=blobs['source/javascript/app.js']
+    blobs['source/javascript/app.js']=(ROOT/'tools/supervised-entry.js').read_bytes()
+    import responsive_layout
+    blobs['source/javascript/kit/display.js']=responsive_layout.patch_display(blobs['source/javascript/kit/display.js'])
+    blobs['source/javascript/kit/responsive-display.js']=(ROOT/'tools/responsive-display.js').read_bytes()
+    blobs['source/javascript/kit/canvas-performance.js']=(ROOT/'tools/canvas-performance.js').read_bytes()
+    blobs['source/javascript/kit/canvas.js']+=b"\nrequire('./canvas-performance').install(Canvas);\n"
+    rt={k:app.get(k) for k in ('id','title','version','screens','settings','config','startWidget','nativeHeader','responsiveMain')}
     rt['stateIds']=state_ids;put_json('source/javascript/kit/app-spec.json',rt)
     for name in list(blobs):
         if name in ('source/rhmiData/application.json','rhmiData/application.json'):
@@ -70,6 +118,7 @@ def build(out, cache):
     # Include the project licence and camera/OSM attribution in both installation formats.
     blobs['source/LICENSE']= (ROOT.parent/'LICENSE').read_bytes()
     blobs['source/DATA-NOTICE.txt']=(ROOT/'DATA-NOTICE.txt').read_bytes()
+    blobs['source/licenses/RobotoCondensed-OFL.txt']=(ROOT/'assets/fonts/RobotoCondensed-OFL.txt').read_bytes()
     out.mkdir(parents=True,exist_ok=True)
     manifest={}
     for extension in ('mgu','tgz'):

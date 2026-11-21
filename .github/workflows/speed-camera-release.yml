@@ -1,299 +1,90 @@
-name: Build BMW Speed Camera Warning
+name: Build and verify SpeedCAM
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Speed Camera Warning version"
-        required: true
-        default: "0.9.1"
-      refresh_data:
-        description: "Force refresh camera and OSM data"
-        required: false
-        type: boolean
-        default: false
-  schedule:
-    - cron: "17 3 * * 1"
+  pull_request:
+    paths:
+      - 'bmw-speed-camera-warning/**'
+      - '.github/workflows/speed-camera-release.yml'
   push:
     branches: [main]
     paths:
-      - "bmw-speed-camera-warning/**"
-      - "CameraData.zip"
-      - ".github/workflows/speed-camera-release.yml"
+      - 'bmw-speed-camera-warning/**'
+      - '.github/workflows/speed-camera-release.yml'
 
+# Validation only. This workflow cannot upload release assets, update tags,
+# change Latest, write the Store catalog or regenerate/publish camera databases.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: speed-camera-warning-release
+  group: speedcam-check-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  build-release:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     env:
-      APP_VERSION: ${{ inputs.version || '0.9.1' }}
-      APP_ID: aurelm_speed_camera_warning
-      VOICE_VERSION: 0.1.9
+      PYTHONUTF8: '1'
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          repository: aurelmarius/bmw-games
-          path: upstream
-
-      - uses: actions/checkout@v5
-        with:
-          repository: robertnisipeanu/mgu-store
-          path: mgu-store
-
+          python-version: '3.12'
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-
-      - name: Restore generated camera and map data cache
-        id: data_cache
-        uses: actions/cache/restore@v4
+          node-version: '8.17.0'
+      - name: Keep the MGU-compatible Node.js path
+        run: echo "NODE8=$(command -v node)" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v4
         with:
-          path: |
-            bmw-speed-camera-warning/data/camera-db.json
-            bmw-speed-camera-warning/data/mari_el_republic.osm.pbf
-            bmw-speed-camera-warning/apps/aurelm_speed_camera_warning/camera-db.json
-            bmw-speed-camera-warning/apps/aurelm_speed_camera_warning/road-zones.json
-            bmw-speed-camera-warning/apps/aurelm_speed_camera_warning/city-map.json
-          key: speed-camera-data-v2-${{ github.run_id }}
-          restore-keys: |
-            speed-camera-data-v2-
-            speed-camera-data-v1-
-
-      - name: Restore committed camera database after cache restore
-        run: |
-          git checkout HEAD -- bmw-speed-camera-warning/data/camera-db.json
-          git checkout HEAD -- bmw-speed-camera-warning/apps/aurelm_speed_camera_warning/camera-db.json
-
-      - name: Import verified camera database
-        run: |
-          python3 bmw-speed-camera-warning/tools/import_mapcam.py "CameraData.zip"
-          # Imported databases are consumed directly by this build.
-          # Do not push generated data from the runner: concurrent builds can race
-          # and create rebase conflicts in camera-db.json.
-
-      - name: Import offline Yoshkar-Ola street geometry
-        if: steps.data_cache.outputs.cache-hit != 'true' || inputs.refresh_data == true || github.event_name == 'schedule'
-        run: |
-          python3 bmw-speed-camera-warning/tools/import_city_roads.py
-          # Generated geometry is included in the release without committing from CI.
-
-      - name: Save generated camera and map data cache
-        if: steps.data_cache.outputs.cache-hit != 'true' || inputs.refresh_data == true || github.event_name == 'schedule'
-        uses: actions/cache/save@v4
+          node-version: '22'
+      - name: Test CI safeguards
+        run: python -m unittest discover -s bmw-speed-camera-warning/tests -p 'test_ci_pipeline.py' -v
+      - name: Restore verified build inputs
+        uses: actions/cache@v4
         with:
+          path: .ci-cache
+          key: speedcam-inputs-${{ runner.os }}-${{ hashFiles('bmw-speed-camera-warning/tools/ci-inputs.json', 'bmw-speed-camera-warning/tools/build-inputs.json') }}
+      - name: Build current source and verify packages
+        run: python bmw-speed-camera-warning/tools/ci_pipeline.py build --node8 "$NODE8"
+      - name: Save build and verification results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: speedcam-build-${{ github.run_id }}
           path: |
-            bmw-speed-camera-warning/data/camera-db.json
-            bmw-speed-camera-warning/data/mari_el_republic.osm.pbf
-            bmw-speed-camera-warning/apps/aurelm_speed_camera_warning/camera-db.json
-            bmw-speed-camera-warning/apps/aurelm_speed_camera_warning/road-zones.json
-            bmw-speed-camera-warning/apps/aurelm_speed_camera_warning/city-map.json
-          key: speed-camera-data-v2-${{ github.run_id }}
+            ci-output/build/*.mgu
+            ci-output/build/*.tgz
+            ci-output/build/*.json
+            ci-output/build/store/*.json
+            ci-output/build/store/*.txt
+          if-no-files-found: error
+          retention-days: 14
 
-      - name: Prepare standalone app
-        run: |
-          mkdir -p upstream/apps/${APP_ID}
-          cp -a bmw-speed-camera-warning/apps/${APP_ID}/. upstream/apps/${APP_ID}/
-          python3 - <<'PY'
-          import json, os
-          p=f"upstream/apps/{os.environ['APP_ID']}/app.json"
-          d=json.load(open(p,encoding='utf-8'))
-          d['version']=os.environ['APP_VERSION']
-          json.dump(d,open(p,'w',encoding='utf-8'),ensure_ascii=False,indent=2)
-          PY
-
-      - name: Generate Cyrillic font atlases
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y fonts-ubuntu python3-pil ffmpeg
-          python3 - <<'PY'
-          p='upstream/kit/tools/bake_fonts.py'
-          s=open(p,encoding='utf-8').read()
-          old="TEXT = ''.join(chr(c) for c in range(32, 127)) + '°μ│·–—…×±²³€↑↓→←✓✕'"
-          extra='АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя'
-          new=old + " + '" + extra + "'"
-          if old not in s:
-              raise SystemExit('Could not locate the standard font charset declaration')
-          open(p,'w',encoding='utf-8').write(s.replace(old,new,1))
-          PY
-          cd upstream
-          python3 kit/tools/bake_fonts.py
-          cd ..
-
-      - name: Generate Russian voice assets and pack privileged service
-        run: |
-          set -euo pipefail
-          VOICE_DIR="bmw-speed-camera-warning/native/bmwcaminfo-voice"
-          mkdir -p "${VOICE_DIR}/audio"
-          python3 -m pip install --break-system-packages --disable-pip-version-check edge-tts gTTS
-
-          synthesize() {
-            local text="$1"
-            local output="$2"
-            local attempt
-            for attempt in 1 2 3; do
-              if timeout 90s edge-tts \
-                --voice "ru-RU-SvetlanaNeural" \
-                --rate="-5%" \
-                --volume="+50%" \
-                --text "$text" \
-                --write-media "$output"; then
-                test -s "$output"
-                return 0
-              fi
-              echo "Edge TTS attempt $attempt failed; retrying..."
-              sleep 3
-            done
-            echo "Microsoft Edge TTS unavailable; using Google Translate TTS fallback"
-            gtts-cli "$text" --lang ru --output "$output"
-            test -s "$output"
-          }
-
-          echo "Generating Russian female neural voice: ru-RU-SvetlanaNeural"
-          synthesize "Внимание, впереди камера" /tmp/camera-500.mp3
-          synthesize "Повторное предупреждение. Камера через двести метров" /tmp/camera-200.mp3
-
-          ffmpeg -nostdin -hide_banner -loglevel error -y -i /tmp/camera-500.mp3 -af "acompressor=threshold=-24dB:ratio=4:attack=5:release=80:makeup=10dB,loudnorm=I=-8:TP=-0.3:LRA=4,alimiter=limit=0.99" -c:a aac -b:a 128k -movflags +faststart "${VOICE_DIR}/audio/camera-500.m4a"
-          ffmpeg -nostdin -hide_banner -loglevel error -y -i /tmp/camera-200.mp3 -af "acompressor=threshold=-24dB:ratio=4:attack=5:release=80:makeup=10dB,loudnorm=I=-8:TP=-0.3:LRA=4,alimiter=limit=0.99" -c:a aac -b:a 128k -movflags +faststart "${VOICE_DIR}/audio/camera-200.m4a"
-          test -s "${VOICE_DIR}/audio/camera-500.m4a"
-          test -s "${VOICE_DIR}/audio/camera-200.m4a"
-          node --check "${VOICE_DIR}/voice.js"
-          node mgu-store/deploy/hu artifact "${VOICE_DIR}" --out release
-          test -s "release/bmwcaminfo-voice@${VOICE_VERSION}.tgz"
-
-      - name: Restore the 0.7.6 MGU presentation settings
-        run: |
-          python3 - <<'PY'
-          import re
-          p='upstream/kit/tools/build.py'
-          s=open(p,encoding='utf-8').read()
-          replacements = {
-              r"('priority':\s*)'[^']+'": r"\1'PRIO_HIGHEST'",
-              r"('visibility':\s*)'[^']+'": r"\1'BACKGROUND'",
-              r"('latencyClass':\s*)'[^']+'": r"\1'HIGH_PRIO_BACKGROUND'",
-              r"('backgroundPriority':\s*)\d+": r"\g<1>50",
-          }
-          for pattern, value in replacements.items():
-              s, count = re.subn(pattern, value, s, count=1)
-              if count != 1:
-                  raise SystemExit(f'Could not patch OAP setting: {pattern}')
-          open(p,'w',encoding='utf-8').write(s)
-          print('Restored OAP settings from known-good 0.7.6')
-          PY
-      - name: Enable internet access through MGU Store uplink
-        run: |
-          python3 - <<'PY'
-          p='upstream/kit/tools/build.py'
-          s=open(p,encoding='utf-8').read()
-          old="'mguHmi': ['ID7'],"
-          new="'mguHmi': ['ID7'], 'mguInternet': True,"
-          if s.count(old) != 1:
-              raise SystemExit('Could not locate generated package internet setting')
-          open(p,'w',encoding='utf-8').write(s.replace(old,new,1))
-          print('Enabled mguInternet for this app package')
-          PY
-      - name: Validate and build
-        run: |
-          node --check upstream/apps/${APP_ID}/main.js
-          node --check upstream/apps/${APP_ID}/gps.js
-          node --check upstream/apps/${APP_ID}/camera-store.js
-          node --check upstream/apps/${APP_ID}/uplink.js
-          node --check upstream/apps/${APP_ID}/local-camera-store.js
-          node --check upstream/apps/${APP_ID}/proximity.js
-          node --check upstream/apps/${APP_ID}/road-guidance.js
-          node --check upstream/apps/${APP_ID}/voice-alert.js
-          node --check upstream/apps/${APP_ID}/cluster-output.js
-          node --check upstream/apps/${APP_ID}/cluster_render_client.js
-          node --check bmw-speed-camera-warning/native/bmwcaminfo-voice/voice.js
-          test -s release/bmwcaminfo-voice@${VOICE_VERSION}.tgz
-          node bmw-speed-camera-warning/tests/readout-config.test.js
-          node bmw-speed-camera-warning/tests/mapcam-warnings.test.js
-          node bmw-speed-camera-warning/tests/voice-queue.test.js
-          node bmw-speed-camera-warning/tests/road-guidance.test.js
-          node bmw-speed-camera-warning/tests/mapcam-integration.test.js
-          node --max-old-space-size=64 bmw-speed-camera-warning/tests/app-startup.test.js
-          node --max-old-space-size=64 bmw-speed-camera-warning/tests/disk-camera-store.test.js
-          node bmw-speed-camera-warning/tests/camera-catalog.test.js
-          python3 -m unittest discover -s bmw-speed-camera-warning/tests -p "test_mapcam*.py"
-          python3 -m py_compile bmw-speed-camera-warning/tools/import_road_zones.py
-          test -f upstream/apps/${APP_ID}/city-map.json
-          python3 - <<'PY'
-          import json, os
-          p='bmw-speed-camera-warning/apps/aurelm_speed_camera_warning/app.json'
-          d=json.load(open(p,encoding='utf-8'));d['version']=os.environ['APP_VERSION']
-          json.dump(d,open(p,'w',encoding='utf-8'),ensure_ascii=False,indent=2)
-          PY
-          python3 bmw-speed-camera-warning/tools/build_local.py --out release --cache .build-cache
-          python3 - <<'PY'
-          import os, tarfile, tempfile, subprocess
-          with tempfile.TemporaryDirectory() as d:
-              with tarfile.open(f"release/{os.environ['APP_ID']}@{os.environ['APP_VERSION']}.tgz") as t:
-                  t.extractall(d,filter='data')
-              subprocess.run(['node','--max-old-space-size=64','bmw-speed-camera-warning/tests/app-startup.test.js',d+'/package/javascript/app.js'],check=True)
-              subprocess.run(['node','--max-old-space-size=64','bmw-speed-camera-warning/tests/disk-camera-store.test.js',d+'/package/javascript'],check=True)
-          PY
-
-      - name: Validate MGU Store release layout
-        run: |
-          test -s "release/${APP_ID}@${APP_VERSION}.tgz"
-          test -s "release/${APP_ID}@${APP_VERSION}.mgu"
-          python3 - <<'PY'
-          import json, os, tarfile
-          package=f"release/{os.environ['APP_ID']}@{os.environ['APP_VERSION']}.tgz"
-          with tarfile.open(package, 'r:gz') as archive:
-              member=next((n for n in archive.getnames() if n.endswith('/package.json')), None)
-              if not member: raise SystemExit('package.json missing from release')
-              pkg=json.load(archive.extractfile(member))
-              if pkg.get('mguInternet') is not True: raise SystemExit('mguInternet missing from built package.json')
-              names=archive.getnames()
-              for f in ('camera-manifest-v1.json','camera-index-v1.json','camera-records-v1.jsonl','disk-camera-store.js'):
-                  if 'package/javascript/'+f not in names: raise SystemExit('Missing catalog file: '+f)
-              if 'package/javascript/camera-db.json' in names: raise SystemExit('Legacy large JSON must not ship')
-              if not any(n.endswith('/uplink.js') for n in names): raise SystemExit('uplink.js missing from built app')
-          print('Verified mguInternet=true and uplink.js are present in the install package')
-          PY
-          python3 - <<'PY'
-          import json, os
-          p=f"bmw-speed-camera-warning/apps/{os.environ['APP_ID']}/app.json"
-          d=json.load(open(p,encoding='utf-8'))
-          if d.get('id') != os.environ['APP_ID']:
-              raise SystemExit('app.json id does not match APP_ID')
-          if not os.environ['APP_ID'].startswith('aurelm_'):
-              raise SystemExit('MGU app id must have a unique vendor prefix')
-          PY
-
-      - name: Publish privileged voice service tool
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="bmwcaminfo-voice@${VOICE_VERSION}"
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "release/bmwcaminfo-voice@${VOICE_VERSION}.tgz" --repo "$GITHUB_REPOSITORY" --clobber
-          else
-            gh release create "$TAG" "release/bmwcaminfo-voice@${VOICE_VERSION}.tgz" --repo "$GITHUB_REPOSITORY" --title "BMW Camera Voice Service ${VOICE_VERSION}" --notes "Privileged ID7 system service for BMW MediaPlayer voice prompts. Uses Microsoft Edge neural Russian female voice ru-RU-SvetlanaNeural with Google Translate TTS fallback; audio is generated during CI and played offline in the vehicle. Install this tool before BMW Speed Camera Warning 0.7.5. Restores the pre-existing audio route and resumes previously playing music after voice prompts."
-          fi
-
-      - name: Publish standalone app
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${APP_ID}@${APP_VERSION}"
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" \
-              "release/${APP_ID}@${APP_VERSION}.tgz" \
-              "release/${APP_ID}@${APP_VERSION}.mgu" \
-              --repo "$GITHUB_REPOSITORY" --clobber
-          else
-            gh release create "$TAG" \
-              "release/${APP_ID}@${APP_VERSION}.tgz" \
-              "release/${APP_ID}@${APP_VERSION}.mgu" \
-              --repo "$GITHUB_REPOSITORY" \
-              --title "BMW Speed Camera Warning ${APP_VERSION}" \
-              --notes "BMW MGU ID7 camera warnings using camera sectors, directions and control paths across Russia. GPS accuracy must be <15 m. Includes section distance, observed average speed and configurable warnings. See INTEGRATION_RU.txt for compatibility limits. Voice warnings use BMW MediaPlayer; the app includes a manual voice test button."
-          fi
+  separate-maps:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '8.17.0'
+      - name: Verify separate regional maps and offline lifecycle
+        run: python bmw-speed-camera-warning/tools/ci_pipeline.py maps
+      - name: Save map verification results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: speedcam-maps-${{ github.run_id }}
+          path: ci-output/maps/CHECKS.json
+          if-no-files-found: error
+          retention-days: 14

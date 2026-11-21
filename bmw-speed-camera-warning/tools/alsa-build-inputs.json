@@ -1,0 +1,37 @@
+{
+  "compiler": {
+    "tarball": "https://ziglang.org/download/0.15.2/zig-x86_64-windows-0.15.2.zip",
+    "shasum": "3a0ed1e8799a2f8ce2a6e6290a9ff22e6906f8227865911fb7ddedc3cc14cb0c",
+    "size": "92614574"
+  },
+  "sysroot": [
+    {
+      "Package": "libc6",
+      "Version": "2.19-18+deb8u10",
+      "Filename": "pool/main/g/glibc/libc6_2.19-18+deb8u10_amd64.deb",
+      "SHA256": "0a95ee1c5bff7f73c1279b2b78f32d40da9025a76f93cb67c03f2867a7133e61"
+    },
+    {
+      "Package": "libc6-dev",
+      "Version": "2.19-18+deb8u10",
+      "Filename": "pool/main/g/glibc/libc6-dev_2.19-18+deb8u10_amd64.deb",
+      "SHA256": "00ba98ce8879bdfde13eac699da718d3aaba904ea6a88d5e21e77d1e298d65eb"
+    }
+  ],
+  "elf": {
+    "machine": "EM_X86_64",
+    "bits": 64,
+    "interpreter": [
+      "/lib64/ld-linux-x86-64.so.2"
+    ],
+    "needed": [
+      "libc.so.6",
+      "libdl.so.2"
+    ],
+    "versions": [
+      "GLIBC_2.2.5",
+      "GLIBC_2.17",
+      "GLIBC_2.2.5"
+    ]
+  }
+}

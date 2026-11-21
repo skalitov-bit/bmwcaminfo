@@ -7,6 +7,9 @@ const base=process.argv[2]||path.join(__dirname,'../apps/aurelm_speed_camera_war
 const {CameraStore,POINTER}=require(path.resolve(base,'disk-camera-store'));
 const {MANIFEST,INDEX,RECORDS,readManifest,validateManifest,validateIndex}=require(path.resolve(base,'camera-catalog'));
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'bmw-disk-test-')),manifest=readManifest(base);
+// Exercise backward compatibility using a genuine legacy-only bundle.
+const legacyBundle=path.join(tmp,'legacy-bundle');fs.mkdirSync(legacyBundle);
+for(const file of [MANIFEST,INDEX,RECORDS])fs.copyFileSync(path.join(base,file),path.join(legacyBundle,file));
 let served=JSON.parse(JSON.stringify(manifest)),fault='',requests=[],stores=[],port,peak=0;
 function memory(stage){const rss=process.memoryUsage().rss/1048576;peak=Math.max(peak,rss);console.log(stage+' RSS MiB='+rss.toFixed(2));}
 const server=http.createServer((req,res)=>{
@@ -23,17 +26,21 @@ const server=http.createServer((req,res)=>{
     else stream.pipe(res);
 });
 const request=(options,cb)=>http.get({hostname:'127.0.0.1',port,path:options.path},cb);
-function store(dir){const s=new CameraStore({dataDir:dir,bundledDir:base,request,log:m=>{if(m.indexOf('rssMiB')>=0)memory(m);}});stores.push(s);return s;}
+function store(dir){const s=new CameraStore({dataDir:dir,bundledDir:legacyBundle,request,log:m=>{if(m.indexOf('rssMiB')>=0)memory(m);}});stores.push(s);return s;}
 async function run(){
     await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));port=server.address().port;
     const s=store(tmp);await s.loadLocal();assert.strictEqual(s.current.cities.russia.length,manifest.count);
     assert.strictEqual(s.current.recordsFor('mari-el').length,manifest.cityCounts['mari-el']);assert.strictEqual(s.current.recordsFor('yoshkar-ola').length,manifest.cityCounts['yoshkar-ola']);
     const nearby=s.current.near({lat:55.75,lon:37.62},25000,500);assert(nearby.length>0&&nearby.length<=500);
     assert(s.current.cache.size<=512&&s.current.cacheBytes<=2*1048576);memory('cold + nearby map');
-    let r=await s.refresh();assert(!r.updated&&!r.error);assert.deepStrictEqual(requests,[MANIFEST]);
+    let r=await s.refresh();assert(!r.updated&&!r.error,JSON.stringify(r.error));assert.deepStrictEqual(requests,[MANIFEST]);
     assert(!fs.existsSync(path.join(tmp,POINTER)),'Same revision must not create duplicate cache');
     served.revision++;requests=[];
+    let gates=0;const previousCatalog=s.current;
+    s.canActivate=()=>gates>=3;
+    s.wait=async()=>{gates++;assert.strictEqual(s.current,previousCatalog,'Keep current catalog during active section');assert(previousCatalog.near({lat:55.75,lon:37.62},2100).length>0);};
     const pair=await Promise.all([s.refresh(),s.refresh()]);r=pair[0];assert(r.updated&&!r.error,JSON.stringify(r.error));
+    assert.strictEqual(gates,3,'Activation waits for the section gate');s.canActivate=()=>true;
     assert.strictEqual(pair[0],pair[1]);assert.deepStrictEqual(requests,[MANIFEST,INDEX,RECORDS]);
     assert.strictEqual(s.current.revision,served.revision);assert(s.current.near({lat:55.75,lon:37.62},2100).length>0);
     memory('first successful streamed update');

@@ -16,4 +16,3 @@ SpeedCAM **0.9.92 gps test version** · звуковой сервис **0.1.49**
 ![Карта и белый GPS-наконечник](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.92/map-preview.png)
 
 Исходники: `SpeedCAM_0.9.92_Source.zip`; исходники PulseAudio и лицензии: `PulseAudio_Corresponding_Source.zip`; проверки: `TEST-RESULTS.json`; контрольные суммы: `SHA256.json`.
-

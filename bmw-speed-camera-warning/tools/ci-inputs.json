@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "appVersion": "0.9.92",
+  "voiceVersion": "0.1.49",
+  "source": {
+    "url": "https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.92/SpeedCAM_0.9.92_Source.zip",
+    "bytes": 79729225,
+    "sha256": "a69d8b5aae719eaedcdc9bd01d85c27d4a1860040fd26d1ba702704005d611fd"
+  },
+  "voice": {
+    "url": "https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.92/bmwcaminfo-voice%400.1.49.tgz",
+    "bytes": 12090373,
+    "sha256": "58be53341db1b1c7dd16c7b49f2d50622c28561f9b4292c1ba8d80436464ff3d"
+  },
+  "referenceApp": {
+    "url": "https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.92/aurelm_speed_camera_warning%400.9.92.tgz",
+    "bytes": 11700480,
+    "sha256": "32815eb649578e22228ff34a675d971fe32095a8f8329c5e8a41e987f40066b6"
+  },
+  "resources": [
+    {
+      "path": "apps/aurelm_speed_camera_warning/city-map.json",
+      "member": "SpeedCAM_0.9.92/apps/aurelm_speed_camera_warning/city-map.json",
+      "bytes": 1796984,
+      "sha256": "e898f5eb82e4ff9333bcef890b517d79487133fbb7926f32ff1f0e9b4a7d8a6a"
+    },
+    {
+      "path": "apps/aurelm_speed_camera_warning/hybrid-index-v1.bin",
+      "member": "SpeedCAM_0.9.92/apps/aurelm_speed_camera_warning/hybrid-index-v1.bin",
+      "bytes": 1211597,
+      "sha256": "85d7f88fe70d9543d6f4d48600556a7100f35a8e2df9a259d712568ac26a7b8f"
+    },
+    {
+      "path": "apps/aurelm_speed_camera_warning/hybrid-records-v1.bin",
+      "member": "SpeedCAM_0.9.92/apps/aurelm_speed_camera_warning/hybrid-records-v1.bin",
+      "bytes": 10194685,
+      "sha256": "c441933b2e49f201cd5ff2ed97ac629bedd03834d7bf17ecaff4004112a487c7"
+    },
+    {
+      "path": "apps/aurelm_speed_camera_warning/icon.png",
+      "member": "SpeedCAM_0.9.92/apps/aurelm_speed_camera_warning/icon.png",
+      "bytes": 3170,
+      "sha256": "f7ed9675a3bad05b58e51c997c3691e811ef84f4c37733a6b0292ddfcd310c41"
+    },
+    {
+      "path": "apps/aurelm_speed_camera_warning/road-zones.json",
+      "member": "SpeedCAM_0.9.92/apps/aurelm_speed_camera_warning/road-zones.json",
+      "bytes": 351973,
+      "sha256": "134ce1e739afb55d4bbc3df2895a70b0ab1800d2798dee75b2a7a00b067f6b97"
+    },
+    {
+      "path": "assets/fonts/RobotoCondensed-OFL.txt",
+      "member": "SpeedCAM_0.9.92/assets/fonts/RobotoCondensed-OFL.txt",
+      "bytes": 4393,
+      "sha256": "0e4cc6ece88573545be2ed25835363662a6182ba4a4c1b5c8feda52add30e8a6"
+    }
+  ],
+  "mapsCatalog": "https://raw.githubusercontent.com/skalitov-bit/speedcam-db/main/maps/catalog.json"
+}

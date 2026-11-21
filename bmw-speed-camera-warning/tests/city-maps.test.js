@@ -1,0 +1,32 @@
+'use strict';
+const assert=require('assert'),fs=require('fs'),path=require('path'),os=require('os'),crypto=require('crypto');
+const root=path.resolve(__dirname,'../apps/aurelm_speed_camera_warning');
+const {CityRoads}=require(root+'/city-roads'),{CityMapStore,validateCatalog}=require(root+'/city-map-store');
+const input=path.resolve(process.argv[2]),catalog=JSON.parse(fs.readFileSync(path.join(input,'catalog.json'),'utf8')),entry=catalog.cities[0];
+const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'speedcam-maps-'));
+const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+async function run(){
+ const bytes=fs.readFileSync(path.join(input,entry.file));assert.equal(bytes.length,entry.bytes);assert.equal(sha(bytes),entry.sha256);validateCatalog(catalog);
+ assert.throws(()=>validateCatalog({schema:1,cities:[Object.assign({},entry,{file:'../cameras.bin'})]}));
+ const r=await new CityRoads(path.join(input,entry.file)).open();await r.ensure({lat:55.757,lon:37.615},4500);assert(r.rows.length>1000);const reads=r.stats.reads;
+ await r.ensure({lat:55.757,lon:37.615},4500);assert.equal(r.stats.reads,reads,'same viewport performs no disk IO');assert(r.cacheBytes<12*1024*1024);assert(r.cache.size<=320);
+ await r.ensure({lat:55.759,lon:37.619},4500);assert(r.stats.reads-reads<reads,'moving view reuses overlapping cells');r.close();assert.equal(r.rows.length,0);
+ const cameraFile=path.join(tmp,'hybrid-records-v1.bin');fs.writeFileSync(cameraFile,'camera DB must not change');const cameraSha=sha(fs.readFileSync(cameraFile));
+ let downloads=0,broken=false,offline=false,current=catalog,downloadBytes=bytes;
+ const fake=async(url,file,limit,progress)=>{if(offline)throw Error('ENOTFOUND');if(!file)return Buffer.from(JSON.stringify(current));downloads++;fs.writeFileSync(file,downloadBytes);progress(downloadBytes.length);return {bytes:downloadBytes.length,sha256:broken?'f'.repeat(64):sha(downloadBytes)};};
+ const s=new CityMapStore(tmp,{download:fake});assert(await s.refresh());assert(await s.install('moscow'));assert.equal(s.progress,100);assert.equal(downloads,1);
+ assert(await s.install('moscow'));assert.equal(downloads,1,'unchanged package not downloaded');
+ await s.ensure({lat:55.757,lon:37.615},4500);assert(s.reader.rows.length>1000);
+ s.close();const again=new CityMapStore(tmp,{download:fake});assert(again.installed.moscow,'installed maps survive restart');
+ offline=true;assert.equal(await again.refresh(),false);assert(again.installed.moscow);offline=false;
+ current={schema:1,cities:[Object.assign({},entry,{revision:entry.revision+1,sha256:'f'.repeat(64),file:'moscow-'+ 'f'.repeat(16)+'.scroads',url:entry.url.replace(entry.file,'moscow-'+ 'f'.repeat(16)+'.scroads')})]};
+ await again.refresh();broken=false;assert.equal(await again.install('moscow'),false,'bad hash rejected');assert.equal(again.installed.moscow.sha256,entry.sha256);
+ current={schema:1,cities:[Object.assign({},entry,{revision:entry.revision-1})]};await again.refresh();assert.equal(await again.install('moscow'),false,'rollback rejected');
+ const n=bytes.readUInt32LE(8),meta=JSON.parse(bytes.slice(12,12+n));meta.revision+=2;const header=Buffer.from(JSON.stringify(meta)),prefix=Buffer.alloc(12);prefix.write('SCROAD01');prefix.writeUInt32LE(header.length,8);
+ downloadBytes=Buffer.concat([prefix,header,bytes.slice(12+n)]);const hash=sha(downloadBytes),file='moscow-'+hash.slice(0,16)+'.scroads';
+ current={schema:1,cities:[Object.assign({},entry,{revision:meta.revision,sha256:hash,file,url:entry.url.replace(entry.file,file),bytes:downloadBytes.length})]};
+ assert(await again.update('moscow'),'update refreshes catalog and replaces map atomically');assert.equal(again.installed.moscow.sha256,hash);assert(!fs.existsSync(path.join(again.dir,entry.file)));
+ assert(await again.remove('moscow'));assert(!again.installed.moscow);assert(!fs.existsSync(path.join(again.dir,file)));assert.equal(sha(fs.readFileSync(cameraFile)),cameraSha);
+ again.close();console.log(JSON.stringify({ok:true,tests:['package integrity','bounded region load','cached reads','moving reuse','install','unchanged','restart offline','hash rejection preserves old','rollback rejection','delete preserves camera DB'],bytes:entry.bytes,regionReads:reads}));
+}
+run().catch(e=>{console.error(e.stack);process.exitCode=1;});

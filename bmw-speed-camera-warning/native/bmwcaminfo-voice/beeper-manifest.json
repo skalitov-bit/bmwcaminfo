@@ -1,0 +1,62 @@
+{
+  "audio/volume-10/beeper-wood.m4a": {
+    "volume": 10,
+    "sha256": "a7d544147da3d02b9ff335c0756c89275fb40cb4e35b16113cd893d9292b03a7",
+    "durationSeconds": 0.256,
+    "rmsRatio": 0.10022031017124002
+  },
+  "audio/volume-20/beeper-wood.m4a": {
+    "volume": 20,
+    "sha256": "19d2ce1c65b617b5b7c29eb9738b0fa393652a0ae0ec0c90ce342ebc6d153fd9",
+    "durationSeconds": 0.256,
+    "rmsRatio": 0.2009808477330741
+  },
+  "audio/volume-30/beeper-wood.m4a": {
+    "volume": 30,
+    "sha256": "aff627b3966391d785ac31cf30280bd562c8bbad89225806831600ebc666ec3d",
+    "durationSeconds": 0.256,
+    "rmsRatio": 0.30158386201535975
+  },
+  "audio/volume-40/beeper-wood.m4a": {
+    "volume": 40,
+    "sha256": "2110c32db2477e9bb6172e02b8c74c4c6b874e091aa645acd4c85db0e5f658f7",
+    "durationSeconds": 0.256,
+    "rmsRatio": 0.4006405231234316
+  },
+  "audio/volume-50/beeper-wood.m4a": {
+    "volume": 50,
+    "sha256": "6a5961e8290cd5543acac7f909446e90695742416250ccd211e9f6d8c1752636",
+    "durationSeconds": 0.256,
+    "rmsRatio": 0.5019256021614886
+  },
+  "audio/volume-60/beeper-wood.m4a": {
+    "volume": 60,
+    "sha256": "a0812a2aa02cd184bf938f8963200ce44f61bd5ba34d0b7d6e2b23658cb59d41",
+    "durationSeconds": 0.256,
+    "rmsRatio": 0.5998455837111235
+  },
+  "audio/volume-70/beeper-wood.m4a": {
+    "volume": 70,
+    "sha256": "cd35f538adf0e92a426fad1bd6bdcbb8bdca8874d84deae358a3cdd09157c078",
+    "durationSeconds": 0.256,
+    "rmsRatio": 0.7027119694602828
+  },
+  "audio/volume-80/beeper-wood.m4a": {
+    "volume": 80,
+    "sha256": "9df55537a73dfd34c70ebd94bd98bfd76ac033f18698ea1a2cb64f4189bb801e",
+    "durationSeconds": 0.256,
+    "rmsRatio": 0.8022610510868098
+  },
+  "audio/volume-90/beeper-wood.m4a": {
+    "volume": 90,
+    "sha256": "bbb04d2be3165213e85160cbeb37ff757c31fd257d344536acd72105cdb8c597",
+    "durationSeconds": 0.256,
+    "rmsRatio": 0.9030484366855053
+  },
+  "audio/beeper-wood.m4a": {
+    "volume": 100,
+    "sha256": "43d535f2ebfbaea2fc2ba44410f92ebe3a3ae1bc4609b3a50d4a004b77356ebe",
+    "durationSeconds": 0.256,
+    "rmsRatio": 1.0
+  }
+}

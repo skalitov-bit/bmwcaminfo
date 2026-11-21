@@ -1,0 +1,33 @@
+'use strict';
+const assert=require('assert'),EventEmitter=require('events'),fs=require('fs'),os=require('os'),path=require('path');
+const {AudioReport}=require('../native/bmwcaminfo-voice/audio-report');
+const {AudioDiagnostics}=require('../apps/aurelm_speed_camera_warning/audio-diagnostics');
+const view=require('../apps/aurelm_speed_camera_warning/diagnostic-report-view');
+async function run(){
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'report-screen-')),blocked=path.join(dir,'blocked');fs.writeFileSync(blocked,'not a folder');
+ const calls=[],d={s:{audioBackend:'file',audioOverlay:true,inventoryError:'offline'},alsa:{}};
+ const service=new AudioReport(d,{reportDir:blocked,mountsFile:blocked,exec:(bin,args,o,cb)=>{calls.push(args[0]);cb({code:1,message:'Overlay absent'},JSON.stringify({outputs:['default','smartx'],overlay:false}),'');}});
+ const r=await service.run({screenOnly:true});assert(r.report&&!r.local&&!r.usb);assert.equal(fs.readFileSync(blocked,'utf8'),'not a folder');assert.deepStrictEqual(calls,['--check','--check-overlay']);assert(d.s.audioOverlay&&d.s.audioBackend==='file');
+ const client=new EventEmitter();client.ready=true;client.targets='map:1088x480,panel:1920x720,hud:800x480';client.backend='id7';let commands=0;
+ client.status=()=>{commands++;setImmediate(()=>client.emit('status','slot 0x100 status 2: content 0x1000300\nslot 0x203 status 1'));};
+ const display=await view.displayReport(client,{appVersion:'test'});assert(display.status.includes('0x203'));assert.equal(commands,1);assert.equal(client.listenerCount('status'),0);
+ client.status=()=>{};const timeout=await view.displayReport(client,{}, {timeout:5});assert(timeout.error.includes('Нет ответа'));assert.equal(client.listenerCount('status'),0);
+ client.status=()=>client.emit('disconnected');assert((await view.displayReport(client)).error.includes('разорвано'));assert.equal(client.listenerCount('disconnected'),0);
+ assert((await view.displayReport(null)).error.includes('Нет подключения'));
+ const ui=new AudioDiagnostics(()=>{},{displayReport:()=>Promise.resolve(display)});ui.backend='file';ui.overlay=true;ui.confirmable=true;ui.request=async p=>{assert.equal(p.action,'audio-report');assert(p.screenOnly);return r;};
+ await ui.showReport('audio');assert(ui.reportPages.length>1);assert(ui.confirmable&&ui.overlay&&ui.backend==='file');assert.equal(ui.screen,'report');
+ const targets=[],texts=[],cv={fillRect(){},strokeRoundRect(){},textWidth(s){return s.length*12;},text(s,x,y,size,color,opts){assert(opts.literal);texts.push(s);}};
+ const draw=()=>{targets.length=0;ui.draw(cv,{colors:{},text:(cv,t)=>texts.push(t),heading(){},drawSelection(){}},(cv,x,y,w,h,run,key)=>targets.push({x,y,w,h,run,key}));};
+ draw();assert(!targets.some(t=>t.key==='report-prev'));const next=targets.find(t=>t.key==='report-next');next.run();assert.equal(ui.reportPage,1);draw();const prev=targets.find(t=>t.key==='report-prev');ui.tap(prev.x+2,prev.y+2);assert.equal(ui.reportPage,0);
+ ui.turnReport(99999);assert.equal(ui.reportPage,ui.reportPages.length-1);draw();assert(!targets.some(t=>t.key==='report-next'));assert(!targets.some(t=>t.key==='audio-save'));
+ assert(!targets.some(t=>t.key==='report-display'),'Audio report must not offer display diagnostics');
+ ui.reportHome='engineering';draw();assert(!targets.some(t=>t.key==='report-audio'));assert(targets.some(t=>t.key==='report-display-test'));
+ targets.find(t=>t.key==='report-display').run();await new Promise(resolve=>setImmediate(resolve));assert.equal(ui.reportKind,'display');assert(ui.reportPages.some(p=>p.join('\n').includes('0x203')));
+ let returned=false;ui.o.closeDisplayReport=()=>{returned=true;};ui.closeReport();assert(returned);assert.equal(ui.reportHome,'audio');
+ let finish;ui.request=()=>new Promise(resolve=>{finish=resolve;});const pending=ui.showReport('audio');ui.closeReport();finish(r);await pending;assert.equal(ui.screen,'channels');assert(!ui.busy);
+ ui.request=async()=>({audioReportProtocol:1,local:'only-file'});await ui.showReport('audio');assert(ui.reportPages.join().includes('обновите звуковой компонент'));
+ const long=view.pages({data:'z'.repeat(5000),end:'LAST'});assert(long.every(p=>p.length<=view.PAGE_LINES&&p.every(l=>l.length<=96)));assert(long.join().includes('LAST'));
+ const moving=new AudioDiagnostics(()=>{},{moving:()=>true});await moving.showReport();assert(moving.message.includes('остановите'));assert(!moving.screen);
+ console.log('PASS screen report: no USB/local writes, read-only audio/status, timeouts, disconnect cleanup, pagination, touch/controller, old service and cancellation. Hardware mocked.');
+}
+run().catch(e=>{console.error(e);process.exitCode=1;});

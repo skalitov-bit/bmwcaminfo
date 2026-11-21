@@ -1,10 +1,10 @@
 {
   "id": "bmwcaminfo-voice",
   "kind": "tool",
-  "version": "0.1.9",
-  "license": "MIT",
+  "version": "0.1.49",
+  "license": "MIT AND GPL-2.0-or-later AND LGPL-2.1-or-later",
   "title": "BMW Camera Voice Service",
-  "description": "High-loudness normalized BMW MediaPlayer Russian voice alerts with previous audio route restoration",
+  "description": "ALSA voice and beeper mixer, M4A compatibility mode, experimental private PulseAudio + Overlay",
   "requires": {
     "mgu-deploy": "0.7.0"
   },
@@ -14,8 +14,48 @@
   ],
   "files": [
     {
+      "path": "audio-profiles.js",
+      "from": "audio-profiles.js",
+      "mode": "0644"
+    },
+    {
+      "path": "stable-output.js",
+      "from": "stable-output.js",
+      "mode": "0644"
+    },
+    {
       "path": "voice.js",
       "from": "voice.js",
+      "mode": "0644"
+    },
+    {
+      "path": "audio-manifest.json",
+      "from": "audio-manifest.json",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/avtodoria-200.m4a",
+      "from": "audio/avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/avtodoria-average-200.m4a",
+      "from": "audio/avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/avtodoria-average.m4a",
+      "from": "audio/avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/avtodoria.m4a",
+      "from": "audio/avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/camera-200.m4a",
+      "from": "audio/camera-200.m4a",
       "mode": "0644"
     },
     {
@@ -24,8 +64,1672 @@
       "mode": "0644"
     },
     {
-      "path": "audio/camera-200.m4a",
-      "from": "audio/camera-200.m4a",
+      "path": "audio/strelka-200.m4a",
+      "from": "audio/strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/strelka.m4a",
+      "from": "audio/strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "volume-manifest.json",
+      "from": "volume-manifest.json",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/strelka.m4a",
+      "from": "audio/volume-10/strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/strelka.m4a",
+      "from": "audio/volume-20/strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/strelka.m4a",
+      "from": "audio/volume-30/strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/strelka.m4a",
+      "from": "audio/volume-40/strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/strelka.m4a",
+      "from": "audio/volume-50/strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/strelka.m4a",
+      "from": "audio/volume-60/strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/strelka.m4a",
+      "from": "audio/volume-70/strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/strelka.m4a",
+      "from": "audio/volume-80/strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/strelka.m4a",
+      "from": "audio/volume-90/strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/strelka-200.m4a",
+      "from": "audio/volume-10/strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/strelka-200.m4a",
+      "from": "audio/volume-20/strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/strelka-200.m4a",
+      "from": "audio/volume-30/strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/strelka-200.m4a",
+      "from": "audio/volume-40/strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/strelka-200.m4a",
+      "from": "audio/volume-50/strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/strelka-200.m4a",
+      "from": "audio/volume-60/strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/strelka-200.m4a",
+      "from": "audio/volume-70/strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/strelka-200.m4a",
+      "from": "audio/volume-80/strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/strelka-200.m4a",
+      "from": "audio/volume-90/strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/avtodoria.m4a",
+      "from": "audio/volume-10/avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/avtodoria.m4a",
+      "from": "audio/volume-20/avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/avtodoria.m4a",
+      "from": "audio/volume-30/avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/avtodoria.m4a",
+      "from": "audio/volume-40/avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/avtodoria.m4a",
+      "from": "audio/volume-50/avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/avtodoria.m4a",
+      "from": "audio/volume-60/avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/avtodoria.m4a",
+      "from": "audio/volume-70/avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/avtodoria.m4a",
+      "from": "audio/volume-80/avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/avtodoria.m4a",
+      "from": "audio/volume-90/avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/avtodoria-200.m4a",
+      "from": "audio/volume-10/avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/avtodoria-200.m4a",
+      "from": "audio/volume-20/avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/avtodoria-200.m4a",
+      "from": "audio/volume-30/avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/avtodoria-200.m4a",
+      "from": "audio/volume-40/avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/avtodoria-200.m4a",
+      "from": "audio/volume-50/avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/avtodoria-200.m4a",
+      "from": "audio/volume-60/avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/avtodoria-200.m4a",
+      "from": "audio/volume-70/avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/avtodoria-200.m4a",
+      "from": "audio/volume-80/avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/avtodoria-200.m4a",
+      "from": "audio/volume-90/avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/avtodoria-average.m4a",
+      "from": "audio/volume-10/avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/avtodoria-average.m4a",
+      "from": "audio/volume-20/avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/avtodoria-average.m4a",
+      "from": "audio/volume-30/avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/avtodoria-average.m4a",
+      "from": "audio/volume-40/avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/avtodoria-average.m4a",
+      "from": "audio/volume-50/avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/avtodoria-average.m4a",
+      "from": "audio/volume-60/avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/avtodoria-average.m4a",
+      "from": "audio/volume-70/avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/avtodoria-average.m4a",
+      "from": "audio/volume-80/avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/avtodoria-average.m4a",
+      "from": "audio/volume-90/avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/avtodoria-average-200.m4a",
+      "from": "audio/volume-10/avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/avtodoria-average-200.m4a",
+      "from": "audio/volume-20/avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/avtodoria-average-200.m4a",
+      "from": "audio/volume-30/avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/avtodoria-average-200.m4a",
+      "from": "audio/volume-40/avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/avtodoria-average-200.m4a",
+      "from": "audio/volume-50/avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/avtodoria-average-200.m4a",
+      "from": "audio/volume-60/avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/avtodoria-average-200.m4a",
+      "from": "audio/volume-70/avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/avtodoria-average-200.m4a",
+      "from": "audio/volume-80/avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/avtodoria-average-200.m4a",
+      "from": "audio/volume-90/avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/camera-500.m4a",
+      "from": "audio/volume-10/camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/camera-500.m4a",
+      "from": "audio/volume-20/camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/camera-500.m4a",
+      "from": "audio/volume-30/camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/camera-500.m4a",
+      "from": "audio/volume-40/camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/camera-500.m4a",
+      "from": "audio/volume-50/camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/camera-500.m4a",
+      "from": "audio/volume-60/camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/camera-500.m4a",
+      "from": "audio/volume-70/camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/camera-500.m4a",
+      "from": "audio/volume-80/camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/camera-500.m4a",
+      "from": "audio/volume-90/camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/camera-200.m4a",
+      "from": "audio/volume-10/camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/camera-200.m4a",
+      "from": "audio/volume-20/camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/camera-200.m4a",
+      "from": "audio/volume-30/camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/camera-200.m4a",
+      "from": "audio/volume-40/camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/camera-200.m4a",
+      "from": "audio/volume-50/camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/camera-200.m4a",
+      "from": "audio/volume-60/camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/camera-200.m4a",
+      "from": "audio/volume-70/camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/camera-200.m4a",
+      "from": "audio/volume-80/camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/camera-200.m4a",
+      "from": "audio/volume-90/camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/dps-post.m4a",
+      "from": "audio/volume-10/dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/dps-post.m4a",
+      "from": "audio/volume-20/dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/dps-post.m4a",
+      "from": "audio/volume-30/dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/dps-post.m4a",
+      "from": "audio/volume-40/dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/dps-post.m4a",
+      "from": "audio/volume-50/dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/dps-post.m4a",
+      "from": "audio/volume-60/dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/dps-post.m4a",
+      "from": "audio/volume-70/dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/dps-post.m4a",
+      "from": "audio/volume-80/dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/dps-post.m4a",
+      "from": "audio/volume-90/dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/dps-post.m4a",
+      "from": "audio/dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/dps-post-200.m4a",
+      "from": "audio/volume-10/dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/dps-post-200.m4a",
+      "from": "audio/volume-20/dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/dps-post-200.m4a",
+      "from": "audio/volume-30/dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/dps-post-200.m4a",
+      "from": "audio/volume-40/dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/dps-post-200.m4a",
+      "from": "audio/volume-50/dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/dps-post-200.m4a",
+      "from": "audio/volume-60/dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/dps-post-200.m4a",
+      "from": "audio/volume-70/dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/dps-post-200.m4a",
+      "from": "audio/volume-80/dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/dps-post-200.m4a",
+      "from": "audio/volume-90/dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/dps-post-200.m4a",
+      "from": "audio/dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/dps-stationary.m4a",
+      "from": "audio/volume-10/dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/dps-stationary.m4a",
+      "from": "audio/volume-20/dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/dps-stationary.m4a",
+      "from": "audio/volume-30/dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/dps-stationary.m4a",
+      "from": "audio/volume-40/dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/dps-stationary.m4a",
+      "from": "audio/volume-50/dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/dps-stationary.m4a",
+      "from": "audio/volume-60/dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/dps-stationary.m4a",
+      "from": "audio/volume-70/dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/dps-stationary.m4a",
+      "from": "audio/volume-80/dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/dps-stationary.m4a",
+      "from": "audio/volume-90/dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/dps-stationary.m4a",
+      "from": "audio/dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/dps-stationary-200.m4a",
+      "from": "audio/volume-10/dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/dps-stationary-200.m4a",
+      "from": "audio/volume-20/dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/dps-stationary-200.m4a",
+      "from": "audio/volume-30/dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/dps-stationary-200.m4a",
+      "from": "audio/volume-40/dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/dps-stationary-200.m4a",
+      "from": "audio/volume-50/dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/dps-stationary-200.m4a",
+      "from": "audio/volume-60/dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/dps-stationary-200.m4a",
+      "from": "audio/volume-70/dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/dps-stationary-200.m4a",
+      "from": "audio/volume-80/dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/dps-stationary-200.m4a",
+      "from": "audio/volume-90/dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/dps-stationary-200.m4a",
+      "from": "audio/dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/average-end.m4a",
+      "from": "audio/volume-10/average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/average-end.m4a",
+      "from": "audio/volume-20/average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/average-end.m4a",
+      "from": "audio/volume-30/average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/average-end.m4a",
+      "from": "audio/volume-40/average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/average-end.m4a",
+      "from": "audio/volume-50/average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/average-end.m4a",
+      "from": "audio/volume-60/average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/average-end.m4a",
+      "from": "audio/volume-70/average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/average-end.m4a",
+      "from": "audio/volume-80/average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/average-end.m4a",
+      "from": "audio/volume-90/average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/average-end.m4a",
+      "from": "audio/average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm-mixer.js",
+      "from": "pcm-mixer.js",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm-output.js",
+      "from": "pcm-output.js",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm-manifest.json",
+      "from": "pcm-manifest.json",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/average-end.pcm",
+      "from": "pcm/average-end.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/avtodoria-200.pcm",
+      "from": "pcm/avtodoria-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/avtodoria-average-200.pcm",
+      "from": "pcm/avtodoria-average-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/avtodoria-average.pcm",
+      "from": "pcm/avtodoria-average.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/avtodoria.pcm",
+      "from": "pcm/avtodoria.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/beeper-sonar.pcm",
+      "from": "pcm/beeper-sonar.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/camera-200.pcm",
+      "from": "pcm/camera-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/camera-500.pcm",
+      "from": "pcm/camera-500.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/dps-post-200.pcm",
+      "from": "pcm/dps-post-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/dps-post.pcm",
+      "from": "pcm/dps-post.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/dps-stationary-200.pcm",
+      "from": "pcm/dps-stationary-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/dps-stationary.pcm",
+      "from": "pcm/dps-stationary.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/strelka-200.pcm",
+      "from": "pcm/strelka-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/strelka.pcm",
+      "from": "pcm/strelka.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "channel-diagnostics.js",
+      "from": "channel-diagnostics.js",
+      "mode": "0644"
+    },
+    {
+      "path": "diagnostics/voice.m4a",
+      "from": "diagnostics/voice.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "diagnostics/beeper.m4a",
+      "from": "diagnostics/beeper.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "diagnostics/both.m4a",
+      "from": "diagnostics/both.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "alsa-probe",
+      "from": "alsa-probe",
+      "mode": "0755"
+    },
+    {
+      "path": "alsa-diagnostics.js",
+      "from": "alsa-diagnostics.js",
+      "mode": "0644"
+    },
+    {
+      "path": "ALSA_PROBE_GLIBC_NOTICE.txt",
+      "from": "ALSA_PROBE_GLIBC_NOTICE.txt",
+      "mode": "0644"
+    },
+    {
+      "path": "alsa-output.js",
+      "from": "alsa-output.js",
+      "mode": "0644"
+    },
+    {
+      "path": "audio-output.js",
+      "from": "audio-output.js",
+      "mode": "0644"
+    },
+    {
+      "path": "command-control.js",
+      "from": "command-control.js",
+      "mode": "0644"
+    },
+    {
+      "path": "audio-schema.js",
+      "from": "audio-schema.js",
+      "mode": "0644"
+    },
+    {
+      "path": "alsa-launch-error.js",
+      "from": "alsa-launch-error.js",
+      "mode": "0644"
+    },
+    {
+      "path": "overlay-probe.js",
+      "mode": "0644"
+    },
+    {
+      "path": "overlay-output.js",
+      "mode": "0644"
+    },
+    {
+      "path": "carplay-duck-control.js",
+      "from": "carplay-duck-control.js",
+      "mode": "0644"
+    },
+    {
+      "path": "carplay-duck-probe.js",
+      "from": "carplay-duck-probe.js",
+      "mode": "0644"
+    },
+    {
+      "path": "audio-report.js",
+      "mode": "0644"
+    },
+    {
+      "path": "converter-output.js",
+      "mode": "0644"
+    },
+    {
+      "path": "report-share.js",
+      "mode": "0644"
+    },
+    {
+      "path": "report-network.js",
+      "mode": "0644"
+    },
+    {
+      "path": "buffer-telemetry.js",
+      "from": "buffer-telemetry.js",
+      "mode": "0644"
+    },
+    {
+      "path": "music-ducker.js",
+      "from": "music-ducker.js",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse-runtime.js",
+      "from": "pulse-runtime.js",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse-output.js",
+      "from": "pulse-output.js",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/provenance.json",
+      "from": "pulse/provenance.json",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/bin/pacat",
+      "from": "pulse/bin/pacat",
+      "mode": "0755"
+    },
+    {
+      "path": "pulse/bin/pactl",
+      "from": "pulse/bin/pactl",
+      "mode": "0755"
+    },
+    {
+      "path": "pulse/bin/pulseaudio",
+      "from": "pulse/bin/pulseaudio",
+      "mode": "0755"
+    },
+    {
+      "path": "pulse/lib/libalsa-util.so",
+      "from": "pulse/lib/libalsa-util.so",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libasyncns.so.0",
+      "from": "pulse/lib/libasyncns.so.0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libattr.so.1",
+      "from": "pulse/lib/libattr.so.1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libcap.so.2",
+      "from": "pulse/lib/libcap.so.2",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libdbus-1.so.3",
+      "from": "pulse/lib/libdbus-1.so.3",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libFLAC.so.8",
+      "from": "pulse/lib/libFLAC.so.8",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libgcrypt.so.20",
+      "from": "pulse/lib/libgcrypt.so.20",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libgpg-error.so.0",
+      "from": "pulse/lib/libgpg-error.so.0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libICE.so.6",
+      "from": "pulse/lib/libICE.so.6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libjson-c.so.2",
+      "from": "pulse/lib/libjson-c.so.2",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libltdl.so.7",
+      "from": "pulse/lib/libltdl.so.7",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/liblzma.so.5",
+      "from": "pulse/lib/liblzma.so.5",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libogg.so.0",
+      "from": "pulse/lib/libogg.so.0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/liborc-0.4.so.0",
+      "from": "pulse/lib/liborc-0.4.so.0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libprotocol-native.so",
+      "from": "pulse/lib/libprotocol-native.so",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libpulse.so.0",
+      "from": "pulse/lib/libpulse.so.0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libpulsecommon-5.0.so",
+      "from": "pulse/lib/libpulsecommon-5.0.so",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libpulsecore-5.0.so",
+      "from": "pulse/lib/libpulsecore-5.0.so",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libsamplerate.so.0",
+      "from": "pulse/lib/libsamplerate.so.0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libSM.so.6",
+      "from": "pulse/lib/libSM.so.6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libsndfile.so.1",
+      "from": "pulse/lib/libsndfile.so.1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libspeexdsp.so.1",
+      "from": "pulse/lib/libspeexdsp.so.1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libsystemd.so.0",
+      "from": "pulse/lib/libsystemd.so.0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libtdb.so.1",
+      "from": "pulse/lib/libtdb.so.1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libudev.so.1",
+      "from": "pulse/lib/libudev.so.1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libuuid.so.1",
+      "from": "pulse/lib/libuuid.so.1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libvorbis.so.0",
+      "from": "pulse/lib/libvorbis.so.0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libvorbisenc.so.2",
+      "from": "pulse/lib/libvorbisenc.so.2",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libwrap.so.0",
+      "from": "pulse/lib/libwrap.so.0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libX11-xcb.so.1",
+      "from": "pulse/lib/libX11-xcb.so.1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libX11.so.6",
+      "from": "pulse/lib/libX11.so.6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libXau.so.6",
+      "from": "pulse/lib/libXau.so.6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libxcb.so.1",
+      "from": "pulse/lib/libxcb.so.1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libXdmcp.so.6",
+      "from": "pulse/lib/libXdmcp.so.6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libXext.so.6",
+      "from": "pulse/lib/libXext.so.6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libXi.so.6",
+      "from": "pulse/lib/libXi.so.6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/libXtst.so.6",
+      "from": "pulse/lib/libXtst.so.6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/module-alsa-sink.so",
+      "from": "pulse/lib/module-alsa-sink.so",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/lib/module-native-protocol-unix.so",
+      "from": "pulse/lib/module-native-protocol-unix.so",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libasyncns0",
+      "from": "pulse/licenses/libasyncns0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libattr1",
+      "from": "pulse/licenses/libattr1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libcap2",
+      "from": "pulse/licenses/libcap2",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libdbus-1-3",
+      "from": "pulse/licenses/libdbus-1-3",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libflac8",
+      "from": "pulse/licenses/libflac8",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libgcrypt20",
+      "from": "pulse/licenses/libgcrypt20",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libgpg-error0",
+      "from": "pulse/licenses/libgpg-error0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libice6",
+      "from": "pulse/licenses/libice6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libjson-c2",
+      "from": "pulse/licenses/libjson-c2",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libltdl7",
+      "from": "pulse/licenses/libltdl7",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/liblzma5",
+      "from": "pulse/licenses/liblzma5",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libogg0",
+      "from": "pulse/licenses/libogg0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/liborc-0.4-0",
+      "from": "pulse/licenses/liborc-0.4-0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libpulse0",
+      "from": "pulse/licenses/libpulse0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libsamplerate0",
+      "from": "pulse/licenses/libsamplerate0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libsm6",
+      "from": "pulse/licenses/libsm6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libsndfile1",
+      "from": "pulse/licenses/libsndfile1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libspeexdsp1",
+      "from": "pulse/licenses/libspeexdsp1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libsystemd0",
+      "from": "pulse/licenses/libsystemd0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libtdb1",
+      "from": "pulse/licenses/libtdb1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libudev1",
+      "from": "pulse/licenses/libudev1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libuuid1",
+      "from": "pulse/licenses/libuuid1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libvorbis0a",
+      "from": "pulse/licenses/libvorbis0a",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libvorbisenc2",
+      "from": "pulse/licenses/libvorbisenc2",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libwrap0",
+      "from": "pulse/licenses/libwrap0",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libx11-6",
+      "from": "pulse/licenses/libx11-6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libx11-xcb1",
+      "from": "pulse/licenses/libx11-xcb1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libxau6",
+      "from": "pulse/licenses/libxau6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libxcb1",
+      "from": "pulse/licenses/libxcb1",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libxdmcp6",
+      "from": "pulse/licenses/libxdmcp6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libxext6",
+      "from": "pulse/licenses/libxext6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libxi6",
+      "from": "pulse/licenses/libxi6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/libxtst6",
+      "from": "pulse/licenses/libxtst6",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/pulseaudio",
+      "from": "pulse/licenses/pulseaudio",
+      "mode": "0644"
+    },
+    {
+      "path": "pulse/licenses/pulseaudio-utils",
+      "from": "pulse/licenses/pulseaudio-utils",
+      "mode": "0644"
+    },
+    {
+      "path": "mixer-settings.js",
+      "from": "mixer-settings.js",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/beeper-choice-1.pcm",
+      "from": "pcm/beeper-choice-1.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/beeper-choice-1.m4a",
+      "from": "audio/volume-10/beeper-choice-1.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/beeper-choice-1.m4a",
+      "from": "audio/volume-20/beeper-choice-1.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/beeper-choice-1.m4a",
+      "from": "audio/volume-30/beeper-choice-1.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/beeper-choice-1.m4a",
+      "from": "audio/volume-40/beeper-choice-1.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/beeper-choice-1.m4a",
+      "from": "audio/volume-50/beeper-choice-1.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/beeper-choice-1.m4a",
+      "from": "audio/volume-60/beeper-choice-1.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/beeper-choice-1.m4a",
+      "from": "audio/volume-70/beeper-choice-1.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/beeper-choice-1.m4a",
+      "from": "audio/volume-80/beeper-choice-1.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/beeper-choice-1.m4a",
+      "from": "audio/volume-90/beeper-choice-1.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/beeper-choice-1.m4a",
+      "from": "audio/beeper-choice-1.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/beeper-choice-2.pcm",
+      "from": "pcm/beeper-choice-2.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/beeper-choice-2.m4a",
+      "from": "audio/volume-10/beeper-choice-2.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/beeper-choice-2.m4a",
+      "from": "audio/volume-20/beeper-choice-2.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/beeper-choice-2.m4a",
+      "from": "audio/volume-30/beeper-choice-2.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/beeper-choice-2.m4a",
+      "from": "audio/volume-40/beeper-choice-2.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/beeper-choice-2.m4a",
+      "from": "audio/volume-50/beeper-choice-2.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/beeper-choice-2.m4a",
+      "from": "audio/volume-60/beeper-choice-2.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/beeper-choice-2.m4a",
+      "from": "audio/volume-70/beeper-choice-2.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/beeper-choice-2.m4a",
+      "from": "audio/volume-80/beeper-choice-2.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/beeper-choice-2.m4a",
+      "from": "audio/volume-90/beeper-choice-2.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/beeper-choice-2.m4a",
+      "from": "audio/beeper-choice-2.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/beeper-choice-3.pcm",
+      "from": "pcm/beeper-choice-3.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/beeper-choice-3.m4a",
+      "from": "audio/volume-10/beeper-choice-3.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/beeper-choice-3.m4a",
+      "from": "audio/volume-20/beeper-choice-3.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/beeper-choice-3.m4a",
+      "from": "audio/volume-30/beeper-choice-3.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/beeper-choice-3.m4a",
+      "from": "audio/volume-40/beeper-choice-3.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/beeper-choice-3.m4a",
+      "from": "audio/volume-50/beeper-choice-3.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/beeper-choice-3.m4a",
+      "from": "audio/volume-60/beeper-choice-3.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/beeper-choice-3.m4a",
+      "from": "audio/volume-70/beeper-choice-3.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/beeper-choice-3.m4a",
+      "from": "audio/volume-80/beeper-choice-3.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/beeper-choice-3.m4a",
+      "from": "audio/volume-90/beeper-choice-3.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/beeper-choice-3.m4a",
+      "from": "audio/beeper-choice-3.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/beeper-choice-4.pcm",
+      "from": "pcm/beeper-choice-4.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/beeper-choice-4.m4a",
+      "from": "audio/volume-10/beeper-choice-4.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/beeper-choice-4.m4a",
+      "from": "audio/volume-20/beeper-choice-4.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/beeper-choice-4.m4a",
+      "from": "audio/volume-30/beeper-choice-4.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/beeper-choice-4.m4a",
+      "from": "audio/volume-40/beeper-choice-4.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/beeper-choice-4.m4a",
+      "from": "audio/volume-50/beeper-choice-4.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/beeper-choice-4.m4a",
+      "from": "audio/volume-60/beeper-choice-4.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/beeper-choice-4.m4a",
+      "from": "audio/volume-70/beeper-choice-4.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/beeper-choice-4.m4a",
+      "from": "audio/volume-80/beeper-choice-4.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/beeper-choice-4.m4a",
+      "from": "audio/volume-90/beeper-choice-4.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/beeper-choice-4.m4a",
+      "from": "audio/beeper-choice-4.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/beeper-choice-5.pcm",
+      "from": "pcm/beeper-choice-5.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/beeper-choice-5.m4a",
+      "from": "audio/volume-10/beeper-choice-5.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/beeper-choice-5.m4a",
+      "from": "audio/volume-20/beeper-choice-5.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/beeper-choice-5.m4a",
+      "from": "audio/volume-30/beeper-choice-5.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/beeper-choice-5.m4a",
+      "from": "audio/volume-40/beeper-choice-5.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/beeper-choice-5.m4a",
+      "from": "audio/volume-50/beeper-choice-5.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/beeper-choice-5.m4a",
+      "from": "audio/volume-60/beeper-choice-5.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/beeper-choice-5.m4a",
+      "from": "audio/volume-70/beeper-choice-5.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/beeper-choice-5.m4a",
+      "from": "audio/volume-80/beeper-choice-5.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/beeper-choice-5.m4a",
+      "from": "audio/volume-90/beeper-choice-5.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/beeper-choice-5.m4a",
+      "from": "audio/beeper-choice-5.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/beeper-choice-6.pcm",
+      "from": "pcm/beeper-choice-6.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/beeper-choice-6.m4a",
+      "from": "audio/volume-10/beeper-choice-6.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/beeper-choice-6.m4a",
+      "from": "audio/volume-20/beeper-choice-6.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/beeper-choice-6.m4a",
+      "from": "audio/volume-30/beeper-choice-6.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/beeper-choice-6.m4a",
+      "from": "audio/volume-40/beeper-choice-6.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/beeper-choice-6.m4a",
+      "from": "audio/volume-50/beeper-choice-6.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/beeper-choice-6.m4a",
+      "from": "audio/volume-60/beeper-choice-6.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/beeper-choice-6.m4a",
+      "from": "audio/volume-70/beeper-choice-6.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/beeper-choice-6.m4a",
+      "from": "audio/volume-80/beeper-choice-6.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/beeper-choice-6.m4a",
+      "from": "audio/volume-90/beeper-choice-6.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/beeper-choice-6.m4a",
+      "from": "audio/beeper-choice-6.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/beeper-choice-7.pcm",
+      "from": "pcm/beeper-choice-7.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/beeper-choice-7.m4a",
+      "from": "audio/volume-10/beeper-choice-7.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/beeper-choice-7.m4a",
+      "from": "audio/volume-20/beeper-choice-7.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/beeper-choice-7.m4a",
+      "from": "audio/volume-30/beeper-choice-7.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/beeper-choice-7.m4a",
+      "from": "audio/volume-40/beeper-choice-7.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/beeper-choice-7.m4a",
+      "from": "audio/volume-50/beeper-choice-7.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/beeper-choice-7.m4a",
+      "from": "audio/volume-60/beeper-choice-7.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/beeper-choice-7.m4a",
+      "from": "audio/volume-70/beeper-choice-7.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/beeper-choice-7.m4a",
+      "from": "audio/volume-80/beeper-choice-7.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/beeper-choice-7.m4a",
+      "from": "audio/volume-90/beeper-choice-7.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/beeper-choice-7.m4a",
+      "from": "audio/beeper-choice-7.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/beeper-choice-8.pcm",
+      "from": "pcm/beeper-choice-8.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/beeper-choice-8.m4a",
+      "from": "audio/volume-10/beeper-choice-8.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/beeper-choice-8.m4a",
+      "from": "audio/volume-20/beeper-choice-8.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/beeper-choice-8.m4a",
+      "from": "audio/volume-30/beeper-choice-8.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/beeper-choice-8.m4a",
+      "from": "audio/volume-40/beeper-choice-8.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/beeper-choice-8.m4a",
+      "from": "audio/volume-50/beeper-choice-8.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/beeper-choice-8.m4a",
+      "from": "audio/volume-60/beeper-choice-8.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/beeper-choice-8.m4a",
+      "from": "audio/volume-70/beeper-choice-8.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/beeper-choice-8.m4a",
+      "from": "audio/volume-80/beeper-choice-8.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/beeper-choice-8.m4a",
+      "from": "audio/volume-90/beeper-choice-8.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/beeper-choice-8.m4a",
+      "from": "audio/beeper-choice-8.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "beeper-choices.json",
+      "from": "beeper-choices.json",
+      "mode": "0644"
+    },
+    {
+      "path": "beeper-sounds.js",
+      "from": "beeper-sounds.js",
       "mode": "0644"
     }
   ],

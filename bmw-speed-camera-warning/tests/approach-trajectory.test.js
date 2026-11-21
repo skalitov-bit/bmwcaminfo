@@ -1,0 +1,37 @@
+'use strict';
+const assert=require('assert'),path=require('path');
+const base=path.resolve(process.argv[2]||path.join(__dirname,'../apps/aurelm_speed_camera_warning'));
+const {ApproachTrajectory,alignment}=require(path.join(base,'approach-trajectory'));
+const {MapcamWarnings}=require(path.join(base,'mapcam-warnings'));
+const {NotificationSession}=require(path.join(base,'notification-session'));
+const {compareWarnings}=require(path.join(base,'notification-priority'));
+const origin=Date.now(),m=111320,cos=Math.cos(55*Math.PI/180);
+const fix=(s,x=0,accuracy=5)=>({lat:55+s*60/3.6/m,lon:37+x/(m*cos),timeMs:origin+s*1000,speedKmh:60,headingDeg:0,accuracyM:accuracy});
+const cam=(id,y,x,limit)=>({id,lat:55+y/m,lon:37+x/(m*cos),limit,warningProfile:'hybrid-v1',warningEnabled:true,mapcamTypeCode:1,mapcamDirectionType:1,mapcamApproachHeadingDeg:0,mapcamAngleDeg:60,mapcamWarningDistanceM:1000});
+const cameras=[cam('main60',500,0,60),cam('side30',400,30,30)];
+let now=origin;const tr=new ApproachTrajectory(),engine=new MapcamWarnings();
+const session=new NotificationSession({cancel(){}},()=>({voice:'off'}),()=>now);
+const selections=[];
+for(let s=0;s<6;s++){
+ const f=fix(s);now=f.timeMs;const track=tr.update(f,now);engine.update(f,cameras,now);
+ for(const state of Object.values(engine.states))state.trajectory=alignment(state.camera,track,state);
+ const chosen=session.update(engine.states,f,0,[]);selections.push(chosen&&chosen.camera.limit);
+}
+assert.equal(selections[1],30,'Before a measured track exists use legacy selection');
+assert.equal(selections[2],30,'One new directional result cannot switch target');
+assert.equal(selections[3],60);assert.equal(selections[5],60);
+const track=tr.value(now);assert(track.trusted);assert.equal(alignment(cameras[0],track).tier,0);assert(alignment(cameras[1],track).tier>0);
+assert.equal(alignment(cameras[1],track,{phase:'section'}).tier,0,'Known section geometry wins over straight tangent');
+const alone=Object.assign({},engine.states.side30);assert.equal(new NotificationSession({cancel(){}},()=>({voice:'off'}),()=>now).update({side30:alone},fix(5),0,[]).camera.limit,30,'Off-axis alone is retained');
+tr.update(fix(6,0,25),origin+6000);assert(!tr.value(origin+6000)||!tr.value(origin+6000).trusted,'Poor accuracy disables ranking');
+const turn=new ApproachTrajectory();for(let s=0;s<4;s++)turn.update(fix(s),origin+s*1000);
+const turning=fix(4,25);turning.headingDeg=55;assert(!turn.update(turning,turning.timeMs).trusted);
+assert.equal(tr.update(null,origin+7000),null);assert.equal(tr.samples.length,0);
+tr.update(fix(8),origin+8000);assert.equal(tr.value(origin+8000),null,'Recovery requires new track');
+for(let s=9;s<100;s++)tr.update(fix(s),origin+s*1000);assert(tr.samples.length<=20);assert.equal(tr.value(origin+103000),null);
+const dummy={camera:{id:'dummy',camera_family:'dummy'},phase:'point',distanceM:1,trajectory:{trusted:true,tier:0}};
+assert(compareWarnings(dummy,alone)>0,'Real camera priority remains above dummy');
+const fast=Object.assign({},alone,{trajectory:{trusted:true,tier:2}}),police={camera:{id:'police',typeNamespace:'estrelka',typeCode:206},phase:'point',distanceM:10,trajectory:{trusted:true,tier:0}};
+assert(compareWarnings(fast,police)<0,'Speed-control priority remains above other categories');
+const started=process.hrtime();for(let i=0;i<100000;i++)alignment(cameras[i%2],track);
+const elapsed=process.hrtime(started);console.log('PASS trajectory: parallel 30/60, two-fix switch, poor GPS, turns, section paths, lone off-axis camera, reset, bounded history and existing priorities. Selections: '+selections.join(',')+'; 100k alignments '+(elapsed[0]*1000+elapsed[1]/1e6).toFixed(1)+'ms (PC).');

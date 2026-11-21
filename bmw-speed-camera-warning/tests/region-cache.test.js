@@ -1,0 +1,24 @@
+'use strict';
+const assert=require('assert');
+const {RegionCache}=require('../apps/aurelm_speed_camera_warning/region-cache');
+const tick=()=>new Promise(r=>setImmediate(r));
+const f=m=>({lat:55+m/111320,lon:37});
+async function run(){
+ let now=1000,reads=0;const jobs=[];
+ const cache=new RegionCache((center,live)=>new Promise((resolve,reject)=>jobs.push({center,live,resolve,reject})),{now:()=>now});
+ const query=m=>cache.near(f(m),4200,undefined,()=>{reads++;return ['disk'];});
+ const finish=(job,value)=>job.resolve({count:3,index:{near:()=>[value]}});
+ assert.deepStrictEqual(query(0),['disk']);query(10);await tick();assert.equal(jobs.length,1);
+ finish(jobs[0],'A');await tick();assert.deepStrictEqual(query(4900),['A']);assert.equal(cache.version,1);
+ assert.deepStrictEqual(query(5100),['A']);await tick();assert.equal(jobs.length,2);
+ assert.deepStrictEqual(query(5500),['A'],'Old region remains valid during preload');
+ assert.deepStrictEqual(query(6100),['disk'],'Past safe coverage uses complete disk lookup');
+ finish(jobs[1],'B');await tick();assert.deepStrictEqual(query(6100),['B']);
+ query(100000);await tick();query(200000);assert(!jobs[2].live(),'GPS jump cancels obsolete job');
+ finish(jobs[2],'obsolete');await tick();assert.equal(cache.version,2);assert.equal(jobs.length,4);
+ jobs[3].reject(Error('read failed'));await tick();assert.equal(cache.error,'read failed');
+ query(200000);await tick();assert.equal(jobs.length,4,'Failure backoff prevents per-GPS reload loop');
+ now+=30001;query(200000);await tick();assert.equal(jobs.length,5);
+ cache.close();finish(jobs[4],'closed');await tick();assert.equal(cache.active,null);assert.equal(cache.version,2);
+ assert(reads>0);console.log('PASS 10/5 region transitions: startup fallback, overlap, edge, GPS jumps, single load, retry, stale completion, close');
+}run().catch(e=>{console.error(e.stack);process.exitCode=1;});

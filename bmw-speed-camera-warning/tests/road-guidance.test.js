@@ -32,7 +32,13 @@ const ambiguous={id:'ambiguous',lat:camera.lat,lon:camera.lon,travel:[0,180],roa
 assert.strictEqual(candidate(prepare(ambiguous),fix(-300,400000,36),500,null),null,'Ambiguous parallel road geometry must suppress warning');
 
 w=new RoadGuidanceWarnings([zone]);
-assert.strictEqual(w.update(Object.assign(fix(-300,500000,36),{accuracyM:20}),[camera],500000).length,0,'Poor GPS accuracy must suppress road-confirmed warnings');
+for(const accuracyM of [15,23,35]){
+ w=new RoadGuidanceWarnings([zone]);
+ w.update(Object.assign(fix(-300,500000,36),{accuracyM}),[camera],500000);
+ assert(w.update(Object.assign(fix(-290,501000,36),{accuracyM}),[camera],501000).some(e=>e.type==='camera'),'Moderate accuracy must allow normal road-confirmed warnings');
+}
+w=new RoadGuidanceWarnings([zone]);
+for(let t=0;t<2;t++)assert.equal(w.update(Object.assign(fix(-300+t*10,502000+t*1000,36),{accuracyM:35.01}),[camera],502000+t*1000).length,0);
 
 const oneWay={id:camera.id,lat:camera.lat,lon:camera.lon,travel:[0],roads:[
  {id:'oneway',pts:[[0,-1000],[0,1000]],camM:1000,dir:1}

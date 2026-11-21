@@ -37,6 +37,9 @@ def build(artifacts, out, repo='skalitov-bit/bmwcaminfo'):
     voice = json.loads((ROOT / 'native' / VOICE_ID / 'component.json').read_text(encoding='utf-8'))
     appfile = artifacts / (APP_ID + '@' + app['version'] + '.tgz')
     voicefile = artifacts / (VOICE_ID + '@' + voice['version'] + '.tgz')
+    graphics = json.loads((ROOT / 'tools' / 'renderer-dependency.json').read_text(encoding='utf-8'))
+    # External components belong to their original source. Never republish their
+    # catalog entries or packages under SpeedCAM, including in the USB copy.
     pkg = read_json_member(appfile, 'package/package.json')
     svc = read_json_member(voicefile, 'component.json')
     if (pkg['name'], pkg['version']) != (APP_ID, app['version']):
@@ -55,22 +58,29 @@ def build(artifacts, out, repo='skalitov-bit/bmwcaminfo'):
                     requires=requires, optional=optional, uninstallable=True, mguHmi=['ID7'])
     rows = [
         entry(appfile, APP_ID, app['version'], 'app', 'SpeedCAM',
-              'Камеры, HUD, приборная панель и голосовые уведомления. Звуковой сервис устанавливается автоматически.',
-              {VOICE_ID: voice['version']}),
-        entry(voicefile, VOICE_ID, voice['version'], 'tool', 'SpeedCAM — звуковой сервис',
+              'Камеры, HUD, приборная панель и голосовые уведомления. Для графики добавьте источник cauliflowermossgrape/idrive7-apps. Звуковой сервис устанавливается вместе с приложением.',
+              dict(graphics['requires'], **{VOICE_ID: voice['version']})),
+        entry(voicefile, VOICE_ID, voice['version'], 'tool', voice['title'],
               'Голосовые уведомления и бипер SpeedCAM. Устанавливается магазином вместе с приложением.',
               voice.get('requires', {}), True),
     ]
+    # Store uses the manifest title to adopt a tool whose old source disappeared.
+    # Keep that stable identifier; localize only the displayed title.
+    rows[1]['texts'] = {'ru': {'title': 'SpeedCAM — звуковой сервис'}}
     icon = ROOT / 'apps' / APP_ID / 'icon.png'
     if not icon.is_file() or icon.stat().st_size > 128 * 1024 or icon.read_bytes()[:8] != b'\x89PNG\r\n\x1a\n':
         raise ValueError('Store icon must be a PNG of at most 128 KiB')
     rows[0].update(icon='SpeedCAM.png', iconSha256=digest(icon))
     out.mkdir(parents=True, exist_ok=True)
+    # Refuse to mix an old three-package USB bundle with the new external source.
+    # Build into a fresh folder; do not silently retain orphaned engine artifacts.
+    usb = out / 'usb' / 'mgu-repo' / 'speedcam'
+    if usb.exists() and any(p.name.startswith(('mgu-render@', 'idrive7-renderd@', 'mgu-inputgate@')) for p in usb.iterdir()):
+        raise ValueError('Old renderer package in USB output; use a fresh output folder')
     shutil.copyfile(icon, out / 'SpeedCAM.png')
     catalog = dict(schema=2, components=rows)
     (out / 'catalog.json').write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     # USB is an offline copy of the same source, so later online updates keep their origin.
-    usb = out / 'usb' / 'mgu-repo' / 'speedcam'
     usb.mkdir(parents=True, exist_ok=True)
     local = json.loads(json.dumps(catalog))
     for row, file in zip(local['components'], (appfile, voicefile)):
@@ -79,6 +89,8 @@ def build(artifacts, out, repo='skalitov-bit/bmwcaminfo'):
     shutil.copyfile(icon, usb / 'SpeedCAM.png')
     (usb / 'catalog.json').write_text(json.dumps(local, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     (usb / 'mgu-copy.json').write_text(json.dumps({'copyOf': 'github:' + repo}) + '\n', encoding='utf-8')
+    shutil.copyfile(ROOT / 'MGU_STORE_RU.txt', out / 'INSTALL_RU.txt')
+    shutil.copyfile(ROOT / 'MGU_STORE_RU.txt', usb / 'INSTALL_RU.txt')
     return catalog
 
 

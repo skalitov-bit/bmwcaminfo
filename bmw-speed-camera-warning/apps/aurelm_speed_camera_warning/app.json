@@ -1,8 +1,10 @@
 {
   "id": "aurelm_speed_camera_warning",
-  "title": "Speed Camera Warning",
-  "description": "Камеры MapCam по России: секторы, направления, участки контроля, средняя скорость и вывод KOMBI/HUD.",
-  "version": "0.9.1",
+  "title": "SpeedCAM",
+  "nativeHeader": true,
+  "responsiveMain": true,
+  "description": "База камер по России: компактная база, названия комплексов и предупреждения KOMBI/HUD.",
+  "version": "0.9.92",
   "vendor": "Andrug05",
   "loggingId": "SCAM",
   "iconGlyph": "camera",
@@ -10,36 +12,54 @@
     {
       "name": "MAIN",
       "kind": "canvas",
-      "title": "Камеры",
-      "buttons": [
+      "title": "SpeedCAM",
+      "buttons": []
+    },
+    {
+      "name": "DISPLAY_RECOVERY",
+      "kind": "menu",
+      "title": "SpeedCAM — восстановление экрана",
+      "items": [
         [
-          "BTN_CAM_PREV",
-          "1"
+          "text3",
+          "DISPLAY_RECOVERY_STATUS",
+          "Графическое управление недоступно"
         ],
         [
-          "BTN_CAM_NEXT",
-          "2"
+          "button",
+          "DISPLAY_RETRY",
+          "Повторить подключение графики"
         ],
         [
-          "BTN_ZOOM",
-          "3"
+          "button",
+          "DISPLAY_SETTINGS",
+          "Открыть настройки уведомлений"
         ],
         [
-          "BTN_REFRESH",
-          "4"
-        ],
-        [
-          "BTN_VOICE_TEST",
-          "5"
-        ],
-        [
-          "BTN_CAMERA_MENU",
-          "Вкладка >"
+          "button",
+          "DISPLAY_EXIT",
+          "Закрыть экран приложения"
         ]
       ]
     }
   ],
   "settings": [
+    {
+      "key": "audio_force_notifications",
+      "label": "Уведомления и бипер всегда (проверка)",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Выключено"
+        ],
+        [
+          "on",
+          "Включено"
+        ]
+      ]
+    },
     {
       "key": "city",
       "label": "База камер",
@@ -86,9 +106,9 @@
     },
     {
       "key": "mapcam_voice",
-      "label": "MapCam: голос",
+      "label": "Голос уведомлений",
       "type": "choice",
-      "default": "always",
+      "default": "speeding",
       "options": [
         [
           "always",
@@ -96,7 +116,23 @@
         ],
         [
           "speeding",
-          "При превышении"
+          "Только при превышении"
+        ],
+        [
+          "off",
+          "Выключен"
+        ]
+      ]
+    },
+    {
+      "key": "notification_beeper",
+      "label": "Бипер",
+      "type": "choice",
+      "default": "auto",
+      "options": [
+        [
+          "auto",
+          "Авто"
         ],
         [
           "off",
@@ -106,7 +142,7 @@
     },
     {
       "key": "mapcam_excess",
-      "label": "MapCam: порог превышения",
+      "label": "Порог превышения",
       "type": "choice",
       "default": "0",
       "options": [
@@ -130,13 +166,17 @@
     },
     {
       "key": "mapcam_distance",
-      "label": "MapCam: дистанция",
+      "label": "Дистанция уведомлений",
       "type": "choice",
       "default": "0",
       "options": [
         [
           "0",
-          "Из базы MapCam"
+          "Авто: база + скорость"
+        ],
+        [
+          "base",
+          "Из базы: фиксированная"
         ],
         [
           "500",
@@ -155,9 +195,84 @@
           "2000 м"
         ]
       ]
+    },
+    {
+      "key": "auto_monitor",
+      "label": "Автозапуск контроля",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включён"
+        ],
+        [
+          "off",
+          "После открытия SpeedCAM"
+        ]
+      ]
+    },
+    {
+      "key": "mapcam_repeat200",
+      "label": "Повтор за 200 м",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включён"
+        ],
+        [
+          "off",
+          "Выключен"
+        ]
+      ]
+    },
+    {
+      "key": "notification_volume",
+      "label": "Громкость уведомлений",
+      "type": "choice",
+      "default": "40",
+      "options": [
+        [
+          "20",
+          "Тихо"
+        ],
+        [
+          "40",
+          "Умеренно"
+        ],
+        [
+          "60",
+          "Средне"
+        ],
+        [
+          "80",
+          "Громко"
+        ],
+        [
+          "100",
+          "Максимум"
+        ]
+      ]
     }
   ],
   "signals": {
+    "de.bmw.infotainment.navigation.positioning.Positioning": {
+      "_optional": "Положение штатной навигации; при отсутствии используется NMEA",
+      "_instances": "Main_Instance",
+      "currentLocation": "rs"
+    },
+    "de.bmw.infotainment.GPSData": {
+      "_optional": "Резерв координат BMW GPSData",
+      "_instances": "1",
+      "GPSPositionCAN": "rs",
+      "GPSPositionExtendedCAN": "rs"
+    },
+    "de.bmw.infotainment.vehicle.Vehicle2": {
+      "_optional": "Скорость автомобиля: сглаживание и краткий резерв GPS",
+      "statusCarSpeed2": "rs"
+    },
     "de.bmw.infotainment.SatellitePositioning": {
       "_instances": "1",
       "_broadcasts": [
@@ -166,5 +281,6 @@
     }
   },
   "maxDiskUsage": 268435456,
-  "memoryKB": 524288
+  "memoryKB": 524288,
+  "mguAppStartType": "autostart"
 }
