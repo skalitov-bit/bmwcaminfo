@@ -16,7 +16,7 @@
 
 SpeedCAM заранее показывает камеру по ходу движения, её ограничение скорости и расстояние до неё. Крупный радар, голосовые подсказки и бипер помогают получать нужную информацию привычным способом — на дисплеях вашего BMW.
 
-**Текущий выпуск: 0.9.86 · Звуковой сервис: 0.1.48.** [Что нового →](https://github.com/skalitov-bit/bmwcaminfo/releases/latest)
+**Текущий выпуск: 0.9.92 gps test version · Звуковой сервис: 0.1.49.** [Что нового →](https://github.com/skalitov-bit/bmwcaminfo/releases/latest)
 
 [Возможности](#возможности) · [Галерея](#галерея) · [HUD и приборка](#hud-и-приборная-панель) · [Установка](#установка) · [Поддержка](#поддержать-разработку)
 
@@ -43,9 +43,11 @@ SpeedCAM заранее показывает камеру по ходу движ
 
 ### Карта: всё нужное рядом
 
-Выбранная камера, ограничения на точках, масштабирование и обновление базы — на одном экране. При движении условная дорога строится по GPS-траектории; это не дорожная навигационная карта.
+Выбранная камера, ограничения на точках, масштабирование и обновление базы — на одном экране. Можно загрузить дорожные карты Москвы и Московской области (включая Новую Москву), Санкт-Петербурга и Ленинградской области. Управление — **Настройки → Карты городов**: загрузить, обновить, посмотреть или удалить. После загрузки дороги доступны без интернета; база камер хранится отдельно. Белый GPS-наконечник направлен вперёд, карта вращается по курсу; начальный масштаб — **2,5×**. Прокладки маршрута и привязки камер к дорожной сети пока нет.
 
-![Карта камер и выбранная точка](docs/screenshots-0.9.86/01-map.png)
+Кадр карты из эмулятора **0.9.92**. Москва с областью — 20,6 МиБ; Петербург с областью — 12,5 МиБ. Данные дорог © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL.
+
+![Дорожная карта и белый GPS-наконечник](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.92/map-preview.png)
 
 ### Предупреждение прямо на карте
 
@@ -351,7 +353,7 @@ SpeedCAM заранее показывает камеру по ходу движ
 
 [Подробная инструкция MGU Store](bmw-speed-camera-warning/MGU_STORE_RU.txt) · [Последний выпуск и файлы](https://github.com/skalitov-bit/bmwcaminfo/releases/latest)
 
-Для версии 0.9.86 нужны **звуковой сервис ≥ 0.1.48**, **idrive7-renderd ≥ 2.1.18** и **mgu-inputgate ≥ 1.1.0**. Ручная установка одного `.mgu` не устанавливает зависимости.
+Для версии 0.9.92 нужны **звуковой сервис ≥ 0.1.49**, **idrive7-renderd ≥ 2.1.18** и **mgu-inputgate ≥ 1.1.0**. Ручная установка одного `.mgu` не устанавливает зависимости.
 
 ## Что учитывать
 
@@ -370,6 +372,6 @@ SpeedCAM заранее показывает камеру по ходу движ
 
 ## Исходники и права
 
-[Исходники 0.9.86](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.86/SpeedCAM_0.9.86_Source.zip) · [Проверки сборки](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.86/TEST-RESULTS.json) · [Исходники PulseAudio и библиотек](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.86/PulseAudio_Corresponding_Source.zip)
+[Исходники 0.9.92](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.92/SpeedCAM_0.9.92_Source.zip) · [Проверки сборки](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.92/TEST-RESULTS.json) · [Исходники PulseAudio и библиотек](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.92/PulseAudio_Corresponding_Source.zip)
 
 Проект основан на [bmwcaminfo](https://github.com/andrug05/bmwcaminfo) и использует графические компоненты [idrive7-apps](https://github.com/cauliflowermossgrape/idrive7-apps). Код проекта распространяется по [MIT License](LICENSE). Лицензии сторонних компонентов и права поставщиков данных сохраняются; данные базы не становятся частью MIT-лицензии кода. SpeedCAM — независимый проект, не официальный продукт BMW.
