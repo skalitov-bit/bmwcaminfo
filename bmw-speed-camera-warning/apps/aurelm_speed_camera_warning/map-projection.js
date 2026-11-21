@@ -13,4 +13,15 @@ class MapOrientation{
   return this.heading;
  }
 }
-module.exports={project,MapOrientation};
+// Display-only memory. Never send this retained position to warning engines.
+class MapPosition extends MapOrientation{
+ constructor(){super();this.position=null;}
+ update(fix,now){
+  if(!require('./gps-quality').usable(fix,now===undefined?Date.now():now))return this.heading;
+  if(this.position&&fix.timeMs<this.position.timeMs)return this.heading;
+  super.update(fix);
+  this.position={lat:fix.lat,lon:fix.lon,timeMs:fix.timeMs};
+  return this.heading;
+ }
+}
+module.exports={project,MapOrientation,MapPosition};

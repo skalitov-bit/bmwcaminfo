@@ -24,7 +24,7 @@ const {CameraClusterOutput}=require('./cluster-output');
 const {GpsOutputStatus}=require('./gps-output-status');
 const {HudPositionStore,HudPositionEditor}=require('./hud-position');
 const {ApproachTrajectory,alignment:trajectoryAlignment,halfWidth:trajectoryWidth,point:trajectoryPoint,withDensity}=require('./approach-trajectory');
-const {project:projectMap,MapOrientation}=require('./map-projection');
+const {project:projectMap,MapPosition}=require('./map-projection');
 const {MapcamWarnings,freshFix:mapcamFreshFix}=require('./mapcam-warnings');
 const {category,hudLabels}=require('./camera-label');
 const style=require('./screen-style');
@@ -69,7 +69,7 @@ mgu.run({async start(ctx){
  const presentImage=ui.image.bind(ui);
  ui.image=(name,cv)=>{if(name==='MAIN_GFX'){
   drawAlertBanner(cv);
-  if(!['ENGINEERING','MOTION_DIAGNOSTICS','HUD_POSITION','SETTINGS','CITY_MAPS'].includes(view)&&(!mapcamFreshFix(fix,Date.now())||fix&&fix.warningAccuracyState==='degraded')){cv.roundRect(1060,12,520,40,0,C.bg);style.text(cv,presentation&&presentation.estimated?gpsMessage('reserve'):gpsHealth(fix,Date.now()),1566,40,18,C.yellow,{align:'right',maxWidth:495});}
+  if(!['ENGINEERING','MOTION_DIAGNOSTICS','HUD_POSITION','SETTINGS','CITY_MAPS'].includes(view)&&(!mapcamFreshFix(fix,Date.now())||fix&&fix.warningAccuracyState==='degraded')){cv.roundRect(1060,12,520,40,0,C.bg);style.text(cv,view==='MAP'&&mapOrientation.position&&!fix?gpsMessage('lost'):presentation&&presentation.estimated?gpsMessage('reserve'):gpsHealth(fix,Date.now()),1566,40,18,C.yellow,{align:'right',maxWidth:495});}
  }return presentImage(name,cv);};
  const actionHandlers=Object.create(null);let nativeButtonView=null;
  const nativeActionIds=ctx.display?((ctx.display.screen&&ctx.display.screen.buttons)||[]).map(b=>b[0]):ACTION_IDS;
@@ -92,7 +92,7 @@ mgu.run({async start(ctx){
  const gps=new BmwPosition(ctx,{vehicle:()=>vehicleSpeed.snapshot()}),roadGuidance=new RoadGuidanceWarnings([]),voice=new CameraVoiceAlerts({assetDir:__dirname,getVolume:()=>settings.get('notification_volume'),log:(m)=>log.warn(m)});
  let vehicleSpeed=new VehicleSpeed(ctx);const motion=new MotionDistance({vehicle:()=>vehicleSpeed.snapshot()});
  const approachTrajectory=new ApproachTrajectory();
- const mapOrientation=new MapOrientation();
+ const mapOrientation=new MapPosition();
  const recovery=new RuntimeRecovery({resume:resumeMonitoring,log:m=>log.info(m)});
  function resumeMonitoring(){
   // Stale positions/section progress must never survive a sleep interval.
@@ -184,7 +184,7 @@ mgu.run({async start(ctx){
  const cameras=()=>{
   if(mapPreview)return []; // Road preview cannot steal the live 10/5 camera cache.
   if(city!=='russia'&&!cameraIndex.nearMap)return database.recordsFor(city).concat(localCameras);
-  const center=fix||(city==='mari-el'?{lat:56.58,lon:48.05}:{lat:56.630,lon:47.928});
+  const center=mapOrientation.position||(city==='mari-el'?{lat:56.58,lon:48.05}:{lat:56.630,lon:47.928});
   const now=Date.now();
   if(cameraIndex.region)cameraIndex.region.ensure(center);
   const regionVersion=cameraIndex.region?cameraIndex.region.version:0;
@@ -196,7 +196,7 @@ mgu.run({async start(ctx){
  const selected=()=>{const rows=cameras();index=Math.max(0,Math.min(index,rows.length-1));return rows[index]||null;};
  const txt=style.text;
  const ln=(cv,a,b,w,c)=>cv.line(a[0],a[1],b[0],b[1],w,c);
- function xy(lat,lon,center,scale){return projectMap(lat,lon,center,scale,MAP,fix&&!mapPreview?mapOrientation.heading:0,!!fix&&!mapPreview);}
+ function xy(lat,lon,center,scale){return projectMap(lat,lon,center,scale,MAP,mapOrientation.position&&!mapPreview?mapOrientation.heading:0,!!mapOrientation.position&&!mapPreview);}
  function clipMapLine(a,b){
   let lo=0,hi=1;const dx=b[0]-a[0],dy=b[1]-a[1];
   for(const [p,q] of [[-dx,a[0]-MAP.x-12],[dx,MAP.x+MAP.w-12-a[0]],[-dy,a[1]-MAP.y-42],[dy,MAP.y+MAP.h-12-a[1]]]){
@@ -214,28 +214,29 @@ mgu.run({async start(ctx){
   }
   cv.circle(x,y,sel?13:10,'#071019');cv.circle(x,y,sel?8+3*pulse:7,C.red);cv.circle(x,y,2.8,'#fff');
  }
- function drawGpsPointer(cv,x,y){
+ function drawGpsPointer(cv,x,y,live){
+  const color=live?C.text:'#777b80';
   // Fixed-size heading-up chevron: two shaded faces, with no animation.
   // Use convex quads supported by both the GPU recorder and PNG canvas.
   const tip=[x,y-29],left=[x-21,y+19],notch=[x,y+8],right=[x+21,y+19],ridge=[x,y-8];
   const shift=p=>[p[0],p[1]+3];
   cv.quad([tip,left,notch,ridge].map(shift),'#000000b0');
   cv.quad([tip,ridge,notch,right].map(shift),'#000000b0');
-  cv.quad([tip,left,notch,ridge],C.text);
-  cv.quad([tip,ridge,notch,right],C.text);
+  cv.quad([tip,left,notch,ridge],color);
+  cv.quad([tip,ridge,notch,right],color);
   cv.quad([tip,ridge,notch,right],'#00000020');
-  cv.line(x,y-26,x,y+7,1,C.text);
+  cv.line(x,y-26,x,y+7,1,color);
   const outline=[tip,left,notch,right,tip];
   for(let i=1;i<outline.length;i++)ln(cv,outline[i-1],outline[i],1.7,'#08090b');
  }
  function drawMap(cv){
   cv.roundRect(MAP.x,MAP.y,MAP.w,MAP.h,0,'#040506');
-  const center=mapPreview||(fix?{lat:fix.lat,lon:fix.lon}:(city==='mari-el'?{lat:56.58,lon:48.05}:{lat:56.630,lon:47.928})),scale=.145*zoom*(city==='mari-el'&&!mapPreview?.045:1);
-  cityMaps.ensure(center,6500,viewportBounds(center,scale,fix&&!mapPreview?mapOrientation.heading:0,MAP,!!fix&&!mapPreview));
+  const center=mapPreview||(mapOrientation.position|| (city==='mari-el'?{lat:56.58,lon:48.05}:{lat:56.630,lon:47.928})),scale=.145*zoom*(city==='mari-el'&&!mapPreview?.045:1);
+  cityMaps.ensure(center,6500,viewportBounds(center,scale,mapOrientation.position&&!mapPreview?mapOrientation.heading:0,MAP,!!mapOrientation.position&&!mapPreview));
   for(let x=MAP.x+40;x<MAP.x+MAP.w;x+=80)ln(cv,[x,MAP.y+8],[x,MAP.y+MAP.h-8],1,C.grid);
   for(let y=MAP.y+30;y<MAP.y+MAP.h;y+=60)ln(cv,[MAP.x+8,y],[MAP.x+MAP.w-8,y],1,C.grid);
   const roadReader=cityMaps.reader&&cityMaps.reader.contains(center)?cityMaps.reader:null;
-  if(roadReader)cityRoadRenderer.draw(cv,roadReader,center,scale,fix&&!mapPreview?mapOrientation.heading:0,MAP,(lat,lon)=>xy(lat,lon,center,scale),clipMapLine,txt);
+  if(roadReader)cityRoadRenderer.draw(cv,roadReader,center,scale,mapOrientation.position&&!mapPreview?mapOrientation.heading:0,MAP,(lat,lon)=>xy(lat,lon,center,scale),clipMapLine,txt);
   (city==='yoshkar-ola'?cityMap.roads:[]).forEach(r=>{
    const a=xy(r[1],r[2],center,scale),b=xy(r[3],r[4],center,scale);
    if(Math.max(a[0],b[0])<MAP.x||Math.min(a[0],b[0])>MAP.x+MAP.w||Math.max(a[1],b[1])<MAP.y||Math.min(a[1],b[1])>MAP.y+MAP.h)return;
@@ -248,7 +249,7 @@ mgu.run({async start(ctx){
    ln(cv,clipped[0],clipped[1],16,predicted?'#354b59':'#4c545b');
    ln(cv,clipped[0],clipped[1],12,predicted?'#14232e':'#252c32');
   };
-  if(fix&&!mapPreview){for(let i=1;i<gpsTrack.length;i++)road(xy(gpsTrack[i-1].lat,gpsTrack[i-1].lon,center,scale),xy(gpsTrack[i].lat,gpsTrack[i].lon,center,scale),false);}
+  if(mapOrientation.position&&!mapPreview){for(let i=1;i<gpsTrack.length;i++)road(xy(gpsTrack[i-1].lat,gpsTrack[i-1].lon,center,scale),xy(gpsTrack[i].lat,gpsTrack[i].lon,center,scale),false);}
   if(trajectory){
    const project=(along,side)=>{const p=trajectoryPoint(trajectory,along,side);return xy(p.lat,p.lon,center,scale);};
    const draw=(a,b,w,color)=>{const clipped=clipMapLine(a,b);if(clipped)ln(cv,clipped[0],clipped[1],w,color);};
@@ -292,10 +293,10 @@ mgu.run({async start(ctx){
     labels.push({x,y,w,h});cv.fillRect(x,y,w,h,'#080d12');txt(cv,String(c.limit),x+w/2,y+21,21,active?C.yellow:C.text,{align:'center'});break;
    }
   });
-  if(fix&&!mapPreview){const p=xy(fix.lat,fix.lon,center,scale);drawGpsPointer(cv,p[0],p[1]);}
+  if(mapOrientation.position&&!mapPreview){const position=mapOrientation.position,p=xy(position.lat,position.lon,center,scale);drawGpsPointer(cv,p[0],p[1],mapcamFreshFix(fix,Date.now()));}
   cv.strokeRoundRect(MAP.x,MAP.y,MAP.w,MAP.h,0,1,'#303a46');
   txt(cv,'МАСШТАБ '+String(zoom)+'×',MAP.x+18,MAP.y+25,15,C.muted);
-  txt(cv,roadReader?'OpenStreetMap contributors / ODbL 1.0':fix?'СХЕМА ТРАЕКТОРИИ / КАРТА ГОРОДА НЕ УСТАНОВЛЕНА':'КАРТЫ ГОРОДОВ: НАСТРОЙКИ',MAP.x+18,MAP.y+MAP.h-15,14,C.muted,{maxWidth:650});
+  txt(cv,roadReader?'OpenStreetMap contributors / ODbL 1.0':mapOrientation.position?'СХЕМА ТРАЕКТОРИИ / КАРТА ГОРОДА НЕ УСТАНОВЛЕНА':'КАРТЫ ГОРОДОВ: НАСТРОЙКИ',MAP.x+18,MAP.y+MAP.h-15,14,C.muted,{maxWidth:650});
   if(mapPreview){cv.fillRect(MAP.x+190,MAP.y+5,230,30,C.panel);txt(cv,'ПРОСМОТР / К GPS',MAP.x+305,MAP.y+26,16,C.yellow,{align:'center'});pageTarget(cv,MAP.x+190,MAP.y+5,230,30,()=>{mapPreview=null;renderSafe();},'maps-exit-preview');}
   txt(cv,'На карте: '+mapped().length+' · Россия: '+(database.cities.russia||[]).length,MAP.x+MAP.w-18,MAP.y+25,15,C.text,{align:'right'});
  }
@@ -346,7 +347,7 @@ mgu.run({async start(ctx){
   }else txt(cv,'КАМЕРЫ НЕ НАЙДЕНЫ',P.x+22,P.y+130,25,C.text,{maxWidth:400});
   drawCameraButtons(cv);
   ln(cv,[P.x+22,P.y+252],[P.x+P.w-22,P.y+252],1,'#303a46');
-  txt(cv,gpsHealth(fix,Date.now()),P.x+22,P.y+285,22,mapcamFreshFix(fix,Date.now())?C.text:C.yellow,{maxWidth:400});
+  txt(cv,mapOrientation.position&&!fix?gpsMessage('lost'):gpsHealth(fix,Date.now()),P.x+22,P.y+285,22,mapcamFreshFix(fix,Date.now())?C.text:C.yellow,{maxWidth:400});
   txt(cv,fix?(Number.isFinite(fix.speedKmh)?Math.round(fix.speedKmh)+' КМ/Ч':'СКОРОСТЬ Н/Д')+' · ТОЧНОСТЬ '+(Number.isFinite(fix.accuracyM)?Math.round(fix.accuracyM)+' М':'Н/Д'):gpsMessage('waiting'),P.x+22,P.y+317,18,C.muted,{maxWidth:400});
   const installedDate=new Date(Number(database.revision)*1000);
   const dateLabel=Number(database.revision)>0&&Number.isFinite(installedDate.getTime())?installedDate.toISOString().slice(0,10).split('-').reverse().join('.'):'НЕ УКАЗАНА';
@@ -607,6 +608,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  }
  function handleGpsLoss(){
   if(hudEditor.busy)return;
+  const repaintLostMap=!gpsSuspended&&mainScreenVisible&&view==='MAP';
   if(!gpsSuspended){
    approachTrajectory.reset();
    gpsSuspended=true;mapcamWarnings.suspend();roadGuidance.reset();
@@ -621,6 +623,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
     type:'camera',estimated:true,phase:p.hit.state&&p.hit.state.phase,speedKmh:p.speedKmh});
   }else{radarCamera=null;if(clusterOutput.current&&clusterOutput.current.camera.id!=='camera-output-test')clusterOutput.clear();}
   syncGpsOutput();
+  if(repaintLostMap)renderSafe();
  }
  function motionTick(){
   if(hudEditor.busy)return;
@@ -812,7 +815,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  renderSafe();refresh();const refreshTimer=setInterval(refresh,REFRESH_INTERVAL_MS);ctx.loop('MAIN',10,()=>{if(fix&&Date.now()-fix.timeMs>3000)handleGpsLoss();
   // Keep a recovery repaint; static pages need neither 10 Hz drawing nor PNG work.
   if(displayedRenderMode!==currentRenderMode()||animatedScreen()||view==='ENGINEERING'||view==='MOTION_DIAGNOSTICS'||Date.now()-lastRenderAt>=5000)renderSafe();});
- log.info('SpeedCAM 0.9.94 started; camera sectors and control paths; GPS accuracy <=35 m; low-accuracy label >=15 m; KOMBI/HUD mode='+cameraDisplayMode);
+ log.info('SpeedCAM 0.9.95 started; camera sectors and control paths; GPS accuracy <=35 m; low-accuracy label >=15 m; KOMBI/HUD mode='+cameraDisplayMode);
 }}).catch(e=>{
  console.error('SPEEDCAM_START_FAILED '+String(e&&e.stack||e));
  // Only the isolated worker may exit: the MainApp-owned supervisor stays alive.

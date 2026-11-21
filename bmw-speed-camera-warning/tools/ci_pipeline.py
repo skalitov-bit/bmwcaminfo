@@ -125,7 +125,7 @@ def build(lock, out, cache, node, node8, result):
             target.write_bytes(raw)
     for file in sorted(APP.glob('*.js')):
         run([node8, '--check', file], result, 'node8-syntax-' + file.name)
-    for test in ('bmw-position', 'gps-assembly', 'gps-diagnostics', 'map-projection',
+    for test in ('bmw-position', 'gps-assembly', 'gps-diagnostics', 'map-projection', 'map-position-loss',
                  'road-guidance', 'approach-trajectory', 'adjacent-roads', 'trajectory-curve',
                  'vehicle-motion', 'region-cache', 'manual-launch', 'manual-supervisor',
                  'overspeed-beeper', 'notification-priority', 'hud-spacing', 'menu-selection',
