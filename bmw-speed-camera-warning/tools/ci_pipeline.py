@@ -151,7 +151,8 @@ def build(lock, out, cache, node, node8, result):
         target.write_bytes(raw)
     run([node, 'tests/app-startup.test.js', js / 'app.js'], result, 'built-startup')
     for test in ('manual-bridge', 'region-integration', 'gpu-store-runtime', 'png-handoff',
-                 'gpu-input-recovery', 'responsive-display', 'lifecycle-bridge'):
+                 'gpu-input-recovery', 'controller-recovery', 'display-recovery-menu',
+                 'render-recovery', 'responsive-display', 'lifecycle-bridge'):
         run([node, 'tests/' + test + '.test.js', js], result, 'built-' + test)
     env_before = os.environ.get('BMW_GPU_WIRE')
     try:

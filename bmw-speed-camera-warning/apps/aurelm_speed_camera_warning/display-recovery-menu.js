@@ -7,7 +7,7 @@ function install(ctx){
  let pending=false,disconnectedSince=Date.now(),lastStatus=null;
  function diagnostic(){
   const s=d.renderDiagnostics(),reason=d.recoveryLocked||s.reason;
-  const why=reason==='INPUT_CAPABILITIES'?'Графический сервис не подтвердил управление. После установки перезагрузите MGU.':
+  const why=reason==='INPUT_CAPABILITIES'?'Графический сервис не подтвердил совместимый режим или касания. Проверьте графический компонент в MGU Store.':
    reason==='REPEATED_STALL'?'Графический слой повторно не ответил. Автопереподключение остановлено.':
    reason==='REPEATED_SUSPEND'?'Графический сервис неоднократно скрывал экран. Повторите подключение.':'Нет доступного графического управления.';
   return why+'\nКасания: '+(s.touch?'есть':'нет')+' / джойстик: '+(s.controller?'есть':'нет')+
@@ -16,6 +16,7 @@ function install(ctx){
  function status(){const s=diagnostic();if(s!==lastStatus){lastStatus=s;return ui.text('DISPLAY_RECOVERY_STATUS',s);}}
  function check(){
   const now=Date.now();
+  if(typeof d.retryController==='function')d.retryController();
   if(d.gpu&&d.gpu.ready)disconnectedSince=null;
   else if(disconnectedSince===null)disconnectedSince=now;
   if(ui.isVisible('DISPLAY_RECOVERY')){status();return;}
@@ -33,6 +34,7 @@ function install(ctx){
  }
  ui.onClick('DISPLAY_RETRY',()=>{
   disconnectedSince=Date.now();d.recoveryLocked=null;d.recoveryAttempts=0;d.recoveryT=0;d.suspensions=[];
+  d.controllerRetryAttempts=0;d.controllerRetryAt=null;d.controllerMissingAt=null;d.controllerRecoveryStatus=null;
   d.softDone=false;d.rendererSuspended=false;d.blocked=false;d.ownDown=null;d.downAt=null;d.ccuLast=null;
   if(d.gpu){const old=d.gpu;d.gpu=null;old.claim([]);old.show(false);old.close();}
   d.place=null;d.bgShown=null;d.lastWords=null;d._mode();

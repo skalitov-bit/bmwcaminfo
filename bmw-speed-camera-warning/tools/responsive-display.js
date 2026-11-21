@@ -49,12 +49,14 @@ function snapshot(d){
   if(typeof d._shown==='function'&&!d._shown())reason='NOT_VISIBLE';
   else {mode='GPU';reason='READY';}
  }else if(d.settings&&d.settings.get('renderer')==='software')reason='SOFTWARE_SETTING';
+ if(reason==='READY'&&g&&g.info&&!g.info.controller)reason=d.controllerRecoveryStatus==='unavailable'?'CONTROLLER_UNAVAILABLE':'CONTROLLER_WAIT';
  const now=Date.now(),screen=g&&g.ready&&valid(g.screen)?g.screen:null;
  return {mode,reason,rendererScreen:screen,geometry:geometry(screen),
   coordinateSpace:screen?'renderer-logical':'default-profile',
   ackAgeMs:d.tickT?Math.max(0,now-d.tickT):null,
   connected:!!(g&&g.ready),native:!!(g&&g.native),touch:!!(g&&g.touch),
   controller:!!(g&&g.info&&g.info.controller),modes:g&&g.info&&g.info.modes,
+  controllerRecovery:d.controllerRecoveryStatus||null,controllerRetryAttempts:d.controllerRetryAttempts||0,
   onScreen:g&&g.onScreen,front:d.rendererFront,
   touchEvents:d.touchEvents||0,ccuEvents:d.ccuEvents||0,recoveryAttempts:d.recoveryAttempts||0,
   path:g&&g.path||null,layout:'wide-no-bar'};

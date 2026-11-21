@@ -102,6 +102,7 @@ def build(out, cache):
     import responsive_layout
     blobs['source/javascript/kit/display.js']=responsive_layout.patch_display(blobs['source/javascript/kit/display.js'])
     blobs['source/javascript/kit/responsive-display.js']=(ROOT/'tools/responsive-display.js').read_bytes()
+    blobs['source/javascript/kit/controller-recovery.js']=(ROOT/'tools/controller-recovery.js').read_bytes()
     blobs['source/javascript/kit/canvas-performance.js']=(ROOT/'tools/canvas-performance.js').read_bytes()
     blobs['source/javascript/kit/canvas.js']+=b"\nrequire('./canvas-performance').install(Canvas);\n"
     rt={k:app.get(k) for k in ('id','title','version','screens','settings','config','startWidget','nativeHeader','responsiveMain')}

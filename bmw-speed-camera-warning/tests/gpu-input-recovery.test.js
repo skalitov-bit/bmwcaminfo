@@ -6,8 +6,8 @@ const ui={isVisible:n=>shown&&n==='MAIN',hasFocus:()=>shown,_invalidate(){}};
 const fixture=()=>make(root,ui,{now:()=>now,setTimeout:fn=>({fn})});
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 async function run(){
- let w=fixture();w.ready(1);assert.equal(w.d.recoveryLocked,'INPUT_CAPABILITIES','missing controller must not silently take the screen');
- assert(!w.d.active());assert(!w.d.gpu.grabbing);
+ let w=fixture();w.ready(5);assert(!w.d.recoveryLocked,'missing controller is a retryable connection capability');
+ assert(w.d.active());assert(!w.d.gpu.grabbing);assert.equal(w.d.controllerRecoveryStatus,'waiting');
  w=fixture();w.ready(6);assert.equal(w.d.recoveryLocked,'INPUT_CAPABILITIES','missing touch');
  w=fixture();w.ready(7,0);assert.equal(w.d.recoveryLocked,'INPUT_CAPABILITIES','server offers no layer mode');
  w=fixture();w.words(0x4d520101,[1,1,7]);w.words(101,[4,1920,720,1]);

@@ -19,10 +19,13 @@ def patch_display(raw):
             this.hasPresented = false;
             this.rendererSuspended = false;
             const info = gpu.info;
-            if (this.spec.responsiveMain && !(gpu.opts && gpu.opts.file) && (!gpu.native || !gpu.touch || !info || !info.controller || (info.modes != null && !(info.modes & 1)))) {
+            if (this.spec.responsiveMain && !(gpu.opts && gpu.opts.file) && (!gpu.native || !gpu.touch || !info || (info.modes != null && !(info.modes & 1)))) {
                 this.recoveryLocked = 'INPUT_CAPABILITIES'; this.softDone = true;
                 this.log.warn('DISPLAY_INPUT_UNAVAILABLE ' + JSON.stringify(info));
+            } else if (this.recoveryLocked === 'INPUT_CAPABILITIES') {
+                this.recoveryLocked = null; this.softDone = false;
             }
+            require('./controller-recovery').ready(this, gpu, Date.now());
             this.bgShown = null; this.lastWords = null;
             this._place(); this._syncVisible(); this._grab();
             // Re-upload cached resources and a frame even when the application is idle.
@@ -67,7 +70,7 @@ def patch_display(raw):
     s = replace(s, "if (this.gpu !== gpu || gpu.onScreen || this.blocked || !this._shown()) return;",
         "if (this.gpu !== gpu || this.rendererFront !== false || gpu.onScreen || this.blocked || !this._shown()) return;")
     s = replace(s, "this.gpu.grab(this.grabbing || (this.own() && gate && !process.env.MGU_NO_GRAB));",
-        "this.gpu.grab(this._shown() && !this.blocked && !this.softDone && !this.rendererSuspended && (this.grabbing || (this.own() && gate && !process.env.MGU_NO_GRAB)));")
+        "this.gpu.grab(this._shown() && !this.blocked && !this.softDone && !this.rendererSuspended && gate && !process.env.MGU_NO_GRAB && (this.grabbing || this.own()));")
     s = replace(s, "const on = this._shown();", "const on = this._shown() && !this.softDone;")
     s = replace(s, "const on = this._shown() && !this.softDone;", """const on = this._shown() && !this.softDone;
         if (!this._shown()) { this.softEpoch = (this.softEpoch || 0) + 1; this.softPending = false; }""")
@@ -107,6 +110,7 @@ def patch_display(raw):
     s = s[:start] + """    /** Watch for missing acknowledgements throughout the visible session, not only at startup. */
     _softIfNoTick() {
         const L = this.last, now = Date.now(), g = this.gpu;
+        if (this.controllerRetryBusy) return;
         if (!L || !g || !g.ready || !this.place || this.blocked || this.rendererSuspended || !this._shown() || !this.shownT) return;
         const idle = now - (this.softDone && this.softStallT ? this.softStallT : Math.max(this.shownT, this.tickT || 0));
         if (idle < 2000) return;
@@ -148,6 +152,7 @@ def patch_display(raw):
     }
 
     _recoverStalled(g) {
+        if (this.controllerRetryBusy) return;
         // Disconnecting also destroys the GPU surface. Never do so before PNG succeeds.
         if (!this.softDone || this.gpu !== g || !g.ready || !this._shown() || this.blocked || this.rendererSuspended) return;
         // Late acknowledgements for SHOW(false) cannot cancel recovery. The
@@ -171,6 +176,7 @@ def patch_display(raw):
 """ + s[end:]
     s = replace(s, "if (this.blocked) return 'HMI image: renderer has another app in front';",
         "if (this.blocked) return 'HMI image: renderer has another app in front';\n        if (this.softDone) return 'HMI image: recovering stalled graphics layer';")
+    s += "\nDisplay.prototype.retryController = function() { return require('./controller-recovery').check(this, Date.now()); };\n"
     return s.encode('utf-8')
 
 
