@@ -43,11 +43,30 @@ class CityMapStore extends EventEmitter{
  });}
  async remove(id){return this.action(async()=>{const old=this.installed[id];if(!old)return true;const next=Object.assign({},this.installed);delete next[id];this.resetReader();atomicJson(path.join(this.dir,'installed.json'),next);this.installed=next;try{fs.unlinkSync(path.join(this.dir,old.file));}catch(e){if(e.code!=='ENOENT')throw e;}this.status='КАРТА УДАЛЕНА. БАЗА КАМЕР СОХРАНЕНА.';return true;});}
  resetReader(){this.generation++;if(this.reader)this.reader.close();this.reader=null;this.readerId='';this.opening=null;}
- async ensure(p,radius,bounds){if(this.closed)return;const id=Object.keys(this.installed).find(k=>{const b=this.installed[k].bbox;return p.lon>=b[0]&&p.lon<=b[2]&&p.lat>=b[1]&&p.lat<=b[3];});
+ async choose(p){
+  const candidates=Object.keys(this.installed).filter(k=>{const b=this.installed[k].bbox;return p.lon>=b[0]&&p.lon<=b[2]&&p.lat>=b[1]&&p.lat<=b[3];});
+  if(candidates.length<2)return candidates[0];
+  // Administrative extracts have overlapping rectangular bounds. Select by
+  // actual indexed roads near the car, not installation order. Cache only four
+  // headers; do not load road payloads merely to choose a region.
+  if(!this.indexCache)this.indexCache=new Map();
+  const x=Math.floor(p.lon*100),y=Math.floor(p.lat*100),fx=Math.cos(p.lat*Math.PI/180);
+  let best=null,bestScore=Infinity;
+  for(const id of candidates){const e=this.installed[id];let cells;
+   if(this.readerId===id&&this.reader)cells=this.reader.meta.cells;
+   else if(this.indexCache.has(e.file))cells=this.indexCache.get(e.file);
+   else{let r;try{r=await new CityRoads(path.join(this.dir,e.file)).open();if(this.closed)return;cells=r.meta.cells;this.indexCache.set(e.file,cells);while(this.indexCache.size>4)this.indexCache.delete(this.indexCache.keys().next().value);}catch(err){this.lastError=String(err.message);continue;}finally{if(r)r.close();}}
+   let score=Infinity;
+   for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){const v=cells[(x+dx)+','+(y+dy)];if(!v||!v[3])continue;const ex=(x+dx+.5-p.lon*100)*fx,ey=y+dy+.5-p.lat*100;score=Math.min(score,ex*ex+ey*ey);}
+   if(score<bestScore||score===bestScore&&id===this.readerId){best=id;bestScore=score;}
+  }
+  return best||candidates.find(id=>id===this.readerId)||candidates[0];
+ }
+ async ensure(p,radius,bounds){if(this.closed||this.selecting)return;const generation=this.generation;this.selecting=true;let id;try{id=await this.choose(p);}finally{this.selecting=false;}if(this.closed||generation!==this.generation)return;
   if(!id){if(this.reader)this.resetReader();return;}
   if(this.readerId!==id){if(this.opening)return;this.resetReader();const gen=this.generation;this.opening=id;try{const r=await new CityRoads(path.join(this.dir,this.installed[id].file)).open();if(this.closed||gen!==this.generation){r.close();return;}this.reader=r;this.readerId=id;}catch(e){this.lastError=String(e.message);return;}finally{if(gen===this.generation)this.opening=null;}}
   const r=this.reader;if(!r)return;try{const changed=await r.ensure(p,radius,bounds);if(changed&&r===this.reader)this.change();}catch(e){this.lastError=String(e.message);}
  }
- close(){this.closed=true;this.resetReader();this.removeAllListeners();}
+ close(){this.closed=true;this.resetReader();if(this.indexCache)this.indexCache.clear();this.removeAllListeners();}
 }
 module.exports={CityMapStore,validateCatalog,validEntry,download,message,CATALOG_URL};

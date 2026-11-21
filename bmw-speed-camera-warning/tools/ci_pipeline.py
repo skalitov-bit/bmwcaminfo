@@ -154,6 +154,8 @@ def build(lock, out, cache, node, node8, result):
                  'gpu-input-recovery', 'controller-recovery', 'display-recovery-menu',
                  'render-recovery', 'responsive-display', 'lifecycle-bridge'):
         run([node, 'tests/' + test + '.test.js', js], result, 'built-' + test)
+    for test in ('city-map-overlap', 'city-map-scroll'):
+        run([node8, 'tests/' + test + '.test.js', js], result, 'built-' + test)
     env_before = os.environ.get('BMW_GPU_WIRE')
     try:
         os.environ['BMW_GPU_WIRE'] = '1'

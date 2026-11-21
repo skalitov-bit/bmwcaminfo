@@ -60,6 +60,8 @@ mgu.run({async start(ctx){
   mapPreview={lat:(e.bbox[1]+e.bbox[3])/2,lon:(e.bbox[0]+e.bbox[2])/2,name:e.name};view='MAP';renderSafe();
  });
  cityMaps.on('change',()=>{if(mainScreenVisible&&(view==='MAP'||view==='CITY_MAPS'))renderSafe();});
+ cityMapPanel.bindNavigation(ctx.display,()=>view==='CITY_MAPS'&&mainScreenVisible);
+ if(typeof ctx.onScroll==='function')ctx.onScroll(dy=>view==='CITY_MAPS'&&cityMapPanel.scrollPixels(dy));
  function openCityMaps(){view='CITY_MAPS';cityMapPanel.open();renderSafe();}
  function drawCityMaps(){const cv=ctx.canvas(W,H).clear(C.bg);cityMapPanel.draw(cv,style,pageTarget);drawTabs(cv,'SETTINGS');return ui.image('MAIN_GFX',cv);}
  const notificationPolicy=new NotificationPolicy(k=>settings.get(k),mainScreenVisible);
@@ -810,7 +812,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  renderSafe();refresh();const refreshTimer=setInterval(refresh,REFRESH_INTERVAL_MS);ctx.loop('MAIN',10,()=>{if(fix&&Date.now()-fix.timeMs>3000)handleGpsLoss();
   // Keep a recovery repaint; static pages need neither 10 Hz drawing nor PNG work.
   if(displayedRenderMode!==currentRenderMode()||animatedScreen()||view==='ENGINEERING'||view==='MOTION_DIAGNOSTICS'||Date.now()-lastRenderAt>=5000)renderSafe();});
- log.info('SpeedCAM 0.9.93 started; camera sectors and control paths; GPS accuracy <=35 m; low-accuracy label >=15 m; KOMBI/HUD mode='+cameraDisplayMode);
+ log.info('SpeedCAM 0.9.94 started; camera sectors and control paths; GPS accuracy <=35 m; low-accuracy label >=15 m; KOMBI/HUD mode='+cameraDisplayMode);
 }}).catch(e=>{
  console.error('SPEEDCAM_START_FAILED '+String(e&&e.stack||e));
  // Only the isolated worker may exit: the MainApp-owned supervisor stays alive.
