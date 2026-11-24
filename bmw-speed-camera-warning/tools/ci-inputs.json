@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "appVersion": "0.9.96",
+  "appVersion": "0.9.97",
   "voiceVersion": "0.1.49",
   "source": {
     "url": "https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.93/SpeedCAM_0.9.93_Source.zip",
@@ -57,4 +57,3 @@
   ],
   "mapsCatalog": "https://raw.githubusercontent.com/skalitov-bit/speedcam-db/main/maps/catalog.json"
 }
-
