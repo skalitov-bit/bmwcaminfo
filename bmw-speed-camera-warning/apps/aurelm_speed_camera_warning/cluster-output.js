@@ -8,11 +8,12 @@ const {gpsMessage}=require('./gps-message');
 const W=420,H=116,S=2,IW=W*S,IH=H*S;
 const RING_SIZE=84,RING_PIXELS=RING_SIZE*S;
 const ALERT_RED=[211,44,54,255]; // Same red as the speed-limit sign (#D32C36).
-// Fixed text slot: distance digit count must never move the sign or stripe.
-const HUD_LAYOUT={textX:108,textWidth:168,gap:23};
+// Approved compact HUD: sign centre x=284 (47px left of the previous x=331).
+// All content fits fixed slots; neither labels nor distance move icons/stripe.
+const HUD_LAYOUT={textX:108,textWidth:136,gap:8};
 // The dots in РАСЧЁТНО / НЕТ GPS and other accented glyphs may reach
 // above the footer baseline. Keep its patch separate from the distance patch.
-const DISTANCE_RECT={x:106*S,y:57*S,w:170*S,h:27*S};
+const DISTANCE_RECT={x:106*S,y:57*S,w:(HUD_LAYOUT.textWidth+2)*S,h:27*S};
 const KOMBI_DISTANCE_RECT={x:126*S,y:57*S,w:168*S,h:35*S};
 const FOOTER_RECT={x:106*S,y:92*S,w:210*S,h:24*S};
 const HUD_FOOTER_RECT={x:0,y:84*S,w:IW,h:32*S};
@@ -30,7 +31,7 @@ const ALERT_LAYER={klass:'alert',z:1000,exclusive:false,contend:true,yield:false
 const kombiBackplate=require('./kombi-backplate');
 // Bottom-centre of the advertised map canvas, not the whole-panel popup.
 // Physical alignment with the OEM belt area still needs on-car verification.
-const OUTPUT_RECT={map:{x:334,y:355},hud:{x:190,y:182}};
+const OUTPUT_RECT={map:{x:331,y:355},hud:{x:190,y:182}};
 const {normalize:normalizeHudPosition}=require('./hud-position');
 const clusterText=require('./cluster-text');
 const {policeKind,iconFor}=require('./point-kind');

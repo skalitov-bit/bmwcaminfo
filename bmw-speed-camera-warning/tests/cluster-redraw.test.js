@@ -51,10 +51,12 @@ for(const patch of [
 assert.strictEqual(cr.full,initialFull,'Digit-count changes never rebuild the static layout');
 for(let d=649;d>=550;d--){e.distanceM=d;out.updateDistance(d,false);compare(e);}
 assert.strictEqual(cr.full,initialFull,'10 Hz distance path stays partial across digit-count ranges');
-for(const d of [101,100,99,98,10,9,8,0,9,10,99,100,999,1000,10000]){
+for(const d of [101,100,99,98,10,9,8,0,9,10,99,100,999,1000,10000,99999,100000,999999,9]){
  e.distanceM=d;out.updateDistance(d,false);compare(e);
 }
 for(const patch of [
+ {camera:{id:'long',limit:120,camera_model:'МОДЕЛЬ С ПРЕДЕЛЬНО ДЛИННЫМ НАЗВАНИЕМ КОМПЛЕКСА',mapcamTypeCode:13,rearCapture:true},distanceM:99999,accuracyDegraded:true},
+ {accuracyDegraded:false,phase:'rear',type:'speeding'},
  {camera:{id:'rear',limit:60,camera_model:'СТРЕЛКА',mapcamTypeCode:1,rearCapture:true}},
  {type:'speeding'}, {camera:{id:'a',limit:80,camera_model:'СТРЕЛКА',mapcamTypeCode:1}},
  {camera:{id:'b',limit:null,camera_model:'КОРДОН',mapcamTypeCode:1}},

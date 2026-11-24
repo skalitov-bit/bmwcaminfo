@@ -17,7 +17,8 @@ function layout(targets){
  const match=/(?:^|[^a-z])map:(\d+)x(\d+)/i.exec(String(targets||''));
  const valid=match&&Number(match[1])>=W&&Number(match[2])>=H;
  const width=valid?Number(match[1]):1088,height=valid?Number(match[2]):480;
- const x=Math.round((width-W)/2),y=height-H;
+ // Align the complete banner 3 display pixels left of the canvas centre.
+ const x=Math.round((width-W)/2)-3,y=height-H;
  return {x,y,w:W,h:H,iw:IW,ih:IH,contentX:x+INSET_X,contentY:y+INSET_Y,width,height,reported:!!valid};
 }
 function gradient(t){

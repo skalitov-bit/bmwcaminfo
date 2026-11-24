@@ -42,9 +42,9 @@ function checkLayers(socket,visible,hudPosition){
   const all=layers.filter(m=>m.target===target);assert.strictEqual(all.length,target==='map'?3:2);
   const pair=target==='map'?all.slice(1):all;
   if(target==='map'){
-   const backing=all[0];assert.strictEqual(backing.x,314);assert.strictEqual(backing.y,346);
+   const backing=all[0];assert.strictEqual(backing.x,311);assert.strictEqual(backing.y,346);
    assert.strictEqual(backing.w,460);assert.strictEqual(backing.h,134);assert.strictEqual(backing.visible,visible?1:0);
-   assert.strictEqual(backing.x+backing.w/2,1088/2);assert.strictEqual(backing.y+backing.h,480);
+   assert.strictEqual(backing.x+backing.w/2,1088/2-3);assert.strictEqual(backing.y+backing.h,480);
    assert.strictEqual(backing.exclusive,0);assert.strictEqual(backing.guide_hold,0);
   }
   const card=pair[0],ring=pair[1];
@@ -56,9 +56,9 @@ function checkLayers(socket,visible,hudPosition){
    assert(layer.x>=0&&layer.y>=0&&layer.x+layer.w<=(target==='map'?1088:800)&&layer.y+layer.h<=480,'Layer stays inside its target');
   }
   assert.strictEqual(card.exclusive,0,'Priority must not hide unrelated lower layers');assert.strictEqual(ring.exclusive,0);
-  assert.strictEqual(card.x,target==='map'?334:hudPosition.x);assert.strictEqual(card.y,target==='map'?355:hudPosition.y);
-  if(target==='map'){assert.strictEqual(card.x+card.w/2,544,'Information is centred');assert.strictEqual(card.y+card.h,471,'Bottom padding stays inside map canvas');}
-  assert.strictEqual(ring.x,card.x+(target==='map'?288:315));assert.strictEqual(ring.y,card.y+(target==='map'?16:17));
+  assert.strictEqual(card.x,target==='map'?331:hudPosition.x);assert.strictEqual(card.y,target==='map'?355:hudPosition.y);
+  if(target==='map'){assert.strictEqual(card.x+card.w/2,541,'Information follows the 3px left offset');assert.strictEqual(card.y+card.h,471,'Bottom padding stays inside map canvas');}
+  assert.strictEqual(ring.x+ring.w/2,card.x+(target==='map'?330:284),'Ring remains centred on the fixed sign');assert.strictEqual(ring.y,card.y+(target==='map'?16:17));
   assert.strictEqual(card.visible,visible?1:0);
   assert.strictEqual(ring.visible,0,'Ring starts hidden and cannot suppress its own card');
  }
@@ -76,7 +76,7 @@ for(const ref of Object.values(output.layers)){
 const layerCount=output.cr.layers.size;
 output.setHudPosition({x:-500,y:1000});
 assert.strictEqual(output.cr.layers.size,layerCount,'Moving does not allocate new layers');
-assert.strictEqual(output.cr.layers.get(output.layers.map).opts.x,334,'HUD movement never moves KOMBI');
+assert.strictEqual(output.cr.layers.get(output.layers.map).opts.x,331,'HUD movement never moves KOMBI');
 assert.strictEqual(output.cr.layers.get(output.layers.hud).opts.x,0);
 assert.strictEqual(output.cr.layers.get(output.layers.hud).opts.y,364);
 sockets[0].destroy();

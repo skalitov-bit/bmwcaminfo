@@ -4,7 +4,7 @@
   "nativeHeader": true,
   "responsiveMain": true,
   "description": "База камер по России: компактная база, названия комплексов и предупреждения KOMBI/HUD.",
-  "version": "0.9.96",
+  "version": "0.9.97",
   "vendor": "Andrug05",
   "loggingId": "SCAM",
   "iconGlyph": "camera",
@@ -284,4 +284,3 @@
   "memoryKB": 524288,
   "mguAppStartType": "autostart"
 }
-

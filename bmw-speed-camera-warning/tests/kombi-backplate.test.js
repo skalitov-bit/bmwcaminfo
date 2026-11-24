@@ -18,7 +18,7 @@ assert.strictEqual(at(40,60)[3],0,'Upper shoulders are inset');
 assert(at(45,120)[3]>0,'Backing widens towards the bottom');
 for(const dims of [[1088,480],[1280,480],[1440,540]]){
  const pos=backing.layout('map:'+dims[0]+'x'+dims[1]+',hud:800x480');
- assert.strictEqual(pos.x+pos.w/2,dims[0]/2);assert.strictEqual(pos.y+pos.h,dims[1]);assert(pos.reported);
+ assert.strictEqual(pos.x+pos.w/2,dims[0]/2-3);assert.strictEqual(pos.y+pos.h,dims[1]);assert(pos.reported);
  assert(pos.contentX>=pos.x&&pos.contentY>=pos.y);
 }
 assert(!backing.layout('').reported);
@@ -50,11 +50,11 @@ assert(o.cr.items[o.layers.hud].px.equals(api.makeFrame(Object.assign({},e,{dist
 const expected=api.makeFrame(Object.assign({},e,{distanceM:0}),true);
 assert(o.cr.items[o.layers.map].px.equals(expected),'Centred KOMBI partial updates equal complete rendering');
 o.cr.targets='map:1280x540,hud:800x480';o.cr.events.ready();
-assert.strictEqual(o.cr.items[bg].opts.x,410);assert.strictEqual(o.cr.items[bg].opts.y,406);
-assert.strictEqual(o.cr.items[o.layers.map].opts.x,430);assert.strictEqual(o.cr.items[o.layers.map].opts.y,415);
+assert.strictEqual(o.cr.items[bg].opts.x,407);assert.strictEqual(o.cr.items[bg].opts.y,406);
+assert.strictEqual(o.cr.items[o.layers.map].opts.x,427);assert.strictEqual(o.cr.items[o.layers.map].opts.y,415);
 assert.strictEqual(Object.keys(o.cr.items).length,5,'No duplicate layers after reconnect');
 o.clear();assert(!o.cr.items[bg].opts.visible);
-o.setGpsStatus('lost');assert(o.cr.items[bg].opts.visible,'GPS status uses same backing');
+o.setGpsStatus('lost');assert(!o.cr.items[bg].opts.visible,'Compact GPS status has no backing');
 o.setGpsStatus('');assert(!o.cr.items[bg].opts.visible);
 o.setMode('hud');o.show(e);assert.strictEqual(o.backplate,null,'No backing on HUD');
 o.close();

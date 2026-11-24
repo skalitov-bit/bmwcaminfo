@@ -3,10 +3,11 @@ const assert=require('assert'),path=require('path');
 const {CityMapPanel}=require('../apps/aurelm_speed_camera_warning/city-map-panel');
 const packed=path.resolve(process.argv[2]),{Display}=require(packed+'/kit/display'),{Recorder}=require(packed+'/kit/record'),style=require(packed+'/screen-style');
 let targets=[],d;
-const rows=Array.from({length:100},(_,i)=>({id:'region-'+i,name:'Область '+String(i).padStart(3,'0'),bytes:123456,createdAt:'2026-11-21T00:00:00Z',coverage:'Test'}));
+const rows=Array.from({length:100},(_,i)=>({id:'region-'+i,countryCode:'RU',name:'Область '+String(i).padStart(3,'0'),bytes:123456,createdAt:'2026-11-21T00:00:00Z',coverage:'Test'}));
 const store={installed:{},catalog:{cities:rows},busy:false,status:'',state:()=> 'НЕ УСТАНОВЛЕНА',entry:id=>rows.find(e=>e.id===id),refresh(){}};
 function draw(){const cv=new Recorder(1600,520);panel.draw(cv,style,(cv,x,y,w,h,fn,key)=>cv.target(x,y,w,h,fn,key,0));targets=cv.targets;if(d)d.pageTargets=targets;assert(cv.scroll);}
 const panel=new CityMapPanel(store,draw,()=>{},()=>{});
+panel.scope='russia';
 d=Object.create(Display.prototype);Object.assign(d,{pageTargets:[],ccuLast:null,focusKey:null,sheet:null,place:{scale:1,ox:0,oy:0,x:0,y:0,w:1600,h:520},log:{info(){},error(e){throw e;}},_repaint(){},_tabList:()=>({tabs:[],sel:-1,settings:-1}),buttons:()=>[]});panel.bindNavigation(d,()=>true);draw();
 let knob=0;function input(pb,df){d._ccu({frontRotaryEncoderOperation:knob,frontRotaryEncoderPushButton:pb||0,frontRotaryEncoderDeflection:df||0});}
 d._focus({k:'tgt:map-city-region-0'});input();
