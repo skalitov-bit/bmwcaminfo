@@ -19,7 +19,7 @@ function blocksFor(index,fix,radius){
 function fail(){throw new Error('HYBRID_CATALOG_INVALID');}
 function validateManifest(m){
  if(!m||m.schemaVersion!==1||m.datasetId!=='hybrid-rus-v1'||m.format!=='hybrid-blocks-v1'||m.warningSchemaVersion!==1||m.cellSize!==.05||m.recordSize!==SIZE||
- !Number.isSafeInteger(m.revision)||m.revision<1||!Number.isInteger(m.count)||m.count<1||m.count>500000||!Number.isInteger(m.warningCount)||m.warningCount<0||m.warningCount>m.count||
+ !Number.isSafeInteger(m.revision)||m.revision<1||!Number.isInteger(m.count)||m.count<1||m.count>1000000||!Number.isInteger(m.warningCount)||m.warningCount<0||m.warningCount>m.count||
  !m.cityCounts||m.cityCounts.russia!==m.warningCount||typeof m.contentHash!=='string'||!/^[a-f0-9]{64}$/.test(m.contentHash)||m.maxRawBlockBytes!==MAX_RAW)fail();
  for(const [key,file,max] of [['index',INDEX,MAX_INDEX],['records',RECORDS,MAX_RECORDS]]){const d=m[key];if(!d||d.file!==file||!Number.isSafeInteger(d.bytes)||d.bytes<1||d.bytes>max||!/^[a-f0-9]{64}$/.test(d.sha256))fail();}
  for(const city of Object.keys(m.cityCounts))if(!['russia','mari-el','yoshkar-ola'].includes(city)||!Number.isInteger(m.cityCounts[city])||m.cityCounts[city]<0||m.cityCounts[city]>m.warningCount)fail();
@@ -135,3 +135,4 @@ class HybridCatalog{
 }
 async function openCatalog(dir,manifest){const m=validateManifest(manifest||readManifest(dir));await verifyFile(path.join(dir,INDEX),m.index);await verifyFile(path.join(dir,RECORDS),m.records);return new HybridCatalog(dir,m,readIndex(dir,m));}
 module.exports={HybridCatalog,openCatalog,readManifest,validateManifest,decodeRecord,canonical,geometry,MANIFEST,INDEX,RECORDS,MONITOR_RADIUS_M};
+
