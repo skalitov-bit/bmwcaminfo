@@ -54,6 +54,8 @@ async function run() {
     for(let i=0;i<cat.index.blocks.length;i++)for(const c of cat.block(i)) {
       if(!/^(СТРЕЛКА|АВТОДОРИЯ)$/.test(c.camera_model||''))continue;
       const file=cameraVoiceFile(1,c);
+      const hazard=require(path.join(base,'notification-types')).hazardKind(c);
+      if(hazard){assert.strictEqual(file,hazard==='school'?'school.m4a':'speed-bump.m4a');continue;}
       if(c.camera_family==='dummy'){assert.strictEqual(file,null);counts.dummy++;}
       else if(c.camera_model==='СТРЕЛКА'){assert.strictEqual(file,'strelka.m4a');counts.strelka++;}
       else {assert.strictEqual(file,c.averageControl?'avtodoria-average.m4a':'avtodoria.m4a');counts.avtodoria++;}

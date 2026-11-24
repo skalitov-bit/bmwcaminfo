@@ -4,7 +4,7 @@
   "nativeHeader": true,
   "responsiveMain": true,
   "description": "База камер по России: компактная база, названия комплексов и предупреждения KOMBI/HUD.",
-  "version": "0.9.97",
+  "version": "0.9.98",
   "vendor": "Andrug05",
   "loggingId": "SCAM",
   "iconGlyph": "camera",
@@ -44,6 +44,26 @@
     }
   ],
   "settings": [
+    {
+      "key": "ui_language",
+      "label": "Language / Язык",
+      "type": "choice",
+      "default": "ask",
+      "options": [
+        [
+          "ask",
+          "Choose language / Выберите язык"
+        ],
+        [
+          "ru",
+          "Русский"
+        ],
+        [
+          "en",
+          "English"
+        ]
+      ]
+    },
     {
       "key": "audio_force_notifications",
       "label": "Уведомления и бипер всегда (проверка)",
@@ -253,6 +273,710 @@
         [
           "100",
           "Максимум"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_speed",
+      "label": "Баннер: Камера скорости",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_integrated",
+      "label": "Баннер: Встроенная камера",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_red_light",
+      "label": "Баннер: Красный свет",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_stop_line",
+      "label": "Баннер: Стоп-линия",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_average",
+      "label": "Баннер: Средняя скорость",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_mobile",
+      "label": "Баннер: Мобильная камера",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_mobile_speed",
+      "label": "Баннер: Мобильный контроль скорости",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_overtaking",
+      "label": "Баннер: Мобильный контроль обгона",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_stop",
+      "label": "Баннер: Мобильный контроль STOP",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_crosswalk",
+      "label": "Баннер: Контроль перехода",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_bus_lane",
+      "label": "Баннер: Полоса общественного транспорта",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_traffic",
+      "label": "Баннер: Комплекс контроля ПДД",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_toll",
+      "label": "Баннер: Оплата проезда",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_parking",
+      "label": "Баннер: Остановка и стоянка",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_weight",
+      "label": "Баннер: Весовой контроль",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_platon",
+      "label": "Баннер: Платон",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_dummy",
+      "label": "Баннер: Муляж",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_police",
+      "label": "Баннер: Пост ДПС",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_police_stationary",
+      "label": "Баннер: Стационарный пост ДПС",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_school",
+      "label": "Баннер: Школа / опасный переход",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_bump",
+      "label": "Баннер: Лежачий полицейский",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_banner_type_other",
+      "label": "Баннер: Другие камеры",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_speed",
+      "label": "Голос: Камера скорости",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_integrated",
+      "label": "Голос: Встроенная камера",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_red_light",
+      "label": "Голос: Красный свет",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_stop_line",
+      "label": "Голос: Стоп-линия",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_average",
+      "label": "Голос: Средняя скорость",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_mobile",
+      "label": "Голос: Мобильная камера",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_mobile_speed",
+      "label": "Голос: Мобильный контроль скорости",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_overtaking",
+      "label": "Голос: Мобильный контроль обгона",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_stop",
+      "label": "Голос: Мобильный контроль STOP",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_crosswalk",
+      "label": "Голос: Контроль перехода",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_bus_lane",
+      "label": "Голос: Полоса общественного транспорта",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_traffic",
+      "label": "Голос: Комплекс контроля ПДД",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_toll",
+      "label": "Голос: Оплата проезда",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_parking",
+      "label": "Голос: Остановка и стоянка",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_weight",
+      "label": "Голос: Весовой контроль",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_platon",
+      "label": "Голос: Платон",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_dummy",
+      "label": "Голос: Муляж",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_police",
+      "label": "Голос: Пост ДПС",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_police_stationary",
+      "label": "Голос: Стационарный пост ДПС",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_school",
+      "label": "Голос: Школа / опасный переход",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_bump",
+      "label": "Голос: Лежачий полицейский",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
+        ]
+      ]
+    },
+    {
+      "key": "notification_voice_type_other",
+      "label": "Голос: Другие камеры",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "Включено"
+        ],
+        [
+          "off",
+          "Выключено"
         ]
       ]
     }

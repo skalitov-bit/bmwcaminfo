@@ -29,7 +29,7 @@ function commands(cv,f,family,rects,color){
  cv.n=i;
 }
 function text(cv,value,x,top,size,color,options){
- const o=options||{},s=String(value).toUpperCase(),f=getFont();size=metrics.fittedSize(s,size,o.maxWidth);
+ const o=options||{},s=require('./i18n').t(value).toUpperCase(),f=getFont();size=metrics.fittedSize(s,size,o.maxWidth);
  const scale=size/f.size;let pen=x;
  if(o.align==='center')pen-=metrics.width(s,size)/2;else if(o.align==='right')pen-=metrics.width(s,size);
  const baseline=top+metrics.capHeight(size),rects=[];

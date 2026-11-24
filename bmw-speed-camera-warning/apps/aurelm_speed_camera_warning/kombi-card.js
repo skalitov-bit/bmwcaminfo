@@ -15,7 +15,7 @@ function distancePixels(e,buffer){
  text.draw(px,r.w,r.h,S,Math.max(0,Math.round(e.distanceM||0))+' М',88,3,48,WHITE,{align:'center',maxWidth:172});return px;
 }
 function makeFrame(e){
- const px=fill(Buffer.alloc(IW*IH*4),BG),police=policeKind(e.camera),titles=hudLabels(e.camera);
+ const px=fill(Buffer.alloc(IW*IH*4),BG),police=policeKind(e.camera)||require('./notification-types').hazardKind(e.camera),titles=hudLabels(e.camera);
  const label=(s,x,y,size,c,o)=>text.draw(px,IW,IH,S,s,x,y,size,c||WHITE,o);
  // Solid base covers every pixel; the accent fades only across the top edge.
  for(let y=0;y<3*S;y++)for(let x=0;x<IW;x++){const a=1-x/IW,i=(y*IW+x)*4;for(let c=0;c<3;c++)px[i+c]=Math.round(BG[c]+(RED[c]-BG[c])*a);}

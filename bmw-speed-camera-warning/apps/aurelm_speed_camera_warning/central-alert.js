@@ -24,7 +24,7 @@ function drawCentralAlert(cv,event,fallbackSpeed,bounds,animationMs){
   };
   cv=scaled;
  }
- const e=event,c=e.camera||{},police=policeKind(c),x=72,y=86,w=1456,h=174;
+ const e=event,c=e.camera||{},police=policeKind(c)||require('./notification-types').hazardKind(c),x=72,y=86,w=1456,h=174;
  const measured=e.useAverage?e.averageKmh:Number.isFinite(e.speedKmh)?e.speedKmh:fallbackSpeed;
  const speed=Number.isFinite(measured)?Math.round(measured):null;
  const limit=!police&&Number.isFinite(c.limit)&&c.limit>0?c.limit:null;

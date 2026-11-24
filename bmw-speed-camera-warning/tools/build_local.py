@@ -105,6 +105,8 @@ def build(out, cache):
     blobs['source/javascript/kit/controller-recovery.js']=(ROOT/'tools/controller-recovery.js').read_bytes()
     blobs['source/javascript/kit/canvas-performance.js']=(ROOT/'tools/canvas-performance.js').read_bytes()
     blobs['source/javascript/kit/canvas.js']+=b"\nrequire('./canvas-performance').install(Canvas);\n"
+    # Native recovery controls and built-in setting labels follow the app language too.
+    blobs['source/javascript/kit/i18n.js']=b"'use strict'; const l=require('../i18n'); module.exports={t:l.t,dict:{},getLanguage:l.language};\n"
     rt={k:app.get(k) for k in ('id','title','version','screens','settings','config','startWidget','nativeHeader','responsiveMain')}
     rt['stateIds']=state_ids;put_json('source/javascript/kit/app-spec.json',rt)
     for name in list(blobs):

@@ -4,7 +4,7 @@ const root=path.resolve(process.argv[2]);let now=10000,front=true;
 class Clock extends Date {static now(){return now;}}
 const mod={exports:{}};
 vm.runInNewContext(fs.readFileSync(root+'/display-recovery-menu.js','utf8'),{
- module:mod,exports:mod.exports,Date:Clock,Promise,setInterval:()=>({unref(){}}),clearInterval(){}
+ module:mod,exports:mod.exports,require:p=>require(path.resolve(root,p)),Date:Clock,Promise,setInterval:()=>({unref(){}}),clearInterval(){}
 });
 const opened=[],handlers={};
 const d={gpu:{ready:true,claim(){},grab(){},show(){}},_shown:()=>front,

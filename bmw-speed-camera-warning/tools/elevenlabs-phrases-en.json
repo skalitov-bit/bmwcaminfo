@@ -1,0 +1,19 @@
+{
+  "camera-500": "Speed camera ahead.",
+  "camera-200": "Speed camera in two hundred metres.",
+  "strelka": "Strelka speed camera ahead.",
+  "strelka-200": "Strelka speed camera in two hundred metres.",
+  "avtodoria": "Avtodoria camera ahead.",
+  "avtodoria-200": "Avtodoria camera in two hundred metres.",
+  "avtodoria-average": "Average speed check ahead. Avtodoria.",
+  "avtodoria-average-200": "Average speed check in two hundred metres. Avtodoria.",
+  "dps-post": "Police checkpoint ahead.",
+  "dps-post-200": "Police checkpoint in two hundred metres.",
+  "dps-stationary": "Permanent police checkpoint ahead.",
+  "dps-stationary-200": "Permanent police checkpoint in two hundred metres.",
+  "average-end": "Average speed check ends.",
+  "school": "School or hazardous pedestrian crossing ahead.",
+  "school-200": "School or hazardous pedestrian crossing in two hundred metres.",
+  "speed-bump": "Speed bump ahead.",
+  "speed-bump-200": "Speed bump in two hundred metres."
+}

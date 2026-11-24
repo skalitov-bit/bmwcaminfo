@@ -34,7 +34,8 @@ const ESTRELKA_CONTROL={15:'СКОРОСТЬ',192:'СКОРОСТЬ',68:'СТО�
  16:'ПОЛОСА ОТ',155:'МУЛЯЖ',156:'КОНТРОЛЬ ПДД',199:'МОБИЛЬНАЯ',
  208:'ОСТАНОВКА/СТОЯНКА',210:'ПЛАТОН',211:'ВЕСОВОЙ КОНТРОЛЬ',227:'СРЕДНЯЯ СКОРОСТЬ'};
 function hudLabels(camera){
- const c=camera||{},police=policeKind(c);
+ const c=camera||{},police=policeKind(c),hazard=require('./notification-types').hazardKind(c);
+ if(hazard)return {control:hazard==='school'?'ШКОЛА / ПЕРЕХОД':'ЛЕЖАЧИЙ ПОЛИЦЕЙСКИЙ',model:''};
  if(police)return {control:'ПОСТ ДПС',model:police==='stationary'?'СТАЦИОНАРНЫЙ':''};
  let control;
  if(c.typeNamespace==='estrelka')control=ESTRELKA_CONTROL[c.typeCode];

@@ -35,12 +35,13 @@ const OUTPUT_RECT={map:{x:331,y:355},hud:{x:190,y:182}};
 const {normalize:normalizeHudPosition}=require('./hud-position');
 const clusterText=require('./cluster-text');
 const {policeKind,iconFor}=require('./point-kind');
+const noLimit=c=>!!policeKind(c)||!!require('./notification-types').hazardKind(c);
 const {PULSE,pulseOpacity,monotonicMs}=require('./ring-pulse');
 function shouldBlink(e){
  if(e&&e.estimated)return false;
  const c=e&&e.camera||{},limit=c.limit;
  const speed=e&&(e.useAverage?e.averageKmh:Number.isFinite(e.measuredSpeedKmh)?e.measuredSpeedKmh:e.speedKmh);
- return !policeKind(c)&&c.camera_family!=='dummy'&&(!c.averageControl||e.useAverage)&&
+ return !noLimit(c)&&c.camera_family!=='dummy'&&(!c.averageControl||e.useAverage)&&
   Number.isFinite(limit)&&limit>0&&Number.isFinite(speed)&&speed-limit>20;
 }
 function makeRing(){
@@ -70,12 +71,12 @@ function hudGeometry(e){
 }
 function distancePixels(e,buffer,centered){
  const r=centered?KOMBI_DISTANCE_RECT:hudGeometry(e).distanceRect,px=buffer||Buffer.alloc(r.w*r.h*4);px.fill(0);
- const red=!policeKind(e.camera)&&e.type==='speeding';
+ const red=!noLimit(e.camera)&&e.type==='speeding';
  clusterText.draw(px,r.w,r.h,S,String(Math.max(0,Math.round(e.distanceM||0)))+(centered?' М':' м'),centered?r.w/S/2:hudGeometry(e).titleCenter-r.x/S,2,32,red?ALERT_RED:rgba(255,205,74),{align:'center',preserveCase:!centered,maxWidth:centered?164:HUD_LAYOUT.textWidth});
  return px;
 }
 function baseFooter(e){
- const red=!policeKind(e.camera)&&e.type==='speeding',white=rgba(245,249,252);
+ const red=!noLimit(e.camera)&&e.type==='speeding',white=rgba(245,249,252);
  if(e.estimated)return {text:gpsMessage('reserve'),color:white};
  if(e.useAverage&&Number.isFinite(e.averageKmh))return {text:(e.partialSection?'ЧАСТ. СРЕДНЯЯ ':'СРЕДНЯЯ ')+Math.round(e.averageKmh),color:red?ALERT_RED:white};
  if(e.phase==='section'||e.phase==='rear')return {text:(e.phase==='section'?'УЧАСТОК':'ПОСЛЕ')+(red?' / ПРЕВЫШЕНИЕ':''),color:red?ALERT_RED:white};
@@ -115,13 +116,16 @@ function footerPixels(value,buffer,centered){
 // Key the pixels, not camera identity or raw speed: equal visible content
 // needs no new icon/sign/title rendering. Keep only keys, not full-frame copies.
 function staticFrameKey(e){
- const c=e.camera||{},titles=hudLabels(c),police=!!policeKind(c),limit=Number(c.limit);
- return JSON.stringify([titles.control,titles.model,police,!police&&Number.isFinite(limit)&&limit>0?limit:null,!police&&e.type==='speeding',hudGeometry(e).signX]);
+ const c=e.camera||{},titles=hudLabels(c),police=!!noLimit(c),limit=Number(c.limit);
+ return JSON.stringify([require('./i18n').language(),titles.control,titles.model,police,!police&&Number.isFinite(limit)&&limit>0?limit:null,!police&&e.type==='speeding',hudGeometry(e).signX]);
 }
 function hudTitle(value,maxWidth){
- const suffix=value.endsWith(' / В СПИНУ')?' / В СПИНУ':'';
+ const english=require('./i18n').language()==='en';
+ if(english)value=require('./i18n').t(value).toUpperCase();
+ const rear=english?' / REAR-FACING':' / В СПИНУ',suffix=value.endsWith(rear)?rear:'';
  if(suffix)return hudTitle(value.slice(0,-suffix.length),maxWidth-clusterText.width(suffix,18))+suffix;
  const short={'СРЕДНЯЯ СКОРОСТЬ':'СРЕДНЯЯ СКОР.','ОСТАНОВКА/СТОЯНКА':'ОСТ./СТОЯНКА','ВЕСОВОЙ КОНТРОЛЬ':'ВЕС. КОНТРОЛЬ','ОПЛАТА ПРОЕЗДА':'ОПЛАТА ПРОЕЗДА'};
+ Object.assign(short,{'AVERAGE SPEED':'AVG. SPEED','SCHOOL / CROSSING':'SCHOOL / CROSSING','POLICE CHECKPOINT':'POLICE CHECK'});
  let result=value;
  if(clusterText.width(result,18)>maxWidth)result=short[value]||value;
  if(clusterText.width(result,18)>maxWidth){
@@ -132,7 +136,7 @@ function hudTitle(value,maxWidth){
 }
 function makeFrame(e,centered){
  const layout=hudGeometry(e);
- const px=Buffer.alloc(IW*IH*4),red=!policeKind(e.camera)&&e.type==='speeding',white=rgba(245,249,252),muted=rgba(169,190,207),accent=red?ALERT_RED:rgba(255,205,74);
+ const px=Buffer.alloc(IW*IH*4),red=!noLimit(e.camera)&&e.type==='speeding',white=rgba(245,249,252),muted=rgba(169,190,207),accent=red?ALERT_RED:rgba(255,205,74);
  const label=(value,x,y,size,color,options)=>clusterText.draw(px,IW,IH,S,value,centered&&x===108?W/2:x,y,size,color,centered&&x===108?Object.assign({},options,{align:'center',maxWidth:168}):options);
  // Preserve transparency so OEM cluster information remains visible around the card.
  if(!centered)rect(px,0,0,Math.round(layout.stripeWidth),5,accent);
@@ -147,13 +151,13 @@ function makeFrame(e,centered){
  }
  const r=centered?KOMBI_DISTANCE_RECT:layout.distanceRect,dp=distancePixels(e,null,centered);
  for(let row=0;row<r.h;row++)dp.copy(px,((r.y+row)*IW+r.x)*4,row*r.w*4,(row+1)*r.w*4);
- const limit=policeKind(e.camera)?NaN:Number(e.camera&&e.camera.limit);
+ const limit=noLimit(e.camera)?NaN:Number(e.camera&&e.camera.limit);
  const signX=centered?KOMBI_ICONS.right:layout.signX,signY=centered?KOMBI_ICONS.y:59;
  if(Number.isFinite(limit)&&limit>0){
   circle(px,signX,signY,32,ALERT_RED);circle(px,signX,signY,26,rgba(255,255,255));
   const size=clusterText.fittedSize(String(limit),32,44);
   label(String(limit),signX,signY-clusterText.capHeight(size)/2,size,rgba(20,29,38),{align:'center'});
- }else if(!policeKind(e.camera))label('ЛИМИТ Н/Д',signX,centered?signY-clusterText.capHeight(11)/2:52,11,muted,{align:'center',maxWidth:64});
+ }else if(!noLimit(e.camera))label('ЛИМИТ Н/Д',signX,centered?signY-clusterText.capHeight(11)/2:52,11,muted,{align:'center',maxWidth:64});
  const patches=footerPatches(footer(e),null,centered);let offset=0;
  patches.rects.forEach(fr=>{for(let row=0;row<fr.h;row++){patches.pixels.copy(px,((fr.y+row)*IW+fr.x)*4,offset,offset+fr.w*4);offset+=fr.w*4;}});
  return px;

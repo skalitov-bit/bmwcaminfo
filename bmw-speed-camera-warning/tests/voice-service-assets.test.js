@@ -4,7 +4,7 @@ const root=process.argv[2]?path.resolve(process.argv[2]):path.resolve(__dirname,
 const source=fs.readFileSync(path.join(root,'voice.js'),'utf8');
 const manifest=require(path.join(root,'audio-manifest.json')),component=require(path.join(root,'component.json'));
 const waits=[], calls=[];
-const context={require:n=>n==='fs'?{existsSync:()=>true}:n==='./audio-manifest.json'?manifest:n==='./command-control'?require(path.join(root,'command-control')):require(n),
+const context={require:n=>n==='fs'?{existsSync:()=>true}:n==='./audio-manifest.json'?manifest:n==='./command-control'?require(path.join(root,'command-control')):n.startsWith('./')?require(path.join(root,n)):require(n),
   clearTimeout:()=>{},setTimeout:(fn,ms)=>{if(ms===3000)return 0;waits.push(ms);fn();},log:()=>{},VoiceService:function(){}};
 vm.createContext(context);
 vm.runInContext(source.slice(0,source.indexOf('function log('))+source.slice(source.indexOf('VoiceService.prototype.play ='),source.indexOf('VoiceService.prototype.release ='))+'\nthis.allowed=ALLOWED;',context);

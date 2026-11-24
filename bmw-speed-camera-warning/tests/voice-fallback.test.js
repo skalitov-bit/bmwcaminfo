@@ -5,7 +5,7 @@ const {MixedOutput}=require(native+'/pcm-output');
 const source=fs.readFileSync(native+'/voice.js','utf8');
 const manifest=require(native+'/audio-manifest.json');
 let now=10000;const waits=[];
-const context={require:n=>n==='fs'?{existsSync:()=>true}:n==='./audio-manifest.json'?manifest:require(n),
+const context={require:n=>n==='fs'?{existsSync:()=>true}:n==='./audio-manifest.json'?manifest:n.startsWith('./')?require(path.join(native,n)):require(n),
  Date:class extends Date{static now(){return now;}},console:{log(){}},
  setTimeout:(fn,ms)=>{waits.push(ms);fn();}};
 vm.createContext(context);vm.runInContext(source.slice(0,source.indexOf('var voice = new VoiceService();')),context);

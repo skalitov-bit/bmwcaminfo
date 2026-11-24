@@ -13,7 +13,7 @@ function install(ctx){
   return why+'\nКасания: '+(s.touch?'есть':'нет')+' / джойстик: '+(s.controller?'есть':'нет')+
    '\nПолучено: '+s.touchEvents+' / '+s.ccuEvents;
  }
- function status(){const s=diagnostic();if(s!==lastStatus){lastStatus=s;return ui.text('DISPLAY_RECOVERY_STATUS',s);}}
+ function status(){const s=require('./i18n').t(diagnostic());if(s!==lastStatus){lastStatus=s;return ui.text('DISPLAY_RECOVERY_STATUS',s);}}
  function check(){
   const now=Date.now();
   if(typeof d.retryController==='function')d.retryController();

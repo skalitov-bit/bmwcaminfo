@@ -20,7 +20,7 @@ function cachedBackground(cv,key,x,y,w,h,draw){
  cv.blit(layer,x,y);return true;
 }
 function text(cv,value,x,baseline,size,color,options){
- const o=options||{},s=String(value).toUpperCase().replace(/[·•]/g,'/').replace(/[—−–]/g,'-').replace(/×/g,'X').replace(/[«»]/g,'').replace(/,/g,' ');
+ const o=options||{},s=require('./i18n').t(value).toUpperCase().replace(/[·•]/g,'/').replace(/[—−–]/g,'-').replace(/×/g,'X').replace(/[«»]/g,'').replace(/,/g,' ');
  size=font.fittedSize(s,size,o.maxWidth||Math.max(1,1580-x));
  if(cv.recording===true)return require('./hud-canvas').text(cv,s,x,baseline-font.capHeight(size),size,color,o);
  const rgb=color.match(/[a-f\d]{2}/gi).map(v=>parseInt(v,16));

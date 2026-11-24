@@ -64,7 +64,7 @@ function decodeRecord(b,p,count,meta){
  if(!type||!mod||Math.abs(latI)>900000000||Math.abs(lonI)>1800000000||dt>3||flags>7||b[p+19]!==0||(limit!==null&&(limit<5||limit>250))||(heading!==null&&heading>=360)||(azimuth!==null&&azimuth>511)||(angle!==null&&angle>255)||warning>2047||off<count*SIZE||off+len>b.length)fail();
  if(!e&&len>0&&len<8)fail();
  const id=e?'estrelka-'+b.slice(p+40,p+52).toString('hex'):'mapcam-'+sourceId,geo=b.slice(off,off+len),encoded=e?null:geo.slice(8).toString('utf8')||null,extra=e?geo.toString('hex')||null:null;
- const lat=latI/1e7,lon=lonI/1e7,family=type[2],name=mod.name||null,warningEnabled=['fixed','mobile','dummy','weight_control'].includes(family)||!!policeKind({typeNamespace:source,typeCode:code});
+ const lat=latI/1e7,lon=lonI/1e7,family=type[2],name=mod.name||null,warningEnabled=['fixed','mobile','dummy','weight_control'].includes(family)||!!policeKind({typeNamespace:source,typeCode:code})||!!require('./notification-types').hazardKind({typeNamespace:source,typeCode:code});
  const c={id,name:name||type[1],type:type[1],lat,lon,limit,source:e?'еСтрелка':'MapCam.info',sourceLabel:(e?'еСтрелка':'MapCam.info')+' · '+String(meta.sourceRevisions[source]).slice(0,10),sourceRecordId:sourceId,typeNamespace:source,typeCode:code,camera_model:name,camera_model_code:model||null,camera_model_kind:mod.kind,camera_family:family,warningProfile:'hybrid-v1',warningEnabled,averageControl:e?code===227:code===4,cityMask:flags&6,
   mapcamTypeCode:e?null:code,mapcamType:type[0],mapcamDirectionType:dt,mapcamApproachHeadingDeg:heading,mapcamTravel:heading===null?[]:dt===1?[heading]:dt===2?[heading,(heading+180)%360]:[],mapcamWarningDistanceM:warning,mapcamAngleDeg:angle===null?60:angle,mapcamControlDirection:null,mapcamHours:null,mapcamPath:encoded?geometry(encoded,geo.readFloatLE(0),geo.readFloatLE(4)):[],
   rearCapture:e&&rawFlags!==null?!!(rawFlags&0x10):null,
@@ -135,4 +135,3 @@ class HybridCatalog{
 }
 async function openCatalog(dir,manifest){const m=validateManifest(manifest||readManifest(dir));await verifyFile(path.join(dir,INDEX),m.index);await verifyFile(path.join(dir,RECORDS),m.records);return new HybridCatalog(dir,m,readIndex(dir,m));}
 module.exports={HybridCatalog,openCatalog,readManifest,validateManifest,decodeRecord,canonical,geometry,MANIFEST,INDEX,RECORDS,MONITOR_RADIUS_M};
-

@@ -18,7 +18,8 @@ async function run(){
   for(const tail of ['../report.json','../../etc/passwd','report.json?x=1','%2e%2e/voice.js'])assert.equal((await get(url+tail)).code,404);
   assert.equal((await get(url.replace(/\/r\/.*$/,'/r/wrong/'))).code,404);
   assert.equal((await get(url,'POST')).code,405);
-  const b=await server.start({});assert.notEqual(url,b.urls[0]);await rejects(get(url));
+  const b=await server.start({language:'en'});assert.notEqual(url,b.urls[0]);await rejects(get(url));
+  r=await get(b.urls[0]);assert(r.body.includes('lang="en"'));assert(r.body.includes('Download JSON report'));assert(!/[А-Яа-яЁё]/.test(r.body),'English phone report has no untranslated Russian UI');
   await server.stop();assert(!server.status().active);await rejects(get(b.urls[0]));
   server.o.ttlMs=70;const c=await server.start({});await wait(140);assert(!server.status().active);await rejects(get(c.urls[0]));
   server.collect=async()=>{await wait(50);return report;};const pending=server.start({});await rejects(server.start({}));server.stop();await rejects(pending);assert(!server.status().active);

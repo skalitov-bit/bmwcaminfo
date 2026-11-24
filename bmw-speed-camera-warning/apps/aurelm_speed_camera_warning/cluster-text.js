@@ -3,7 +3,7 @@
 const atlas=require('./cluster-font.json');
 const alpha=require('zlib').inflateSync(Buffer.from(atlas.alpha,'base64'));
 function glyph(ch){return atlas.glyphs[ch]||atlas.glyphs['?'];}
-function upper(value,options){return options&&options.preserveCase?String(value):String(value).toUpperCase();}
+function upper(value,options){const text=require('./i18n').t(value);return options&&options.preserveCase?text:text.toUpperCase();}
 function width(value,size,options){let units=0;for(const ch of upper(value,options))units+=glyph(ch)[5];return units*size/atlas.size;}
 function fittedSize(value,size,maxWidth,options){const w=width(value,size,options);return maxWidth&&w>maxWidth?size*maxWidth/w:size;}
 function topInset(value,size,options){let top=0;for(const ch of upper(value,options))top=Math.min(top,atlas.capHeight+glyph(ch)[4]);return Math.ceil(-top*size/atlas.size);}

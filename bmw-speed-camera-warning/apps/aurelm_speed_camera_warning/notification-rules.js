@@ -19,7 +19,7 @@ function warningRange(camera,options,speed){
  return Math.min(MAX_WARNING_RANGE_M,Math.ceil((target-1e-7)/50)*50);
 }
 function isSpeeding(camera,speed,options,previous,useAverage){
- if(policeKind(camera)||camera.camera_family==='dummy'||camera.averageControl&&!useAverage||
+ if(require('./notification-types').hazardKind(camera)||policeKind(camera)||camera.camera_family==='dummy'||camera.averageControl&&!useAverage||
     !Number.isFinite(camera.limit)||camera.limit<=0||!Number.isFinite(speed))return false;
  const threshold=camera.limit+Math.max(0,Number(options&&options.excessKmh)||0);
  // Entry is strictly above the chosen threshold; leave 2 km/h below it.

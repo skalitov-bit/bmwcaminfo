@@ -11,6 +11,8 @@ const FILES = {
 // Model is an explicit database field. Never infer it from an address or display name.
 function cameraVoiceFile(stage, camera, forceAudio) {
   const c = camera || {}, generic = stage === 2 ? FILES[2] : FILES[1];
+  const hazard=require('./notification-types').hazardKind(c);
+  if(hazard)return (hazard==='school'?'school':'speed-bump')+(stage===2?'-200':'')+'.m4a';
   if(isDummy(c))return forceAudio===true?generic:null; // Explicit diagnostic mode only.
   const police = policeKind(c);
   if (police) return (police === 'stationary' ? 'dps-stationary' : 'dps-post') + (stage === 2 ? '-200.m4a' : '.m4a');
@@ -44,12 +46,12 @@ class CameraVoiceAlerts {
   }
 
   camera(stage, relevant, camera, forceAudio) {
-    const generic = policeKind(camera) ? null : stage === 2 ? FILES[2] : FILES[1];
+    const generic = (policeKind(camera)||require('./notification-types').hazardKind(camera)) ? null : stage === 2 ? FILES[2] : FILES[1];
     return this._send(cameraVoiceFile(stage, camera, forceAudio), relevant, generic);
   }
 
   cameraResult(stage,relevant,camera,forceAudio) {
-    const generic=policeKind(camera)?null:stage===2?FILES[2]:FILES[1];
+    const generic=(policeKind(camera)||require('./notification-types').hazardKind(camera))?null:stage===2?FILES[2]:FILES[1];
     return this._send(cameraVoiceFile(stage,camera,forceAudio),relevant,generic,true);
   }
 
@@ -68,6 +70,7 @@ class CameraVoiceAlerts {
     const output=r=>detailed?r:r.ok===true;
     if(!file)return Promise.resolve(output({ok:true,visualOnly:true}));
     if(this.pending>=2)return Promise.resolve(output({ok:false,skipped:true}));
+    file=require('./i18n').voiceFile(file);fallback=fallback&&require('./i18n').voiceFile(fallback);
     this.pending++;
     const generation=this.generation,created=Date.now();
     const expired=()=>generation!==this.generation||Date.now()-created>8000||(relevant&&!relevant());
@@ -129,7 +132,7 @@ class CameraVoiceAlerts {
         // Older services ignore extra fields on play. A separate action prevents
         // them from playing at full volume when a quieter level was requested.
         if(settled)return;
-        sent=true;socket.write(JSON.stringify({action:'play-v3',id,file,volume,ttlMs:8000}) + '\n');
+        sent=true;socket.write(JSON.stringify({action:'play-v3',id,file,volume,ttlMs:8000,language:require('./i18n').language()}) + '\n');
       });
       socket.on('data', (chunk) => {
         buffer += chunk;

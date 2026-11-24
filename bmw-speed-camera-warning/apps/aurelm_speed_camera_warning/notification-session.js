@@ -3,13 +3,14 @@ const {distance,bearing,diff,freshFix,pointHit}=require('./mapcam-warnings');
 const {warningRange}=require('./notification-rules');
 const {compareWarnings,controlsSpeed}=require('./notification-priority');
 const {isDummy}=require('./point-kind');
+const {allowed,hazardKind}=require('./notification-types');
 const {alignment,withDensity}=require('./approach-trajectory');
 // One announcement ledger per physical approach. No elapsed-time camera lockout.
 class NotificationSession {
  constructor(voice,getOptions,now){this.voice=voice;this.getOptions=getOptions;this.now=now||Date.now;
   this.encounters=new Map();this.live={};this.fix=null;this.current=null;this.busy=false;this.serial=0;
   this.pendingEnd=null;this.lastEndToken=null;this.choice=null;}
- suspend(){this.live={};this.fix=null;this.current=null;this.pendingEnd=null;this.choice=null;if(this.voice.cancel)this.voice.cancel();}
+ suspend(){this.live={};this.fix=null;this.current=null;this.visualCurrent=null;this.audioCurrent=null;this.pendingEnd=null;this.choice=null;if(this.voice.cancel)this.voice.cancel();}
  clear(){this.suspend();this.encounters.clear();}
  update(states,fix,heading,events){
   // Capture the preceding encounter before pruning it after crossing the end.
@@ -21,7 +22,7 @@ class NotificationSession {
    if(token===this.lastEndToken||!previous||previous.phase!=='section')continue;
    this.lastEndToken=token;
    // In speeding-only mode, close an audible warning, not a silent approach.
-   if(!freshFix(fix,this.now())||!o.forceAudio&&(o.voice==='off'||o.voice==='speeding'&&
+   if(!allowed(o,'voice',e.camera)||!freshFix(fix,this.now())||!o.forceAudio&&(o.voice==='off'||o.voice==='speeding'&&
       !(r&&r.stages[1]&&r.stages[1].done)&&!previous.speeding))continue;
    this.pendingEnd={token,createdAt:this.now()};break;
   }
@@ -47,6 +48,8 @@ class NotificationSession {
    if(this.choice.count<2)best=previous;
   }else this.choice=null;
   this.current=best;
+  this.visualCurrent=best&&allowed(o,'banner',best.camera)?best:sorted.find(s=>allowed(o,'banner',s.camera))||null;
+  this.audioCurrent=best&&allowed(o,'voice',best.camera)?best:sorted.find(s=>allowed(o,'voice',s.camera))||null;
   // A new active warning takes precedence over a message about a finished one.
   if(this.current)this.pendingEnd=null;
   for(const s of sorted){
@@ -56,7 +59,7 @@ class NotificationSession {
   }
   this.pump();return this.current;
  }
- eligible(s){const o=this.getOptions();return !!s&&s.phase!=='rear'&&freshFix(this.fix,this.now())&&(o.forceAudio===true||!isDummy(s.camera)&&this.fix.speedKmh>15&&o.voice!=='off'&&(o.voice!=='speeding'||s.speeding));}
+ eligible(s){const o=this.getOptions();return !!s&&allowed(o,'voice',s.camera)&&s.phase!=='rear'&&freshFix(this.fix,this.now())&&(o.forceAudio===true||!isDummy(s.camera)&&this.fix.speedKmh>15&&o.voice!=='off'&&(o.voice!=='speeding'||s.speeding||!!hazardKind(s.camera)));}
  diagnosticCandidate(){
   // All currently detected approaches get one phrase; no queue of stale points.
   return Object.values(this.live).filter(s=>this.eligible(s)).sort(compareWarnings).find(s=>{
@@ -68,7 +71,7 @@ class NotificationSession {
   if(this.busy)return;
   // Diagnostic mode visits each live approach, normal mode follows visual priority.
   const o=this.getOptions(),forced=o.forceAudio===true;
-  const s=forced?this.diagnosticCandidate():this.current;if(!this.eligible(s)){this.pumpEnd();return;}
+  const s=forced?this.diagnosticCandidate():this.audioCurrent;if(!this.eligible(s)){this.pumpEnd();return;}
   const r=this.encounters.get(s.camera.id);if(!r)return;
   let stage=1;
   if(r.stages[1]&&r.stages[1].done){
@@ -79,7 +82,7 @@ class NotificationSession {
   const attempt=r.stages[stage]||(r.stages[stage]={tries:0,done:false,blocked:false,nextAt:0});
   if(attempt.done||attempt.blocked||attempt.tries>=2||this.now()<attempt.nextAt)return;
   // If stage 1 was delayed until very close, use the generic distance-free phrase, not "200 metres".
-  const relevant=()=>this.encounters.get(r.id)===r&&(this.getOptions().forceAudio===true)===forced&&(forced||this.current&&this.current.camera.id===r.id)&&
+  const relevant=()=>this.encounters.get(r.id)===r&&(this.getOptions().forceAudio===true)===forced&&(forced||this.audioCurrent&&this.audioCurrent.camera.id===r.id)&&
     this.live[r.id]&&this.eligible(this.live[r.id])&&(stage!==2||this.getOptions().repeat200!==false&&this.live[r.id].phase!=='section'&&this.live[r.id].distanceM>=80&&this.live[r.id].distanceM<=210);
   attempt.tries++;this.busy=true;
   const assetStage=stage===2&&s.distanceM<150?1:stage;

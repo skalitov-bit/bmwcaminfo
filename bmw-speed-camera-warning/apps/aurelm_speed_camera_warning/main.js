@@ -1,6 +1,7 @@
 'use strict';
 const {RADIUS:REGION_RADIUS_M}=require('./region-cache');
 const mgu=require('./kit/mgu');
+const i18n=require('./i18n');
 const uplink=require('./uplink');
 const cityMap=require('./city-map.json');
 const {CityMapStore}=require('./city-map-store');
@@ -49,7 +50,10 @@ const CAMERA_BUTTONS=[{step:-1,x:P.x+145,y:P.y+140,w:56,h:64},{step:1,x:P.x+366,
 const C=style.colors;
 const ACTION_IDS=['BTN_CAM_PREV','BTN_CAM_NEXT','BTN_ZOOM','BTN_REFRESH','BTN_VOICE_TEST','BTN_CAMERA_MENU'];
 mgu.run({async start(ctx){
- const {ui,settings,log,dataDir}=ctx;uplink.init(dataDir);log.info('UPLINK '+uplink.describe());uplink.checkInternet({timeout:3500}).then(ok=>log.info('UPLINK_HTTPS_PROBE '+(ok?'online':'offline')+'; '+uplink.describe())).catch(e=>log.warn('UPLINK_PROBE_ERROR '+e));let city=String(settings.get('city')||'russia'),view='MAP',index=0,zoom=2.5,zoomIndex=ZOOM_STEPS.indexOf(2.5),fix=null,cameraDisplayMode=String(settings.get('camera_display')||'kombi'),gpsStatus={state:'starting',errorCode:null,eventsReceived:0,invalidEvents:0},lastAlert='Нет предупреждений',alertUntil=0,activeAlert=null;
+ const {ui,settings,log,dataDir}=ctx;
+ i18n.setLanguage(settings.get('ui_language'));
+ let languageFirst=!['ru','en'].includes(settings.get('ui_language')),languageReturn='SETTINGS';
+uplink.init(dataDir);log.info('UPLINK '+uplink.describe());uplink.checkInternet({timeout:3500}).then(ok=>log.info('UPLINK_HTTPS_PROBE '+(ok?'online':'offline')+'; '+uplink.describe())).catch(e=>log.warn('UPLINK_PROBE_ERROR '+e));let city=String(settings.get('city')||'russia'),view='MAP',index=0,zoom=2.5,zoomIndex=ZOOM_STEPS.indexOf(2.5),fix=null,cameraDisplayMode=String(settings.get('camera_display')||'kombi'),gpsStatus={state:'starting',errorCode:null,eventsReceived:0,invalidEvents:0},lastAlert='Нет предупреждений',alertUntil=0,activeAlert=null;
  const store=new CameraStore({dataDir,bundledDir:__dirname,log:m=>log.info(m),canActivate:()=>!notificationSession.pendingEnd&&!Object.values(mapcamWarnings.states).some(s=>s.phase==='section'&&(s.camera.averageControl||s.camera.mapcamTypeCode===4))});let database=(await store.loadLocal()).database;
  let cameraIndex=database,displayCache=null,mapPulseVisible=false,radarCamera=null;
  let mainScreenVisible=typeof ui.isVisible==='function'&&ui.isVisible('MAIN');
@@ -71,6 +75,22 @@ mgu.run({async start(ctx){
   drawAlertBanner(cv);
   if(!['ENGINEERING','MOTION_DIAGNOSTICS','HUD_POSITION','SETTINGS','CITY_MAPS'].includes(view)&&(!mapcamFreshFix(fix,Date.now())||fix&&fix.warningAccuracyState==='degraded')){cv.roundRect(1060,12,520,40,0,C.bg);style.text(cv,view==='MAP'&&mapOrientation.position&&!fix?gpsMessage('lost'):presentation&&presentation.estimated?gpsMessage('reserve'):gpsHealth(fix,Date.now()),1566,40,18,C.yellow,{align:'right',maxWidth:495});}
  }return presentImage(name,cv);};
+ function applyNativeLanguage(){
+  if(typeof ui.text!=='function')return;
+  [['DISPLAY_RETRY','Повторить подключение графики'],['DISPLAY_SETTINGS','Открыть настройки уведомлений'],['DISPLAY_EXIT','Закрыть экран приложения']].forEach(pair=>{
+   try{Promise.resolve(ui.text(pair[0],i18n.t(pair[1]))).catch(()=>{});}catch(e){}
+  });
+ }
+ applyNativeLanguage();
+ const languagePanel=new (require('./language-panel').LanguagePanel)(language=>{
+  settings.set('ui_language',language);i18n.setLanguage(language);languageFirst=false;
+  voice.cancel();clusterOutput.frameKey=null;clusterOutput.footerKey=null;
+  if(clusterOutput.current&&typeof clusterOutput._draw==='function')clusterOutput._draw(clusterOutput.current);
+  else if(typeof clusterOutput._drawGpsStatus==='function')clusterOutput._drawGpsStatus();
+  applyNativeLanguage();view=languageReturn;renderSafe();
+ },()=>{if(!languageFirst){view=languageReturn;renderSafe();}});
+ function openLanguage(){languageReturn='SETTINGS';view='LANGUAGE';renderSafe();}
+ function drawLanguage(){const cv=ctx.canvas(W,H).clear(C.bg);languagePanel.draw(cv,style,pageTarget,languageFirst);return presentImage('MAIN_GFX',cv);}
  const actionHandlers=Object.create(null);let nativeButtonView=null;
  const nativeActionIds=ctx.display?((ctx.display.screen&&ctx.display.screen.buttons)||[]).map(b=>b[0]):ACTION_IDS;
  require('./controller-navigation').install(ctx.display);
@@ -119,8 +139,11 @@ mgu.run({async start(ctx){
   clusterOutput.setGpsStatus(gpsOutputStatus.update(fix,Date.now(),presentation&&presentation.estimated,notificationPolicy.monitoring()&&!audioPage()&&view!=='HUD_POSITION'));
  }
  const hudEditor=new HudPositionEditor({store:hudPositionStore,output:clusterOutput,change:()=>renderSafe(),apply:p=>clusterOutput.setHudPosition(p),back:()=>{hudEditor.stop();view='SETTINGS';warningSettings=true;renderSafe();},moving:()=>!!(mapcamFreshFix(fix,Date.now())&&fix.speedKmh>3||vehicleSpeed.snapshot().valid&&vehicleSpeed.snapshot().speedKmh>3)});let refreshInFlight=null,refreshBusy=false,refreshStartedAt=0,refreshError=false,refreshDetails=[],refreshStatus='База готова';
+ const notificationTypes=require('./notification-types');
+ const bannerEnabled=c=>notificationTypes.enabled(k=>settings.get(k),'banner',c);
+ const voiceEnabled=c=>notificationTypes.enabled(k=>settings.get(k),'voice',c);
  const forceAudioEnabled=()=>settings.get('audio_force_notifications')==='on';
- const mapcamOptions=()=>({forceAudio:forceAudioEnabled(),voice:String(settings.get('mapcam_voice')||'speeding'),excessKmh:Number(settings.get('mapcam_excess')||0),distanceM:Number(settings.get('mapcam_distance'))||0,dynamicDistance:String(settings.get('mapcam_distance')||'0')==='0',repeat200:settings.get('mapcam_repeat200')!=='off'});
+ const mapcamOptions=()=>({bannerEnabled,voiceEnabled,forceAudio:forceAudioEnabled(),voice:String(settings.get('mapcam_voice')||'speeding'),excessKmh:Number(settings.get('mapcam_excess')||0),distanceM:Number(settings.get('mapcam_distance'))||0,dynamicDistance:String(settings.get('mapcam_distance')||'0')==='0',repeat200:settings.get('mapcam_repeat200')!=='off'});
  const mapcamWarnings=new MapcamWarnings(mapcamOptions());
  const gpsQuality=new GpsQuality();
  roadGuidance.configure(mapcamOptions());
@@ -141,8 +164,13 @@ mgu.run({async start(ctx){
  function syncBeeper(){if(gpsSuspended||audioPage()){beeper.stop();return;}beeper.update(beepState(notificationSession.current,fix,Date.now(),notificationPolicy.monitoring(),voice.pending>0||notificationSession.busy,settings.get('notification_volume'),forceAudioEnabled(),settings.get('notification_beeper')));}
  localCameras.forEach(c=>{if(c.road)roadGuidance.zones[c.id]=prepare({id:c.id,lat:c.lat,lon:c.lon,roads:[{id:'user-road-'+c.id,pts:c.road.pts,camM:c.road.camM,dir:c.direction==='forward'?1:0}]});});
  let warningSettings=false,warningSettingIndex=0,settingsTaps=0,lastSettingsTap=0;
- const WARNING_ROW_STEP=39,WARNING_ROW_HEIGHT=36;
+ const WARNING_ROW_STEP=31,WARNING_ROW_HEIGHT=29;
+ const typePanel=new (require('./notification-type-panel').NotificationTypePanel)(settings,()=>renderSafe(),()=>{view='SETTINGS';warningSettings=true;renderSafe();});
+ function openTypes(channel){typePanel.open(channel);view='NOTIFICATION_TYPES';renderSafe();}
+ function drawTypes(){const cv=ctx.canvas(W,H).clear(C.bg);typePanel.draw(cv,style,pageTarget);drawTabs(cv,'SETTINGS');return ui.image('MAIN_GFX',cv);}
  const warningRows=[
+  {key:'banner_types',label:'Баннер',values:['select'],labels:['Выбрать типы']},
+  {key:'voice_types',label:'Голосовые уведомления',values:['select'],labels:['Выбрать типы']},
   {key:'mapcam_voice',label:'Голос',default:'speeding',values:['always','speeding','off'],labels:['Каждая камера','Только при превышении','Выключен']},
   {key:'notification_beeper',label:'Бипер',default:'auto',values:['auto','off'],labels:['Авто','Выключен']},
   {key:'beeper_sound',label:'Звук бипера',values:['select'],labels:['Выбрать из списка']},
@@ -153,7 +181,7 @@ mgu.run({async start(ctx){
   {key:'mapcam_repeat200',label:'Повтор за 200 м',values:['on','off'],labels:['Включён','Выключен']}
  ];
  function warningValue(r){const value=String(settings.get(r.key)||r.default||r.values[0]);return Math.max(0,r.values.indexOf(value));}
- function changeWarningSetting(){const r=warningRows[warningSettingIndex];if(r.key==='beeper_sound'){openBeeperSounds();return;}settings.set(r.key,r.values[(warningValue(r)+1)%r.values.length]);if(r.key.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());roadGuidance.configure(mapcamOptions());clearLiveAlerts();}else syncBackgroundNotification();renderSafe();}
+ function changeWarningSetting(){const r=warningRows[warningSettingIndex];if(r.key==='banner_types'||r.key==='voice_types'){openTypes(r.key==='banner_types'?'banner':'voice');return;}if(r.key==='beeper_sound'){openBeeperSounds();return;}settings.set(r.key,r.values[(warningValue(r)+1)%r.values.length]);if(r.key.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());roadGuidance.configure(mapcamOptions());clearLiveAlerts();}else syncBackgroundNotification();renderSafe();}
  function changeVolume(delta){const r=warningRows.find(r=>r.key==='notification_volume');const next=Math.max(0,Math.min(r.values.length-1,warningValue(r)+delta));settings.set(r.key,r.values[next]);renderSafe();}
  function clearLiveAlerts(keepSession,keepMotion){if(!keepMotion){motion.reset();presentation=null;}const hadAlert=!!activeAlert;beeper.stop();activeAlert=null;alertUntil=0;backgroundNotification.clear();if(!displayProbe.busy&&!hudEditor.busy)clusterOutput.clear();if(!keepSession)notificationSession.suspend();if(hadAlert&&mainScreenVisible)renderSafe();}
  function drawWarningSettings(){
@@ -163,13 +191,13 @@ mgu.run({async start(ctx){
   warningRows.forEach((r,i)=>{const y=88+i*WARNING_ROW_STEP,on=i===warningSettingIndex;
    if(on)style.drawSelection(cv,288,y,1270,WARNING_ROW_HEIGHT);
    else cv.roundRect(288,y,1270,WARNING_ROW_HEIGHT,0,'#111214');
-   txt(cv,r.label,310,y+28,21,C.text,{maxWidth:570});if(r.key!=='notification_volume')txt(cv,r.labels[warningValue(r)],900,y+28,21,C.text,{maxWidth:630});
+   txt(cv,r.label,310,y+23,21,C.text,{maxWidth:570});if(r.key!=='notification_volume')txt(cv,r.labels[warningValue(r)],900,y+23,21,C.text,{maxWidth:630});
    if(r.key==='notification_volume'){
     for(let step=0;step<5;step++){
      const h=8+step*5,x=900+step*38;
-     cv.fillRect(x,y+34-h,26,h,step<=warningValue(r)?C.red:'#24262a');
+     cv.fillRect(x,y+28-h,26,h,step<=warningValue(r)?C.red:'#24262a');
     }
-    for(const b of [{x:1370,t:'−'},{x:1470,t:'+'}]){cv.roundRect(b.x,y,70,WARNING_ROW_HEIGHT,0,'#24262a');txt(cv,b.t,b.x+35,y+29,28,C.text,{align:'center'});}
+    for(const b of [{x:1370,t:'−'},{x:1470,t:'+'}]){cv.roundRect(b.x,y,70,WARNING_ROW_HEIGHT,0,'#24262a');txt(cv,b.t,b.x+35,y+24,26,C.text,{align:'center'});}
    }
   });
   if(forceAudioEnabled()){
@@ -339,8 +367,8 @@ mgu.run({async start(ctx){
   if(c){const labels=hudLabels(c);
    iconFor(c).drawCanvas(cv,P.x+24,P.y+56,54,45,[245,249,252]);
    txt(cv,labels.control,P.x+100,P.y+78,27,C.text,{maxWidth:320});
-   txt(cv,labels.model||(policeKind(c)?'':'МОДЕЛЬ НЕ УКАЗАНА'),P.x+100,P.y+109,23,C.muted,{maxWidth:320});
-   if(!policeKind(c)&&Number.isFinite(c.limit)&&c.limit>0)style.speedSign(cv,c.limit,P.x+71,P.y+189,49);
+   txt(cv,labels.model||(policeKind(c)||notificationTypes.hazardKind(c)?'':'МОДЕЛЬ НЕ УКАЗАНА'),P.x+100,P.y+109,23,C.muted,{maxWidth:320});
+   if(!notificationTypes.hazardKind(c)&&!policeKind(c)&&Number.isFinite(c.limit)&&c.limit>0)style.speedSign(cv,c.limit,P.x+71,P.y+189,49);
    else if(!policeKind(c))txt(cv,'ЛИМИТ Н/Д',P.x+24,P.y+192,19,C.muted,{maxWidth:105});
    txt(cv,(index+1)+' / '+cameras().length,P.x+283,P.y+181,25,C.text,{align:'center',maxWidth:149});
    txt(cv,'КАМЕР В ОБЛАСТИ КАРТЫ',P.x+145,P.y+235,16,C.muted,{maxWidth:275});
@@ -398,7 +426,8 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   });
   txt(cv,'ТЕКУЩИЙ РЕЖИМ: '+displayModeLabel(cameraDisplayMode),290,296,25,C.text,{maxWidth:880});
   cv.strokeRoundRect(1220,270,340,50,0,1,C.muted);txt(cv,'КАРТЫ ГОРОДОВ',1390,302,22,C.text,{align:'center'});pageTarget(cv,1220,270,340,50,openCityMaps,'settings-city-maps');
-  txt(cv,closeError||'ПОСЛЕ ЗАКРЫТИЯ: ЗАПУСК ТОЛЬКО ЧЕРЕЗ ЯРЛЫК SPEEDCAM',290,346,20,closeError?C.yellow:C.muted,{maxWidth:1230});
+  cv.strokeRoundRect(1220,330,340,50,0,1,C.muted);txt(cv,'SET LANGUAGE',1390,362,22,C.text,{align:'center'});pageTarget(cv,1220,330,340,50,openLanguage,'settings-language');
+  txt(cv,closeError||'ПОСЛЕ ЗАКРЫТИЯ: ЗАПУСК ТОЛЬКО ЧЕРЕЗ ЯРЛЫК SPEEDCAM',290,346,20,closeError?C.yellow:C.muted,{maxWidth:880});
   const audioLines=audioHealth.lines(voice.lastError,beeper.lastError);
   txt(cv,audioLines[0],290,391,20,C.text,{maxWidth:1230});
   txt(cv,audioLines[1],290,433,17,C.muted,{maxWidth:1230});
@@ -505,12 +534,12 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
    const c=hit.camera,labels=hudLabels(c);
    iconFor(c).drawCanvas(cv,306,109,96,79,[245,249,252]);
    txt(cv,labels.control,434,156,54,C.text,{maxWidth:770});
-   txt(cv,labels.model||(policeKind(c)?'':'МОДЕЛЬ НЕ УКАЗАНА'),434,216,42,C.muted,{maxWidth:770});
-   if(!policeKind(c)&&Number.isFinite(c.limit)&&c.limit>0)style.speedSign(cv,c.limit,1386,262,145);
-   else if(!policeKind(c)){txt(cv,'ЛИМИТ',1386,245,30,C.muted,{align:'center',maxWidth:290});txt(cv,'Н/Д',1386,315,66,C.text,{align:'center',maxWidth:290});}
+   txt(cv,labels.model||(policeKind(c)||notificationTypes.hazardKind(c)?'':'МОДЕЛЬ НЕ УКАЗАНА'),434,216,42,C.muted,{maxWidth:770});
+   if(!notificationTypes.hazardKind(c)&&!policeKind(c)&&Number.isFinite(c.limit)&&c.limit>0)style.speedSign(cv,c.limit,1386,262,145);
+   else if(!notificationTypes.hazardKind(c)&&!policeKind(c)){txt(cv,'ЛИМИТ',1386,245,30,C.muted,{align:'center',maxWidth:290});txt(cv,'Н/Д',1386,315,66,C.text,{align:'center',maxWidth:290});}
    const distance=Math.round(p?p.distanceM:hit.distanceM)+' М';
    txt(cv,distance,320,378,112,C.text,{maxWidth:865});
-   txt(cv,p&&p.estimated?gpsMessage('reserve'):hit.state&&hit.state.phase==='section'?'ДО КОНЦА УЧАСТКА':hit.state&&hit.state.phase==='rear'?(policeKind(c)?'ЗА ПОСТОМ':'ЗА КАМЕРОЙ'):(policeKind(c)?'ДО ПОСТА':'ДО КАМЕРЫ'),322,422,25,C.muted,{maxWidth:860});
+   txt(cv,p&&p.estimated?gpsMessage('reserve'):hit.state&&hit.state.phase==='section'?'ДО КОНЦА УЧАСТКА':hit.state&&hit.state.phase==='rear'?(policeKind(c)?'ЗА ПОСТОМ':'ЗА КАМЕРОЙ'):(notificationTypes.hazardKind(c)?'ДО ТОЧКИ':policeKind(c)?'ДО ПОСТА':'ДО КАМЕРЫ'),322,422,25,C.muted,{maxWidth:860});
    cv.line(294,451,1552,451,1,'#303a46');
    const st=p&&p.estimated?null:hit.state,measured=st&&st.useAverage?st.averageKmh:p?p.speedKmh:fix&&fix.speedKmh;
    txt(cv,(st&&st.useAverage?(st.partialSection?'ЧАСТ. СРЕДНЯЯ ':'СРЕДНЯЯ '):'СКОРОСТЬ ')+(Number.isFinite(measured)?Math.round(measured):'—')+' КМ/Ч',320,489,28,st&&st.speeding?C.red:C.text,{maxWidth:620});
@@ -528,11 +557,11 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   if(view===nativeButtonView)return;nativeButtonView=view;
   for(const id of nativeActionIds)for(const method of ['visible','enabled']){
    const extra=['BTN_REFRESH','BTN_VOICE_TEST','BTN_CAMERA_MENU'].includes(id);
-   const hidden=(view==='ENGINEERING'||view==='MOTION_DIAGNOSTICS'||view==='HUD_POSITION'||audioPage())||extra&&(view==='SETTINGS'&&id!=='BTN_REFRESH'||view==='MAP'&&id!=='BTN_REFRESH'||id==='BTN_CAMERA_MENU'&&(view==='ADD'||view==='MY'));
+   const hidden=(view==='ENGINEERING'||view==='MOTION_DIAGNOSTICS'||view==='HUD_POSITION'||view==='NOTIFICATION_TYPES'||audioPage())||extra&&(view==='SETTINGS'&&id!=='BTN_REFRESH'||view==='MAP'&&id!=='BTN_REFRESH'||id==='BTN_CAMERA_MENU'&&(view==='ADD'||view==='MY'));
    if(typeof ui[method]==='function')Promise.resolve(ui[method](id,!hidden)).catch(e=>log.warn('BUTTON_STATE_FAILED '+id+' '+String(e)));
   }
  }
- function render(){syncBackgroundNotification();if(!mainScreenVisible)return;syncNativeButtons();if(view==='CITY_MAPS')return drawCityMaps();if(view==='HUD_POSITION')return drawHudPosition();if(view==='MOTION_DIAGNOSTICS')return drawMotionDiagnostics();if(view==='AUDIO_WIZARD')return drawAudioWizard();if(view==='AUDIO_CHANNELS')return drawAudioChannels();if(view==='RADAR')return drawRadar();if(view==='ENGINEERING')return drawEngineering();if(view==='ADD')return drawAddCamera();if(view==='MY')return drawMyCameras();if(view==='SETTINGS')return drawSettings();return drawMainMap();}
+ function render(){syncBackgroundNotification();if(!mainScreenVisible)return;if(languageFirst||view==='LANGUAGE')return drawLanguage();syncNativeButtons();if(view==='NOTIFICATION_TYPES')return drawTypes();if(view==='CITY_MAPS')return drawCityMaps();if(view==='HUD_POSITION')return drawHudPosition();if(view==='MOTION_DIAGNOSTICS')return drawMotionDiagnostics();if(view==='AUDIO_WIZARD')return drawAudioWizard();if(view==='AUDIO_CHANNELS')return drawAudioChannels();if(view==='RADAR')return drawRadar();if(view==='ENGINEERING')return drawEngineering();if(view==='ADD')return drawAddCamera();if(view==='MY')return drawMyCameras();if(view==='SETTINGS')return drawSettings();return drawMainMap();}
  let renderQueued=false,renderRunning=false,renderTimer=null,lastRenderAt=0,renderCount=0;
  function animatedScreen(){return mainScreenVisible&&((notificationPolicy.destination()==='canvas'&&activeAlert&&Date.now()<alertUntil)||view==='MAP'&&(mapPulseVisible||refreshBusy));}
  function softwareScreen(){return !!(ctx.display&&typeof ctx.display.active==='function'&&!ctx.display.active('MAIN'));}
@@ -581,21 +610,22 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   if(!mapcamFreshFix(fix,now)){handleGpsLoss();return;}
   syncGpsOutput();
   if(gpsSuspended){gpsSuspended=false;clusterOutput.clear();}
-  const near=monitoringCameras();
+  const near=monitoringCameras().filter(c=>!notificationTypes.hazardKind(c)||bannerEnabled(c)||voiceEnabled(c));
   const trajectory=withDensity(approachTrajectory.update(fix,now),near);
   // Moderate accuracy changes the display label, not acquisition or audio rules.
   const events=mapcamWarnings.update(fix,near,now,trajectory).concat(roadGuidance.update(fix,localCameras,now));
   const states=Object.assign({},roadGuidance.states,mapcamWarnings.states);
   Object.keys(states).forEach(id=>{states[id].accuracyDegraded=fix.warningAccuracyState==='degraded';states[id].trajectory=trajectoryAlignment(states[id].camera,trajectory,states[id]);});
   const current=notificationSession.update(states,fix,mapcamWarnings.heading,events);
-  radarCamera=selectRadar(current,near,fix,mapcamWarnings.heading,roadGuidance,trajectory);
+  const visualCurrent=notificationSession.visualCurrent;
+  radarCamera=selectRadar(visualCurrent,near.filter(bannerEnabled),fix,mapcamWarnings.heading,roadGuidance,trajectory);
   motion.anchor(radarCamera,fix);presentation=motion.value();
   events.forEach(e=>{
    if(e.type==='end')lastAlert='КОНТРОЛЬ ЗАВЕРШЁН · '+e.camera.name;
    if(e.type!=='voice')log.info('WARNING '+e.type+' camera='+e.camera.id+' distance='+e.distanceM);
   });
-  if(current){
-   const st=current,c=st.camera;
+  if(visualCurrent){
+   const st=visualCurrent,c=st.camera;
    if(c){const e={camera:c,distanceM:st.distanceM,type:st.speeding?'speeding':'camera',speeding:st.speeding,
     phase:st.phase,speedKmh:Number.isFinite(st.speedKmh)?Math.round(st.speedKmh):null,measuredSpeedKmh:st.speedKmh,averageKmh:st.averageKmh,
     useAverage:st.useAverage,partialSection:st.partialSection,accuracyDegraded:st.accuracyDegraded};
@@ -684,6 +714,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  }
  function handlePageTap(x,y){
   if(!Number.isFinite(x)||!Number.isFinite(y))return;
+  if(languageFirst||view==='LANGUAGE'){languagePanel.tap(x,y,languageFirst);return;}
   const tab=style.tabAt(x,y);
   if(tab)require('./controller-navigation').focusTab(ctx.display,tab);
   if(tab==='SETTINGS'){
@@ -696,7 +727,9 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   if(view==='AUDIO_CHANNELS'){audioDiagnostics.tap(x,y);return;}
   if(view==='AUDIO_WIZARD'){audioWizard.tap(x,y);return;}
   if(view==='HUD_POSITION'){hudEditor.tap(x,y);return;}
+  if(view==='NOTIFICATION_TYPES'){typePanel.tap(x,y);return;}
   if(view==='CITY_MAPS'){cityMapPanel.tap(x,y);return;}
+  if(view==='SETTINGS'&&!warningSettings&&x>=1220&&x<1560&&y>=330&&y<380){openLanguage();return;}
   if(view==='SETTINGS'&&!warningSettings&&x>=1220&&x<1560&&y>=270&&y<320){openCityMaps();return;}
   if(view==='SETTINGS'&&warningSettings&&x>=850&&x<1190&&y>=12&&y<56){openMixerSettings();return;}
   if(view==='SETTINGS'&&!warningSettings&&x>=850&&x<1190&&y>=12&&y<56){closeProgram();return;}
@@ -770,7 +803,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
    txt(cv,(localCameraIndex+1)+' / '+localCameras.length,290,113,22,C.muted,{maxWidth:1020});
    txt(cv,c.type||c.name||'КАМЕРА',290,166,34,C.text,{maxWidth:1060});
    txt(cv,c.lat.toFixed(6)+' , '+c.lon.toFixed(6),290,216,28,C.text,{maxWidth:1060});
-   if(!policeKind(c)&&Number.isFinite(c.limit)&&c.limit>0)style.speedSign(cv,c.limit,1476,166,54);
+   if(!notificationTypes.hazardKind(c)&&!policeKind(c)&&Number.isFinite(c.limit)&&c.limit>0)style.speedSign(cv,c.limit,1476,166,54);
    else if(!policeKind(c))txt(cv,'ЛИМИТ Н/Д',1420,173,18,C.muted,{maxWidth:135});
    txt(cv,'НАПРАВЛЕНИЕ: '+(c.direction==='both'?'ОБА НАПРАВЛЕНИЯ':'ПО ДВИЖЕНИЮ'),290,277,24,C.muted,{maxWidth:1230});
    txt(cv,c.road?'ДОРОЖНАЯ ПРИВЯЗКА: ЕСТЬ':'ДОРОЖНАЯ ПРИВЯЗКА: НЕТ',290,328,24,C.muted,{maxWidth:1230});
@@ -801,7 +834,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  bindAction('BTN_ZOOM',()=>{if(view==='RADAR')return;if(view==='ENGINEERING'){return;}if(view==='SETTINGS'){warningSettings=true;renderSafe();return;}if(view==='ADD'){cameraType=(cameraType+1)%CAMERA_TYPES.length;renderSafe();}else if(view==='MY'){if(localCameras.length){deletePending=true;renderSafe();}}else{changeZoom(1,true);}});
  bindAction('BTN_REFRESH',()=>{if(view==='ENGINEERING'){return;}if(view==='SETTINGS'){warningSettings=false;renderSafe();return;}if(view==='ADD'){cameraDirection=cameraDirection==='forward'?'both':'forward';renderSafe();}else if(view==='MY'){removeSelectedCamera();}else refresh();});
  bindAction('BTN_VOICE_TEST',()=>{if(view==='MAP'||view==='SETTINGS')return;if(view==='ADD'){saveLocalCamera();return;}if(view==='MY'){deletePending=false;beginAddCamera();view='ADD';renderSafe();return;}testCameraOutputs();});
- settings.onChange(k=>{if(k==='audio_force_notifications'){notificationSession.clear();beeper.stop();updateWarnings();renderSafe();return;}if(k==='notification_volume'||k==='notification_beeper'){syncBeeper();renderSafe();return;}if(k==='auto_monitor'){if(k==='auto_monitor'&&!notificationPolicy.monitoring()){radarCamera=null;mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}syncBackgroundNotification();renderSafe();return;}if(k.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());roadGuidance.configure(mapcamOptions());clearLiveAlerts();renderSafe();return;}if(k==='city'){city=String(settings.get('city')||'russia');index=0;roadGuidance.reset();renderSafe();}else if(k==='camera_display'){cameraDisplayMode=String(settings.get('camera_display')||'kombi');clusterOutput.setMode(cameraDisplayMode);renderSafe();}});
+ settings.onChange(k=>{if(k==='ui_language'){i18n.setLanguage(settings.get(k));applyNativeLanguage();renderSafe();return;}if(k.indexOf('notification_banner_type_')===0||k.indexOf('notification_voice_type_')===0){notificationSession.clear();clearLiveAlerts();updateWarnings();renderSafe();return;}if(k==='audio_force_notifications'){notificationSession.clear();beeper.stop();updateWarnings();renderSafe();return;}if(k==='notification_volume'||k==='notification_beeper'){syncBeeper();renderSafe();return;}if(k==='auto_monitor'){if(k==='auto_monitor'&&!notificationPolicy.monitoring()){radarCamera=null;mapcamWarnings.suspend();roadGuidance.reset();clearLiveAlerts();}syncBackgroundNotification();renderSafe();return;}if(k.indexOf('mapcam_')===0){mapcamWarnings.configure(mapcamOptions());roadGuidance.configure(mapcamOptions());clearLiveAlerts();renderSafe();return;}if(k==='city'){city=String(settings.get('city')||'russia');index=0;roadGuidance.reset();renderSafe();}else if(k==='camera_display'){cameraDisplayMode=String(settings.get('camera_display')||'kombi');clusterOutput.setMode(cameraDisplayMode);renderSafe();}});
  gps.on('change',gpsChanged);gps.start();ui.onVisible((n,v)=>{if(n==='MAIN'){if(!v&&view==='HUD_POSITION'){hudEditor.stop();view='SETTINGS';warningSettings=true;}if(!v&&audioPage()){if(view==='AUDIO_WIZARD')audioWizard.stop('Приложение скрыто: тест остановлен');else audioDiagnostics.stop();view='ENGINEERING';}mainScreenVisible=!!v;notificationPolicy.setVisible(v);syncBackgroundNotification();if(v)renderSafe();}});
  // This timer is independent of ctx.loop(), which stops when MAIN is hidden.
  const motionTimer=setInterval(motionTick,100);
@@ -815,7 +848,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  renderSafe();refresh();const refreshTimer=setInterval(refresh,REFRESH_INTERVAL_MS);ctx.loop('MAIN',10,()=>{if(fix&&Date.now()-fix.timeMs>3000)handleGpsLoss();
   // Keep a recovery repaint; static pages need neither 10 Hz drawing nor PNG work.
   if(displayedRenderMode!==currentRenderMode()||animatedScreen()||view==='ENGINEERING'||view==='MOTION_DIAGNOSTICS'||Date.now()-lastRenderAt>=5000)renderSafe();});
- log.info('SpeedCAM 0.9.97 started; camera sectors and control paths; GPS accuracy <=35 m; low-accuracy label >=15 m; KOMBI/HUD mode='+cameraDisplayMode);
+ log.info('SpeedCAM 0.9.98 started; camera sectors and control paths; GPS accuracy <=35 m; low-accuracy label >=15 m; KOMBI/HUD mode='+cameraDisplayMode);
 }}).catch(e=>{
  console.error('SPEEDCAM_START_FAILED '+String(e&&e.stack||e));
  // Only the isolated worker may exit: the MainApp-owned supervisor stays alive.

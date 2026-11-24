@@ -1,7 +1,7 @@
 {
   "id": "bmwcaminfo-voice",
   "kind": "tool",
-  "version": "0.1.49",
+  "version": "0.1.50",
   "license": "MIT AND GPL-2.0-or-later AND LGPL-2.1-or-later",
   "title": "BMW Camera Voice Service",
   "description": "ALSA voice and beeper mixer, M4A compatibility mode, experimental private PulseAudio + Overlay",
@@ -1730,6 +1730,1171 @@
     {
       "path": "beeper-sounds.js",
       "from": "beeper-sounds.js",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/school.m4a",
+      "from": "audio/school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/school.pcm",
+      "from": "pcm/school.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/school.m4a",
+      "from": "audio/volume-10/school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/school.m4a",
+      "from": "audio/volume-20/school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/school.m4a",
+      "from": "audio/volume-30/school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/school.m4a",
+      "from": "audio/volume-40/school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/school.m4a",
+      "from": "audio/volume-50/school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/school.m4a",
+      "from": "audio/volume-60/school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/school.m4a",
+      "from": "audio/volume-70/school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/school.m4a",
+      "from": "audio/volume-80/school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/school.m4a",
+      "from": "audio/volume-90/school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/school-200.m4a",
+      "from": "audio/school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/school-200.pcm",
+      "from": "pcm/school-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/school-200.m4a",
+      "from": "audio/volume-10/school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/school-200.m4a",
+      "from": "audio/volume-20/school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/school-200.m4a",
+      "from": "audio/volume-30/school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/school-200.m4a",
+      "from": "audio/volume-40/school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/school-200.m4a",
+      "from": "audio/volume-50/school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/school-200.m4a",
+      "from": "audio/volume-60/school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/school-200.m4a",
+      "from": "audio/volume-70/school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/school-200.m4a",
+      "from": "audio/volume-80/school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/school-200.m4a",
+      "from": "audio/volume-90/school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/speed-bump.m4a",
+      "from": "audio/speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/speed-bump.pcm",
+      "from": "pcm/speed-bump.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/speed-bump.m4a",
+      "from": "audio/volume-10/speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/speed-bump.m4a",
+      "from": "audio/volume-20/speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/speed-bump.m4a",
+      "from": "audio/volume-30/speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/speed-bump.m4a",
+      "from": "audio/volume-40/speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/speed-bump.m4a",
+      "from": "audio/volume-50/speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/speed-bump.m4a",
+      "from": "audio/volume-60/speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/speed-bump.m4a",
+      "from": "audio/volume-70/speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/speed-bump.m4a",
+      "from": "audio/volume-80/speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/speed-bump.m4a",
+      "from": "audio/volume-90/speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/speed-bump-200.m4a",
+      "from": "audio/speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/speed-bump-200.pcm",
+      "from": "pcm/speed-bump-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/speed-bump-200.m4a",
+      "from": "audio/volume-10/speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/speed-bump-200.m4a",
+      "from": "audio/volume-20/speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/speed-bump-200.m4a",
+      "from": "audio/volume-30/speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/speed-bump-200.m4a",
+      "from": "audio/volume-40/speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/speed-bump-200.m4a",
+      "from": "audio/volume-50/speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/speed-bump-200.m4a",
+      "from": "audio/volume-60/speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/speed-bump-200.m4a",
+      "from": "audio/volume-70/speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/speed-bump-200.m4a",
+      "from": "audio/volume-80/speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/speed-bump-200.m4a",
+      "from": "audio/volume-90/speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "speech-language.js",
+      "from": "speech-language.js",
+      "mode": "0644"
+    },
+    {
+      "path": "diagnostics/en-both.m4a",
+      "from": "diagnostics/en-both.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-camera-500.m4a",
+      "from": "audio/en-camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-camera-500.pcm",
+      "from": "pcm/en-camera-500.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-camera-500.m4a",
+      "from": "audio/volume-10/en-camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-camera-500.m4a",
+      "from": "audio/volume-20/en-camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-camera-500.m4a",
+      "from": "audio/volume-30/en-camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-camera-500.m4a",
+      "from": "audio/volume-40/en-camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-camera-500.m4a",
+      "from": "audio/volume-50/en-camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-camera-500.m4a",
+      "from": "audio/volume-60/en-camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-camera-500.m4a",
+      "from": "audio/volume-70/en-camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-camera-500.m4a",
+      "from": "audio/volume-80/en-camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-camera-500.m4a",
+      "from": "audio/volume-90/en-camera-500.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-camera-200.m4a",
+      "from": "audio/en-camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-camera-200.pcm",
+      "from": "pcm/en-camera-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-camera-200.m4a",
+      "from": "audio/volume-10/en-camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-camera-200.m4a",
+      "from": "audio/volume-20/en-camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-camera-200.m4a",
+      "from": "audio/volume-30/en-camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-camera-200.m4a",
+      "from": "audio/volume-40/en-camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-camera-200.m4a",
+      "from": "audio/volume-50/en-camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-camera-200.m4a",
+      "from": "audio/volume-60/en-camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-camera-200.m4a",
+      "from": "audio/volume-70/en-camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-camera-200.m4a",
+      "from": "audio/volume-80/en-camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-camera-200.m4a",
+      "from": "audio/volume-90/en-camera-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-strelka.m4a",
+      "from": "audio/en-strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-strelka.pcm",
+      "from": "pcm/en-strelka.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-strelka.m4a",
+      "from": "audio/volume-10/en-strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-strelka.m4a",
+      "from": "audio/volume-20/en-strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-strelka.m4a",
+      "from": "audio/volume-30/en-strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-strelka.m4a",
+      "from": "audio/volume-40/en-strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-strelka.m4a",
+      "from": "audio/volume-50/en-strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-strelka.m4a",
+      "from": "audio/volume-60/en-strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-strelka.m4a",
+      "from": "audio/volume-70/en-strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-strelka.m4a",
+      "from": "audio/volume-80/en-strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-strelka.m4a",
+      "from": "audio/volume-90/en-strelka.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-strelka-200.m4a",
+      "from": "audio/en-strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-strelka-200.pcm",
+      "from": "pcm/en-strelka-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-strelka-200.m4a",
+      "from": "audio/volume-10/en-strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-strelka-200.m4a",
+      "from": "audio/volume-20/en-strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-strelka-200.m4a",
+      "from": "audio/volume-30/en-strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-strelka-200.m4a",
+      "from": "audio/volume-40/en-strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-strelka-200.m4a",
+      "from": "audio/volume-50/en-strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-strelka-200.m4a",
+      "from": "audio/volume-60/en-strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-strelka-200.m4a",
+      "from": "audio/volume-70/en-strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-strelka-200.m4a",
+      "from": "audio/volume-80/en-strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-strelka-200.m4a",
+      "from": "audio/volume-90/en-strelka-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-avtodoria.m4a",
+      "from": "audio/en-avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-avtodoria.pcm",
+      "from": "pcm/en-avtodoria.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-avtodoria.m4a",
+      "from": "audio/volume-10/en-avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-avtodoria.m4a",
+      "from": "audio/volume-20/en-avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-avtodoria.m4a",
+      "from": "audio/volume-30/en-avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-avtodoria.m4a",
+      "from": "audio/volume-40/en-avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-avtodoria.m4a",
+      "from": "audio/volume-50/en-avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-avtodoria.m4a",
+      "from": "audio/volume-60/en-avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-avtodoria.m4a",
+      "from": "audio/volume-70/en-avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-avtodoria.m4a",
+      "from": "audio/volume-80/en-avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-avtodoria.m4a",
+      "from": "audio/volume-90/en-avtodoria.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-avtodoria-200.m4a",
+      "from": "audio/en-avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-avtodoria-200.pcm",
+      "from": "pcm/en-avtodoria-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-avtodoria-200.m4a",
+      "from": "audio/volume-10/en-avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-avtodoria-200.m4a",
+      "from": "audio/volume-20/en-avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-avtodoria-200.m4a",
+      "from": "audio/volume-30/en-avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-avtodoria-200.m4a",
+      "from": "audio/volume-40/en-avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-avtodoria-200.m4a",
+      "from": "audio/volume-50/en-avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-avtodoria-200.m4a",
+      "from": "audio/volume-60/en-avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-avtodoria-200.m4a",
+      "from": "audio/volume-70/en-avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-avtodoria-200.m4a",
+      "from": "audio/volume-80/en-avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-avtodoria-200.m4a",
+      "from": "audio/volume-90/en-avtodoria-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-avtodoria-average.m4a",
+      "from": "audio/en-avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-avtodoria-average.pcm",
+      "from": "pcm/en-avtodoria-average.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-avtodoria-average.m4a",
+      "from": "audio/volume-10/en-avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-avtodoria-average.m4a",
+      "from": "audio/volume-20/en-avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-avtodoria-average.m4a",
+      "from": "audio/volume-30/en-avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-avtodoria-average.m4a",
+      "from": "audio/volume-40/en-avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-avtodoria-average.m4a",
+      "from": "audio/volume-50/en-avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-avtodoria-average.m4a",
+      "from": "audio/volume-60/en-avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-avtodoria-average.m4a",
+      "from": "audio/volume-70/en-avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-avtodoria-average.m4a",
+      "from": "audio/volume-80/en-avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-avtodoria-average.m4a",
+      "from": "audio/volume-90/en-avtodoria-average.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-avtodoria-average-200.m4a",
+      "from": "audio/en-avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-avtodoria-average-200.pcm",
+      "from": "pcm/en-avtodoria-average-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-avtodoria-average-200.m4a",
+      "from": "audio/volume-10/en-avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-avtodoria-average-200.m4a",
+      "from": "audio/volume-20/en-avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-avtodoria-average-200.m4a",
+      "from": "audio/volume-30/en-avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-avtodoria-average-200.m4a",
+      "from": "audio/volume-40/en-avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-avtodoria-average-200.m4a",
+      "from": "audio/volume-50/en-avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-avtodoria-average-200.m4a",
+      "from": "audio/volume-60/en-avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-avtodoria-average-200.m4a",
+      "from": "audio/volume-70/en-avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-avtodoria-average-200.m4a",
+      "from": "audio/volume-80/en-avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-avtodoria-average-200.m4a",
+      "from": "audio/volume-90/en-avtodoria-average-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-dps-post.m4a",
+      "from": "audio/en-dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-dps-post.pcm",
+      "from": "pcm/en-dps-post.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-dps-post.m4a",
+      "from": "audio/volume-10/en-dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-dps-post.m4a",
+      "from": "audio/volume-20/en-dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-dps-post.m4a",
+      "from": "audio/volume-30/en-dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-dps-post.m4a",
+      "from": "audio/volume-40/en-dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-dps-post.m4a",
+      "from": "audio/volume-50/en-dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-dps-post.m4a",
+      "from": "audio/volume-60/en-dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-dps-post.m4a",
+      "from": "audio/volume-70/en-dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-dps-post.m4a",
+      "from": "audio/volume-80/en-dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-dps-post.m4a",
+      "from": "audio/volume-90/en-dps-post.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-dps-post-200.m4a",
+      "from": "audio/en-dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-dps-post-200.pcm",
+      "from": "pcm/en-dps-post-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-dps-post-200.m4a",
+      "from": "audio/volume-10/en-dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-dps-post-200.m4a",
+      "from": "audio/volume-20/en-dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-dps-post-200.m4a",
+      "from": "audio/volume-30/en-dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-dps-post-200.m4a",
+      "from": "audio/volume-40/en-dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-dps-post-200.m4a",
+      "from": "audio/volume-50/en-dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-dps-post-200.m4a",
+      "from": "audio/volume-60/en-dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-dps-post-200.m4a",
+      "from": "audio/volume-70/en-dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-dps-post-200.m4a",
+      "from": "audio/volume-80/en-dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-dps-post-200.m4a",
+      "from": "audio/volume-90/en-dps-post-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-dps-stationary.m4a",
+      "from": "audio/en-dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-dps-stationary.pcm",
+      "from": "pcm/en-dps-stationary.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-dps-stationary.m4a",
+      "from": "audio/volume-10/en-dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-dps-stationary.m4a",
+      "from": "audio/volume-20/en-dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-dps-stationary.m4a",
+      "from": "audio/volume-30/en-dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-dps-stationary.m4a",
+      "from": "audio/volume-40/en-dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-dps-stationary.m4a",
+      "from": "audio/volume-50/en-dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-dps-stationary.m4a",
+      "from": "audio/volume-60/en-dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-dps-stationary.m4a",
+      "from": "audio/volume-70/en-dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-dps-stationary.m4a",
+      "from": "audio/volume-80/en-dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-dps-stationary.m4a",
+      "from": "audio/volume-90/en-dps-stationary.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-dps-stationary-200.m4a",
+      "from": "audio/en-dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-dps-stationary-200.pcm",
+      "from": "pcm/en-dps-stationary-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-dps-stationary-200.m4a",
+      "from": "audio/volume-10/en-dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-dps-stationary-200.m4a",
+      "from": "audio/volume-20/en-dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-dps-stationary-200.m4a",
+      "from": "audio/volume-30/en-dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-dps-stationary-200.m4a",
+      "from": "audio/volume-40/en-dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-dps-stationary-200.m4a",
+      "from": "audio/volume-50/en-dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-dps-stationary-200.m4a",
+      "from": "audio/volume-60/en-dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-dps-stationary-200.m4a",
+      "from": "audio/volume-70/en-dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-dps-stationary-200.m4a",
+      "from": "audio/volume-80/en-dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-dps-stationary-200.m4a",
+      "from": "audio/volume-90/en-dps-stationary-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-average-end.m4a",
+      "from": "audio/en-average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-average-end.pcm",
+      "from": "pcm/en-average-end.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-average-end.m4a",
+      "from": "audio/volume-10/en-average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-average-end.m4a",
+      "from": "audio/volume-20/en-average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-average-end.m4a",
+      "from": "audio/volume-30/en-average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-average-end.m4a",
+      "from": "audio/volume-40/en-average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-average-end.m4a",
+      "from": "audio/volume-50/en-average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-average-end.m4a",
+      "from": "audio/volume-60/en-average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-average-end.m4a",
+      "from": "audio/volume-70/en-average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-average-end.m4a",
+      "from": "audio/volume-80/en-average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-average-end.m4a",
+      "from": "audio/volume-90/en-average-end.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-school.m4a",
+      "from": "audio/en-school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-school.pcm",
+      "from": "pcm/en-school.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-school.m4a",
+      "from": "audio/volume-10/en-school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-school.m4a",
+      "from": "audio/volume-20/en-school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-school.m4a",
+      "from": "audio/volume-30/en-school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-school.m4a",
+      "from": "audio/volume-40/en-school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-school.m4a",
+      "from": "audio/volume-50/en-school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-school.m4a",
+      "from": "audio/volume-60/en-school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-school.m4a",
+      "from": "audio/volume-70/en-school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-school.m4a",
+      "from": "audio/volume-80/en-school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-school.m4a",
+      "from": "audio/volume-90/en-school.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-school-200.m4a",
+      "from": "audio/en-school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-school-200.pcm",
+      "from": "pcm/en-school-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-school-200.m4a",
+      "from": "audio/volume-10/en-school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-school-200.m4a",
+      "from": "audio/volume-20/en-school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-school-200.m4a",
+      "from": "audio/volume-30/en-school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-school-200.m4a",
+      "from": "audio/volume-40/en-school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-school-200.m4a",
+      "from": "audio/volume-50/en-school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-school-200.m4a",
+      "from": "audio/volume-60/en-school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-school-200.m4a",
+      "from": "audio/volume-70/en-school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-school-200.m4a",
+      "from": "audio/volume-80/en-school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-school-200.m4a",
+      "from": "audio/volume-90/en-school-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-speed-bump.m4a",
+      "from": "audio/en-speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-speed-bump.pcm",
+      "from": "pcm/en-speed-bump.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-speed-bump.m4a",
+      "from": "audio/volume-10/en-speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-speed-bump.m4a",
+      "from": "audio/volume-20/en-speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-speed-bump.m4a",
+      "from": "audio/volume-30/en-speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-speed-bump.m4a",
+      "from": "audio/volume-40/en-speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-speed-bump.m4a",
+      "from": "audio/volume-50/en-speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-speed-bump.m4a",
+      "from": "audio/volume-60/en-speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-speed-bump.m4a",
+      "from": "audio/volume-70/en-speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-speed-bump.m4a",
+      "from": "audio/volume-80/en-speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-speed-bump.m4a",
+      "from": "audio/volume-90/en-speed-bump.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/en-speed-bump-200.m4a",
+      "from": "audio/en-speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "pcm/en-speed-bump-200.pcm",
+      "from": "pcm/en-speed-bump-200.pcm",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-10/en-speed-bump-200.m4a",
+      "from": "audio/volume-10/en-speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-20/en-speed-bump-200.m4a",
+      "from": "audio/volume-20/en-speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-30/en-speed-bump-200.m4a",
+      "from": "audio/volume-30/en-speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-40/en-speed-bump-200.m4a",
+      "from": "audio/volume-40/en-speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-50/en-speed-bump-200.m4a",
+      "from": "audio/volume-50/en-speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-60/en-speed-bump-200.m4a",
+      "from": "audio/volume-60/en-speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-70/en-speed-bump-200.m4a",
+      "from": "audio/volume-70/en-speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-80/en-speed-bump-200.m4a",
+      "from": "audio/volume-80/en-speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "audio/volume-90/en-speed-bump-200.m4a",
+      "from": "audio/volume-90/en-speed-bump-200.m4a",
       "mode": "0644"
     }
   ],

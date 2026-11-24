@@ -49,7 +49,7 @@ def atomic_write(path, data):
 
 def phrases():
     # Include the two generic recordings too; the old generator preserved them.
-    original = {Path(name).stem: info['text'] for name, info in read_json(SERVICE/'audio-manifest.json').items()}
+    original = {Path(name).stem: info['text'] for name, info in read_json(SERVICE/'audio-manifest.json').items() if not name.startswith(('en-', 'beeper-'))}
     edited_file = Path(__file__).with_name('elevenlabs-phrases.json')
     if not edited_file.exists():
         return original

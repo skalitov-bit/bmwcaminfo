@@ -159,7 +159,7 @@ class AudioDiagnostics {
   finally{if(generation===this.generation){this.busy=false;this.testing=false;this.change();}}
  }
  toggleOverlay(){if(this.busy)return;++this.generation;this.overlay=!this.overlay;if(!this.overlay&&(isProfile(this.backend)||this.backend==='pulse'))this.backend='converter';this.confirmable=false;this.confirming=false;this.result=null;this.message=this.overlay?'OVERLAY: включите музыку CarPlay. Выберите ALSA Converter, ALSA или M4A.':'Обычный вывод: выберите ALSA Converter, ALSA или M4A.';this.change();}
- request(payload){return new Promise((resolve,reject)=>{
+ request(payload){payload=Object.assign({},payload,{language:require('./i18n').language()});return new Promise((resolve,reject)=>{
   let done=false,buffer='';const socket=this.net.createConnection('/run/bmwcaminfo-voice/ctl.sock');this.socket=socket;
   const finish=(error,value)=>{if(done)return;done=true;clearTimeout(timer);socket.destroy();if(this.socket===socket)this.socket=null;error?reject(error):resolve(value);};
   const timer=setTimeout(()=>finish(Error('Нет ответа звукового сервиса')),70000);

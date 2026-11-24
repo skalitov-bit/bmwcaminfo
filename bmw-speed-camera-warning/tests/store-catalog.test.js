@@ -31,10 +31,10 @@ function planner(have,list=all,providers=[]){
 }
 const deploy={'mgu-deploy':'0.8.16'};
 const graphics=Object.assign({},deploy,{[renderer]:'2.1.18',[gate]:'1.1.0'});
-const ready=Object.assign({},graphics,{[voice]:'0.1.49'});
+const ready=Object.assign({},graphics,{[voice]:'0.1.50'});
 check('catalog has only our app and voice; exact external requirements',()=>{
  assert.deepStrictEqual(entries.map(e=>e.id),[app,voice]);
- assert.deepStrictEqual(entries.find(e=>e.id===app).requires,{[renderer]:'2.1.18',[gate]:'1.1.0',[voice]:'0.1.49'});
+ assert.deepStrictEqual(entries.find(e=>e.id===app).requires,{[renderer]:'2.1.18',[gate]:'1.1.0',[voice]:'0.1.50'});
  assert.equal(entries.find(e=>e.id===voice).kind,'tool');
 });
 check('fresh install resolves both sources before SpeedCAM',()=>{
@@ -43,7 +43,7 @@ check('fresh install resolves both sources before SpeedCAM',()=>{
 });
 check('matching graphics and voice reused',()=>assert.deepStrictEqual(planner(ready).plan(),[app]));
 check('newer graphics/voice not downgraded',()=>{
- assert.deepStrictEqual(planner(Object.assign({},ready,{[renderer]:'2.2.0',[gate]:'1.2.0',[voice]:'0.1.50'})).plan(),[app]);
+ assert.deepStrictEqual(planner(Object.assign({},ready,{[renderer]:'2.2.0',[gate]:'1.2.0',[voice]:'0.1.51'})).plan(),[app]);
 });
 check('old renderer upgraded',()=>{
  assert.deepStrictEqual(planner(Object.assign({},ready,{[renderer]:'1.9.0'})).plan(),[renderer,app]);
@@ -70,7 +70,7 @@ check('old Store renderer is not a substitute for idrive7 or a new dependency',(
 });
 check('missing gate fails explicitly',()=>assert.throws(()=>planner(deploy,all.filter(e=>e.id!==gate)).plan(),/needs mgu-inputgate .*no source has/));
 check('missing voice fails explicitly',()=>assert.throws(()=>planner(graphics,all.filter(e=>e.id!==voice)).plan(),/needs bmwcaminfo-voice .*no source has/));
-check('voice install failure still blocks application',()=>assert.equal(planner(graphics).u.requirementMet(voice,'0.1.49'),false));
+check('voice install failure still blocks application',()=>assert.equal(planner(graphics).u.requirementMet(voice,'0.1.50'),false));
 check('insufficient deploy rejected',()=>assert.throws(()=>planner({'mgu-deploy':'0.6.0'}).plan(),/mgu-deploy/));
 check('own packages remain ID7',()=>entries.forEach(e=>assert.equal(lib.compat(e.mguHmi,'ID8'),'no')));
 check('our artifact sizes, hashes and URLs match packages',()=>{

@@ -7,5 +7,5 @@ function policeKind(c){
  return code===20?'stationary':null;
 }
 function isDummy(c){return !!c&&(c.camera_family==='dummy'||c.typeNamespace==='estrelka'&&Number(c.typeCode)===155);}
-function iconFor(c){return policeKind(c)?require('./police-icon'):require('./camera-icon');}
+function iconFor(c){const hazard=require('./notification-types').hazardKind(c);if(hazard)return require('./hazard-icon').forKind(hazard);return policeKind(c)?require('./police-icon'):require('./camera-icon');}
 module.exports={policeKind,iconFor,isDummy};

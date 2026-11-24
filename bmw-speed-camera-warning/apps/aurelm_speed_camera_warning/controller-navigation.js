@@ -13,6 +13,7 @@ function install(display){
   if(direction==='N'||direction==='S'){
    const ring=this._ring();
    const sequence=ORDER.map(key=>ring.find(p=>p.k==='tgt:'+key)).filter(Boolean);
+   for(const p of ring)if(p.k.indexOf('tgt:')===0&&!sequence.some(s=>s.k===p.k))sequence.push(p);
    const index=sequence.findIndex(p=>p.k===this.focusKey);
    if(index>=0)return sequence[Math.max(0,Math.min(sequence.length-1,index+(direction==='S'?1:-1)))];
   }
