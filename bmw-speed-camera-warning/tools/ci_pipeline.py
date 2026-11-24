@@ -131,6 +131,7 @@ def build(lock, out, cache, node, node8, result):
                  'overspeed-beeper', 'notification-priority', 'hud-spacing', 'menu-selection',
                  'pulse-music-duck', 'mixer-settings', 'overlay-runtime'):
         run([node, 'tests/' + test + '.test.js'], result, test)
+    run([node8, 'tests/country-maps.test.js'], result, 'country-maps-node8')
     run([sys.executable, 'tools/build_local.py', '--out', out, '--cache', cache / 'runtime'], result, 'build-app')
     run([sys.executable, 'tools/build_store_catalog.py', '--artifacts', out, '--out', out / 'store'], result, 'store-catalog')
     built = out / ('aurelm_speed_camera_warning@' + app['version'] + '.tgz')

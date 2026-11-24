@@ -91,14 +91,17 @@ def main():
     header={'schema':1,'id':args.id,'name':args.name,'coverage':args.coverage,'bbox':bbox,'revision':revision,'createdAt':stamp,'source':args.source,'sourceUrl':args.source_url,'sourceSha256':rawsource,'license':'ODbL-1.0','attribution':'© OpenStreetMap contributors','cellMicrodegrees':STEP,'ways':h.ways,'points':h.points,'cells':index}
     if args.extra_pbf:header['sourceFiles']=[{'file':p.name,'sha256':hashlib.file_digest(p.open('rb'),'sha256').hexdigest()} for p in [args.pbf]+args.extra_pbf]
     headerbytes=encode(header)
-    if len(headerbytes)>2*1024*1024 or len(index)>50000:raise ValueError('Road index exceeds supported reader limits')
+    if len(headerbytes)>8*1024*1024 or len(index)>200000:raise ValueError('Road index exceeds supported reader limits')
     if any(v[1]>1024*1024 or v[2]>1024*1024 or v[3]>16000 for v in index.values()):raise ValueError('Road cell exceeds supported reader limits')
     package=b'SCROAD01'+struct.pack('<I',len(headerbytes))+headerbytes+b''.join(blocks)
     if len(package)>64*1024*1024:raise ValueError('Road package exceeds download limit')
     digest=hashlib.sha256(package).hexdigest();name=args.id+'-'+digest[:16]+'.scroads'
     args.out.mkdir(parents=True,exist_ok=True);(args.out/name).write_bytes(package)
     entry={k:header[k] for k in ('id','name','coverage','bbox','revision','createdAt','attribution','license')};entry.update(bytes=len(package),sha256=digest,file=name,url='https://raw.githubusercontent.com/skalitov-bit/speedcam-db/main/maps/'+name)
-    catalog['cities']=[c for c in catalog['cities'] if c['id']!=args.id]+[entry]
+    extended=len(headerbytes)>2*1024*1024 or len(index)>50000
+    catalog['cities']=[c for c in catalog['cities'] if c['id']!=args.id]
+    catalog['extendedCities']=[c for c in catalog.get('extendedCities',[]) if c['id']!=args.id]
+    catalog['extendedCities' if extended else 'cities'].append(entry)
     temp=catalog_file.with_suffix('.json.tmp');temp.write_bytes(encode(catalog));os.replace(temp,catalog_file)
     (args.out/'build-report.json').write_bytes(encode({'inputBytes':sum(p.stat().st_size for p in [args.pbf]+args.extra_pbf),'packageBytes':len(package),'headerBytes':len(headerbytes),'payloadBytes':offset,'ways':h.ways,'duplicateWaysSkipped':h.duplicates,'points':h.points,'cells':len(index),'maxCellRawBytes':max(v[2] for v in index.values()),'seconds':time.monotonic()-start,'sha256':digest,'sourceSha256':rawsource,'bbox':bbox}))
     print((args.out/'build-report.json').read_text(),flush=True)

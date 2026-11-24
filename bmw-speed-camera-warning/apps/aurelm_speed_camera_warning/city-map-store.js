@@ -3,7 +3,13 @@ const fs=require('fs'),path=require('path'),https=require('https'),crypto=requir
 const {ensureDirectory}=require('./camera-store'),{CityRoads}=require('./city-roads');
 const PREFIX='https://raw.githubusercontent.com/skalitov-bit/speedcam-db/',CATALOG_URL=PREFIX+'main/maps/catalog.json',MAX_FILE=64*1024*1024,MAX_INSTALLED=128*1024*1024;
 function validEntry(e){if(!e||!/^[a-z0-9-]{2,40}$/.test(e.id)||typeof e.name!=='string'||e.name.length>60||typeof e.coverage!=='string'||e.coverage.length>160||!Number.isSafeInteger(e.revision)||e.revision<1||!Number.isInteger(e.bytes)||e.bytes<100||e.bytes>MAX_FILE||!/^\d{4}-\d\d-\d\dT/.test(e.createdAt)||!Number.isFinite(Date.parse(e.createdAt))||!/^[a-f0-9]{64}$/.test(e.sha256)||e.file!==e.id+'-'+e.sha256.slice(0,16)+'.scroads'||e.url!==PREFIX+'main/maps/'+e.file||!Array.isArray(e.bbox)||e.bbox.length!==4||!e.bbox.every(Number.isFinite)||e.bbox[0]>=e.bbox[2]||e.bbox[1]>=e.bbox[3]||e.bbox.some((v,i)=>Math.abs(v)>(i%2?90:180))||e.license!=='ODbL-1.0')throw Error('MAP_CATALOG_INVALID');return e;}
-function validateCatalog(c){if(!c||c.schema!==1||!Array.isArray(c.cities)||c.cities.length>300)throw Error('MAP_CATALOG_INVALID');const ids=new Set();c.cities.forEach(e=>{validEntry(e);if(ids.has(e.id))throw Error('MAP_CATALOG_DUPLICATE');ids.add(e.id);});return c;}
+function validateCatalog(c){
+ if(!c||c.schema!==1||!Array.isArray(c.cities)||c.extendedCities!==undefined&&!Array.isArray(c.extendedCities))throw Error('MAP_CATALOG_INVALID');
+ // Older releases read only cities. Keep oversized packages out of that list
+ // until a reader with country-index support is installed.
+ const cities=c.cities.concat(c.extendedCities||[]);if(cities.length>300)throw Error('MAP_CATALOG_INVALID');
+ const ids=new Set();cities.forEach(e=>{validEntry(e);if(ids.has(e.id))throw Error('MAP_CATALOG_DUPLICATE');ids.add(e.id);});return {schema:1,cities};
+}
 function atomicJson(file,obj){const t=file+'.tmp';fs.writeFileSync(t,JSON.stringify(obj));fs.renameSync(t,file);}
 function download(url,file,limit,progress){return new Promise((resolve,reject)=>{
  if(!url.startsWith(PREFIX)||url.indexOf('..')>=0)return reject(Error('MAP_URL_NOT_ALLOWED'));

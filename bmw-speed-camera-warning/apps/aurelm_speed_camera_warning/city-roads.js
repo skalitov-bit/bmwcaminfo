@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('fs'),zlib=require('zlib');
-const MAGIC='SCROAD01',MAX_HEADER=2*1024*1024,MAX_RAW=1024*1024;
+// Country packages retain the same cell format and viewport cache budgets.
+const MAGIC='SCROAD01',MAX_HEADER=8*1024*1024,MAX_CELLS=200000,MAX_RAW=1024*1024;
 function range(file,offset,size){return new Promise((resolve,reject)=>{
  fs.open(file,'r',(e,fd)=>{if(e)return reject(e);const b=Buffer.alloc(size);let pos=0;
   const end=(err)=>fs.close(fd,()=>err?reject(err):resolve(b));
@@ -17,7 +18,7 @@ class CityRoads{
  constructor(file){this.file=file;this.cache=new Map();this.cacheBytes=0;this.version=0;this.generation=0;this.stats={reads:0,bytes:0,cacheBytes:0,loadMs:0};this.rows=[];this.wanted='';this.pending=null;this.closed=false;}
  async open(){const h=await range(this.file,0,12);if(h.slice(0,8).toString()!==MAGIC)throw Error('MAP_FORMAT');const n=h.readUInt32LE(8);if(n<50||n>MAX_HEADER)throw Error('MAP_HEADER_SIZE');this.start=12+n;
   const meta=JSON.parse((await range(this.file,12,n)).toString('utf8'));const total=fs.statSync(this.file).size;
-  if(meta.schema!==1||!/^[a-z0-9-]{2,40}$/.test(meta.id)||meta.cellMicrodegrees!==10000||!meta.cells||Object.keys(meta.cells).length>50000||!Array.isArray(meta.bbox)||meta.bbox.length!==4||!meta.bbox.every(Number.isFinite)||meta.bbox[0]>=meta.bbox[2]||meta.bbox[1]>=meta.bbox[3])throw Error('MAP_HEADER_INVALID');
+  if(total>64*1024*1024||meta.schema!==1||!/^[a-z0-9-]{2,40}$/.test(meta.id)||meta.cellMicrodegrees!==10000||!meta.cells||Array.isArray(meta.cells)||Object.keys(meta.cells).length>MAX_CELLS||!Array.isArray(meta.bbox)||meta.bbox.length!==4||!meta.bbox.every(Number.isFinite)||meta.bbox[0]>=meta.bbox[2]||meta.bbox[1]>=meta.bbox[3])throw Error('MAP_HEADER_INVALID');
   Object.keys(meta.cells).forEach(k=>{const v=meta.cells[k];if(!/^-?\d+,-?\d+$/.test(k)||!Array.isArray(v)||v.length!==4||v.some(x=>!Number.isInteger(x)||x<0)||v[1]<1||v[1]>MAX_RAW||v[2]>MAX_RAW||v[2]<2||v[3]>16000||this.start+v[0]+v[1]>total)throw Error('MAP_INDEX_INVALID');});this.meta=meta;return this;
  }
  contains(p){const b=this.meta.bbox;return p&&p.lon>=b[0]&&p.lon<=b[2]&&p.lat>=b[1]&&p.lat<=b[3];}
