@@ -132,13 +132,14 @@ def build(lock, out, cache, node, node8, result):
                  'pulse-music-duck', 'mixer-settings', 'overlay-runtime'):
         run([node, 'tests/' + test + '.test.js'], result, test)
     run([node8, 'tests/country-maps.test.js'], result, 'country-maps-node8')
+    run([node8, 'tests/city-map-hdd.test.js'], result, 'city-map-hdd-node8')
     run([sys.executable, 'tools/build_local.py', '--out', out, '--cache', cache / 'runtime'], result, 'build-app')
     run([sys.executable, 'tools/build_store_catalog.py', '--artifacts', out, '--out', out / 'store'], result, 'store-catalog')
     built = out / ('aurelm_speed_camera_warning@' + app['version'] + '.tgz')
     files = payload(built)
     pkg = json.loads(files['package/package.json'])
     assert pkg['version'] == app['version'] and pkg['mguInternet'] is True
-    for name in ('city-roads.js', 'city-map-store.js', 'city-map-panel.js', 'city-map-renderer.js', 'hybrid-index-v1.bin', 'hybrid-records-v1.bin'):
+    for name in ('city-roads.js', 'city-map-store.js', 'city-map-storage.js', 'city-map-hdd-dialog.js', 'city-map-panel.js', 'city-map-renderer.js', 'hybrid-index-v1.bin', 'hybrid-records-v1.bin'):
         assert 'package/javascript/' + name in files, name
     assert not any(n.endswith('.scroads') for n in files), 'Regional maps must stay separate'
     assert 'package/javascript/camera-db.json' not in files
@@ -155,7 +156,7 @@ def build(lock, out, cache, node, node8, result):
                  'gpu-input-recovery', 'controller-recovery', 'display-recovery-menu',
                  'render-recovery', 'responsive-display', 'lifecycle-bridge'):
         run([node, 'tests/' + test + '.test.js', js], result, 'built-' + test)
-    for test in ('city-map-overlap', 'city-map-scroll'):
+    for test in ('city-map-overlap', 'city-map-scroll', 'city-map-hdd-dialog'):
         run([node8, 'tests/' + test + '.test.js', js], result, 'built-' + test)
     env_before = os.environ.get('BMW_GPU_WIRE')
     try:

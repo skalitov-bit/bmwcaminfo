@@ -58,14 +58,16 @@ uplink.init(dataDir);log.info('UPLINK '+uplink.describe());uplink.checkInternet(
  let cameraIndex=database,displayCache=null,mapPulseVisible=false,radarCamera=null;
  let mainScreenVisible=typeof ui.isVisible==='function'&&ui.isVisible('MAIN');
  let mapPreview=null;
- const cityMaps=new CityMapStore(dataDir),cityRoadRenderer=new CityMapRenderer();
+ const cityMaps=new CityMapStore(dataDir,{requireHddNotice:true}),cityRoadRenderer=new CityMapRenderer();
  const cityMapPanel=new CityMapPanel(cityMaps,renderSafe,()=>openView('SETTINGS'),e=>{
   // Preview never replaces a live fix or moves the warning database cache.
   mapPreview={lat:(e.bbox[1]+e.bbox[3])/2,lon:(e.bbox[0]+e.bbox[2])/2,name:e.name};view='MAP';renderSafe();
  });
- cityMaps.on('change',()=>{if(mainScreenVisible&&(view==='MAP'||view==='CITY_MAPS'))renderSafe();});
- cityMapPanel.bindNavigation(ctx.display,()=>view==='CITY_MAPS'&&mainScreenVisible);
- if(typeof ctx.onScroll==='function')ctx.onScroll(dy=>view==='CITY_MAPS'&&cityMapPanel.scrollPixels(dy));
+ const hddDialog=new (require('./city-map-hdd-dialog').CityMapHddDialog)(cityMaps);
+ cityMaps.on('change',()=>{if(mainScreenVisible)renderSafe();});
+ function drawHddDialog(){const cv=ctx.canvas(W,H).clear(C.bg);hddDialog.draw(cv,style,pageTarget);return presentImage('MAIN_GFX',cv);}
+ cityMapPanel.bindNavigation(ctx.display,()=>!cityMaps.notice&&view==='CITY_MAPS'&&mainScreenVisible);
+ if(typeof ctx.onScroll==='function')ctx.onScroll(dy=>!cityMaps.notice&&view==='CITY_MAPS'&&cityMapPanel.scrollPixels(dy));
  function openCityMaps(){view='CITY_MAPS';cityMapPanel.open();renderSafe();}
  function drawCityMaps(){const cv=ctx.canvas(W,H).clear(C.bg);cityMapPanel.draw(cv,style,pageTarget);drawTabs(cv,'SETTINGS');return ui.image('MAIN_GFX',cv);}
  const notificationPolicy=new NotificationPolicy(k=>settings.get(k),mainScreenVisible);
@@ -95,8 +97,8 @@ uplink.init(dataDir);log.info('UPLINK '+uplink.describe());uplink.checkInternet(
  const nativeActionIds=ctx.display?((ctx.display.screen&&ctx.display.screen.buttons)||[]).map(b=>b[0]):ACTION_IDS;
  require('./controller-navigation').install(ctx.display);
  require('./display-recovery-menu').install(ctx);
- function bindAction(id,fn){actionHandlers[id]=fn;if(nativeActionIds.includes(id))ui.onClick(id,fn);}
- function pageTarget(cv,x,y,w,h,run,key){if(cv.recording===true&&typeof cv.target==='function')cv.target(x,y,w,h,run,key,0);}
+ function bindAction(id,fn){const guarded=()=>{if(!cityMaps.notice)return fn();};actionHandlers[id]=guarded;if(nativeActionIds.includes(id))ui.onClick(id,guarded);}
+ function pageTarget(cv,x,y,w,h,run,key){if(cv.recording===true&&typeof cv.target==='function')cv.target(x,y,w,h,()=>{if(!cityMaps.notice||key.indexOf('hdd-transfer-')===0)return run();},key,0);}
  // Actions live on the page. MAIN has no native RHMI bar in app.json.
  // Only bind/hide controls actually declared by an older runtime, if present.
  if(typeof ctx.hideButton==='function')nativeActionIds.forEach(id=>ctx.hideButton(id));
@@ -554,14 +556,14 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   return ui.image('MAIN_GFX',cv);
  }
  function syncNativeButtons(){
-  if(view===nativeButtonView)return;nativeButtonView=view;
+  const buttonView=cityMaps.notice?'HDD_DIALOG':view;if(buttonView===nativeButtonView)return;nativeButtonView=buttonView;
   for(const id of nativeActionIds)for(const method of ['visible','enabled']){
    const extra=['BTN_REFRESH','BTN_VOICE_TEST','BTN_CAMERA_MENU'].includes(id);
-   const hidden=(view==='ENGINEERING'||view==='MOTION_DIAGNOSTICS'||view==='HUD_POSITION'||view==='NOTIFICATION_TYPES'||audioPage())||extra&&(view==='SETTINGS'&&id!=='BTN_REFRESH'||view==='MAP'&&id!=='BTN_REFRESH'||id==='BTN_CAMERA_MENU'&&(view==='ADD'||view==='MY'));
+   const hidden=!!cityMaps.notice||(view==='ENGINEERING'||view==='MOTION_DIAGNOSTICS'||view==='HUD_POSITION'||view==='NOTIFICATION_TYPES'||audioPage())||extra&&(view==='SETTINGS'&&id!=='BTN_REFRESH'||view==='MAP'&&id!=='BTN_REFRESH'||id==='BTN_CAMERA_MENU'&&(view==='ADD'||view==='MY'));
    if(typeof ui[method]==='function')Promise.resolve(ui[method](id,!hidden)).catch(e=>log.warn('BUTTON_STATE_FAILED '+id+' '+String(e)));
   }
  }
- function render(){syncBackgroundNotification();if(!mainScreenVisible)return;if(languageFirst||view==='LANGUAGE')return drawLanguage();syncNativeButtons();if(view==='NOTIFICATION_TYPES')return drawTypes();if(view==='CITY_MAPS')return drawCityMaps();if(view==='HUD_POSITION')return drawHudPosition();if(view==='MOTION_DIAGNOSTICS')return drawMotionDiagnostics();if(view==='AUDIO_WIZARD')return drawAudioWizard();if(view==='AUDIO_CHANNELS')return drawAudioChannels();if(view==='RADAR')return drawRadar();if(view==='ENGINEERING')return drawEngineering();if(view==='ADD')return drawAddCamera();if(view==='MY')return drawMyCameras();if(view==='SETTINGS')return drawSettings();return drawMainMap();}
+ function render(){syncBackgroundNotification();if(!mainScreenVisible)return;if(languageFirst||view==='LANGUAGE')return drawLanguage();syncNativeButtons();if(cityMaps.notice)return drawHddDialog();if(view==='NOTIFICATION_TYPES')return drawTypes();if(view==='CITY_MAPS')return drawCityMaps();if(view==='HUD_POSITION')return drawHudPosition();if(view==='MOTION_DIAGNOSTICS')return drawMotionDiagnostics();if(view==='AUDIO_WIZARD')return drawAudioWizard();if(view==='AUDIO_CHANNELS')return drawAudioChannels();if(view==='RADAR')return drawRadar();if(view==='ENGINEERING')return drawEngineering();if(view==='ADD')return drawAddCamera();if(view==='MY')return drawMyCameras();if(view==='SETTINGS')return drawSettings();return drawMainMap();}
  let renderQueued=false,renderRunning=false,renderTimer=null,lastRenderAt=0,renderCount=0;
  function animatedScreen(){return mainScreenVisible&&((notificationPolicy.destination()==='canvas'&&activeAlert&&Date.now()<alertUntil)||view==='MAP'&&(mapPulseVisible||refreshBusy));}
  function softwareScreen(){return !!(ctx.display&&typeof ctx.display.active==='function'&&!ctx.display.active('MAIN'));}
@@ -715,6 +717,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  function handlePageTap(x,y){
   if(!Number.isFinite(x)||!Number.isFinite(y))return;
   if(languageFirst||view==='LANGUAGE'){languagePanel.tap(x,y,languageFirst);return;}
+  if(cityMaps.notice){hddDialog.tap(x,y);return;}
   const tab=style.tabAt(x,y);
   if(tab)require('./controller-navigation').focusTab(ctx.display,tab);
   if(tab==='SETTINGS'){
@@ -848,7 +851,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  renderSafe();refresh();const refreshTimer=setInterval(refresh,REFRESH_INTERVAL_MS);ctx.loop('MAIN',10,()=>{if(fix&&Date.now()-fix.timeMs>3000)handleGpsLoss();
   // Keep a recovery repaint; static pages need neither 10 Hz drawing nor PNG work.
   if(displayedRenderMode!==currentRenderMode()||animatedScreen()||view==='ENGINEERING'||view==='MOTION_DIAGNOSTICS'||Date.now()-lastRenderAt>=5000)renderSafe();});
- log.info('SpeedCAM 0.9.98 started; camera sectors and control paths; GPS accuracy <=35 m; low-accuracy label >=15 m; KOMBI/HUD mode='+cameraDisplayMode);
+ log.info('SpeedCAM 0.9.99 started; camera sectors and control paths; GPS accuracy <=35 m; low-accuracy label >=15 m; KOMBI/HUD mode='+cameraDisplayMode);
 }}).catch(e=>{
  console.error('SPEEDCAM_START_FAILED '+String(e&&e.stack||e));
  // Only the isolated worker may exit: the MainApp-owned supervisor stays alive.

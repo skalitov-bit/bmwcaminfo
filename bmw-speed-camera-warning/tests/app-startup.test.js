@@ -78,11 +78,24 @@ const replacements={
     './disk-camera-store':{CameraStore},'./gps':{BmwGps:GPS},'./bmw-position':{BmwPosition:GPS},
     './voice-alert':{CameraVoiceAlerts:Voice},'./cluster-output':{CameraClusterOutput:Cluster}
 };
+let hddFixture;
+if(process.env.BMW_HDD_DIALOG_TEST){const Base=appRequire('./city-map-store').CityMapStore;replacements['./city-map-store']={CityMapStore:class extends Base{constructor(dir,o){assert(o.requireHddNotice,'Production enables HDD notices');const share=path.join(dir,'simulated-hdd');fs.mkdirSync(share);super(dir,Object.assign({},o,{storage:{share,mounted:()=>true,freeBytes:async()=>1e10}}));hddFixture=this;}}};}
 vm.runInNewContext(fs.readFileSync(file,'utf8'),{require:n=>replacements[n]||appRequire(n),
     __dirname:path.dirname(path.resolve(file)),console,Buffer,process,setTimeout:fn=>setTimeout(fn,0),setInterval:(fn,ms)=>{if(ms===250)backgroundTick=fn;if(ms===100)motionTick=fn;return 0;}}, {filename:file});
 async function run(){
     await startPromise;await activeStore.pending;await new Promise(resolve=>setTimeout(resolve,30));
     assert(images>0,'Initial app screen must render: '+warnings.join('\n'));
+    if(process.env.BMW_HDD_DIALOG_TEST){
+      const settle=()=>new Promise(r=>setTimeout(r,100));await hddFixture.ready;await settle();
+      assert(texts.includes('HDD ОБНАРУЖЕН'),warnings.join('\n'));assert.equal(hddFixture.hddState.accepted,false);
+      if(wire){wire.ack();assert(wire.d.pageTargets.some(t=>t.key==='hdd-transfer-start'));assert(!wire.d.pageTargets.some(t=>t.key.indexOf('nav-')===0));}
+      tapHandler(100,460);await settle();assert.equal(hddFixture.notice.kind,'found','left tiles cannot bypass dialog');
+      tapHandler(1000,420);await settle();assert.equal(hddFixture.notice,null);assert(!hddFixture.hddState.accepted);
+      hddFixture.hddDeferred=false;await hddFixture.prepareStorage();await settle();assert.equal(hddFixture.notice.kind,'found');
+      tapHandler(550,420);await hddFixture.ready;await settle();assert.equal(hddFixture.notice.kind,'success');assert(texts.includes('HDD ГОТОВ К РАБОТЕ'));
+      tapHandler(800,420);await settle();assert.equal(hddFixture.notice,null);assert(hddFixture.hddState.accepted);
+      assert(!warnings.some(w=>/UI_RENDER_FAILED|ReferenceError|TypeError/.test(w)),warnings.join('\n'));hddFixture.close();console.log('PASS actual app HDD dialogs: before transfer, modal input guard, later, start, success and return');return;
+    }
     if(process.env.BMW_LANGUAGE_TEST){
       const settle=()=>new Promise(r=>setTimeout(r,60)),l=appRequire('./i18n');
       const save=name=>{if(previewDir)fs.writeFileSync(path.join(previewDir,name+'.png'),lastCanvas.png());};
