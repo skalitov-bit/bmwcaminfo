@@ -2,376 +2,142 @@
 
 # SpeedCAM
 
-### Камеры впереди. Информация — перед глазами.
+### Cameras ahead. Information where you need it.
 
-**Уведомления о камерах для BMW MGU ID7: центральный экран, HUD и приборная панель.**
+**Camera alerts for BMW MGU ID7 — on the central display, head-up display and instrument cluster.**
 
-[**Скачать SpeedCAM**](https://github.com/skalitov-bit/bmwcaminfo/releases/latest) · [**Обновить базу**](https://github.com/skalitov-bit/speedcam-db/releases/latest) · [**Поддержать проект ♥**](https://pay.cloudtips.ru/p/93ccdd74)
+[**Download SpeedCAM**](https://github.com/skalitov-bit/bmwcaminfo/releases/latest) · [**Camera database**](https://github.com/skalitov-bit/speedcam-db/releases/latest) · [**Support the project ♥**](https://pay.cloudtips.ru/p/93ccdd74)
 
-**Бесплатно · Установка через MGU Store · База работает без интернета**
+**Free · MGU Store installation · Offline camera alerts · English & Russian**
 
 </div>
 
-![SpeedCAM: полноэкранный радар и предупреждение о Стрелке](docs/screenshots-0.9.86/12-radar-active-warning.png)
+![SpeedCAM 0.9.100: an approaching speed camera on the Radar screen](docs/screenshots-0.9.100/radar.png)
 
-SpeedCAM заранее показывает камеру по ходу движения, её ограничение скорости и расстояние до неё. Крупный радар, голосовые подсказки и бипер помогают получать нужную информацию привычным способом — на дисплеях вашего BMW.
+SpeedCAM brings camera information to your BMW's own displays: the type of control, the camera model when available, the speed limit and the remaining distance. A clear radar view, voice prompts and an accelerating beeper help you follow the road ahead.
 
-**Текущий выпуск: 0.9.96 gps test version · Звуковой сервис: 0.1.49.** [Что нового →](https://github.com/skalitov-bit/bmwcaminfo/releases/latest)
+**Current release: 0.9.100 gps test version · Audio service: 0.1.50.** [Release notes →](https://github.com/skalitov-bit/bmwcaminfo/releases/latest)
 
-[Возможности](#возможности) · [Галерея](#галерея) · [HUD и приборка](#hud-и-приборная-панель) · [Установка](#установка) · [Поддержка](#поддержать-разработку)
+[Features](#features) · [Countries](#camera-database-27-countries) · [Screenshots](#screenshots) · [Installation](#installation) · [Support](#support-speedcam)
 
-## Возможности
+## Features
 
-| В дороге | Что даёт SpeedCAM |
+| Feature | What it does |
 |---|---|
-| **Камера по ходу движения** | Выбор с учётом направления и прогнозируемой траектории, включая поворот. Приоритет реальных камер перед муляжами. |
-| **Предупреждение заранее** | Динамическая дистанция первого уведомления: при большей скорости предупреждение появляется раньше. |
-| **Крупный радар** | Тип контроля, название комплекса, если оно известно, ограничение и плавное изменение расстояния. |
-| **HUD и приборная панель** | Настраиваемое положение HUD, отдельная подложка приборки и выбор дисплеев. |
-| **Голос и бипер** | Одновременная озвучка и бипер в поддерживающих микширование режимах. Бипер учащается при приближении к камере. |
-| **Звук под себя** | Восемь звуков бипера, отдельная громкость голоса и бипера, прослушивание и настройка приглушения музыки. |
-| **Свои камеры** | Добавление пользовательских точек и исключение ненужной камеры из уведомлений с сохранением после обновления базы. |
-| **Обновление в автомобиле** | Кнопка «ОБНОВИТЬ БД», дата установленной базы и понятный статус загрузки. Новая база не требует новой версии приложения. |
-| **Без постоянного интернета** | После установки база хранится локально. Интернет нужен для обновления, а не для каждого предупреждения. |
-| **Управление BMW** | Касания и джойстик, чёрный фон, крупные надписи Roboto Condensed и красные акценты. |
+| **Alerts along your path** | Uses direction and the predicted driving trajectory, including curves, to select relevant points. Real cameras take priority over dummy cameras. |
+| **Speed-aware warning distance** | In automatic mode, higher approach speeds trigger earlier warnings. |
+| **Rear-facing cameras** | Shows a rear-facing warning when this information is available and retains monitoring for 100 m after passing the camera. |
+| **Three display options** | Central-screen radar, compact HUD alerts and an instrument-cluster banner with its own translucent backing. HUD position and its top line are adjustable. |
+| **Voice and beeper** | English and Russian voice prompts, eight beeper sounds, separate voice/beeper levels and a music-ducking option. Simultaneous playback is supported by the mixing audio modes. |
+| **Choose each alert type** | Separate checkbox lists for visual banners and voice prompts. School/crossing and speed-bump alerts are available but disabled by default. |
+| **Your own points** | Add personal cameras or exclude a camera from alerts. Exclusions survive camera-database updates. |
+| **Independent database updates** | Update the camera database inside the app without installing a new application version. |
+| **Downloadable road maps** | Install, update or delete only the regions you need. Road maps are separate from the camera database. |
+| **Maps on HDD** | When a compatible writable HDD is detected, the app offers to move downloaded maps, verifies their integrity and raises map storage capacity to 4 GiB. |
+| **BMW controls** | Touch and iDrive controller support, large Roboto Condensed text, dark backgrounds and red accents. |
 
-Поддерживаются камеры скорости, красного света, стоп-линии, контроля ПДД, полосы общественного транспорта, точки средней скорости и посты ДПС — в зависимости от данных конкретной базы. Неизвестные модели и ограничения не подменяются предположениями.
+Supported categories include speed cameras, red-light and stop-line cameras, traffic-rule and bus-lane enforcement, average-speed control, police posts, school/crossing warnings and speed bumps. The available details depend on the individual database record; unknown models and limits are not invented.
 
-## Галерея
+## Camera database: 27 countries
 
-Изображения центрального экрана получены в эмуляторе версии **0.9.86**; HUD и приборка отрисованы её кодом. Это демонстрационные сценарии, не фотографии экранов автомобиля. Даты базы, количество точек и скорость на снимках относятся к тестовым данным. Нажмите на изображение, чтобы открыть его крупно.
+The published snapshot dated **24 November 2026** contains **517,034 objects**, including **232,351 alert objects**. Other records are additional road points. These figures describe that snapshot, not a live counter or a count of physical speed cameras.
 
-### Карта: всё нужное рядом
+| Country | Country | Country |
+|---|---|---|
+| 🇦🇲 Armenia | 🇦🇹 Austria | 🇦🇿 Azerbaijan |
+| 🇧🇾 Belarus | 🇧🇪 Belgium | 🇫🇮 Finland |
+| 🇫🇷 France | 🇬🇪 Georgia | 🇩🇪 Germany |
+| 🇮🇱 Israel | 🇮🇹 Italy | 🇰🇿 Kazakhstan |
+| 🇰🇬 Kyrgyzstan | 🇱🇻 Latvia | 🇱🇹 Lithuania |
+| 🇲🇩 Moldova | 🇳🇱 Netherlands | 🇵🇱 Poland |
+| 🇷🇺 Russia | 🇪🇸 Spain | 🇸🇪 Sweden |
+| 🇨🇭 Switzerland | 🇹🇷 Türkiye | 🇺🇦 Ukraine |
+| 🇦🇪 United Arab Emirates | 🇬🇧 United Kingdom | 🇺🇿 Uzbekistan |
 
-Выбранная камера, ограничения на точках, масштабирование и обновление базы — на одном экране. Можно загрузить дорожные карты Москвы и Московской области (включая Новую Москву), Санкт-Петербурга и Ленинградской области. Управление — **Настройки → Карты городов**: загрузить, обновить, посмотреть или удалить. После загрузки дороги доступны без интернета; база камер хранится отдельно. Белый GPS-наконечник направлен вперёд, карта вращается по курсу; начальный масштаб — **2,5×**. Прокладки маршрута и привязки камер к дорожной сети пока нет.
+Coverage and available alert types vary by country. Inclusion does not imply complete coverage of every road.
 
-Кадр карты из эмулятора **0.9.92**. Москва с областью — 20,6 МиБ; Петербург с областью — 12,5 МиБ. Данные дорог © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL.
+Open **Map → Update DB** in the car to install the latest database. SpeedCAM checks the download and keeps the installed database if an update fails. Once installed, camera alerts work offline. [Latest database and update details →](https://github.com/skalitov-bit/speedcam-db/releases/latest)
 
-![Дорожная карта и белый GPS-наконечник](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.92/map-preview.png)
+**Camera coverage and downloadable road-map coverage are different.** A country in the camera database does not necessarily have a downloadable road map.
 
-### Предупреждение прямо на карте
+## Screenshots
 
-Баннер занимает область карты, оставляя карточку выбранной камеры справа. На вкладке «Радар» дублирующий баннер не появляется.
+The images below are rendered from **0.9.100** application code using simulated scenarios, rather than photographs of a car. Some demonstrate the Russian interface; English settings and alerts are shown as well. Speeds, positions, counts and dates inside the screenshots are test data. Hardware-specific audio and display behavior still requires testing on the vehicle.
 
-![Баннер камеры на карте](docs/screenshots-0.9.86/central-smooth-distance.png)
+### Camera map
 
-### Голос и бипер — под ваш вкус
+Browse nearby points, read speed limits directly on the map, select a camera, zoom and update the database. The map below demonstrates the camera layer; downloaded regional road geometry is a separate layer. When GPS is lost, the map holds its last position.
 
-Настройте громкость голоса и бипера отдельно, выберите один из восьми звуков и прослушайте результат до сохранения.
+![Camera map and selected point in SpeedCAM 0.9.100](docs/screenshots-0.9.100/camera-map.png)
 
-![Микшер уведомлений](docs/screenshots-0.9.86/mixer-default.png)
+### Choose your language
 
-![Выбор звука бипера](docs/screenshots-0.9.86/beeper-sounds-list.png)
+Choose English or Russian on first launch, or use **Settings → SET LANGUAGE** later. The language selection applies to the interface and voice prompts.
 
-### Посты ДПС
+![Language selection](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.100/language-choice.png)
 
-Отдельный значок и понятная подпись на экранах автомобиля.
+![Settings in English](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.100/settings-en.png)
 
-![Стационарный пост ДПС на радаре](docs/screenshots-0.9.86/dps-stationary-radar.png)
+### Only the alerts you want
 
-### Свои точки
+Enable or disable individual visual and spoken alert categories independently. Turning off a banner does not require turning off its voice prompt, or vice versa.
 
-Добавляйте камеры в личный список и управляйте ими из приложения.
+![Visual alert categories in English](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.100/banner-types-en.png)
 
-![Добавление камеры](docs/screenshots-0.9.86/02-add.png)
+### HUD, instrument cluster and central banner
 
-![Мои камеры](docs/screenshots-0.9.86/03-my-cameras.png)
+School/crossing and speed-bump examples show the distinct icons and layouts used on each display. These categories are opt-in. The central popup is shown only on the **Map** tab; the Radar tab already has its own full-size warning view.
 
-## HUD и приборная панель
+![English school and speed-bump alerts on all three displays](docs/screenshots-0.9.100/display-alerts-en.png)
 
-Один сценарий — два варианта отображения. HUD сохраняет компактный вид, приборка использует отдельную подложку с прозрачностью 35%. В настройках можно изменить положение HUD и отключить его верхнюю полосу. На статичных кадрах анимация не воспроизводится.
+### Sound, balanced your way
 
-### Стрелка — приближение
+Adjust voice and beeper volume independently, choose how much the beeper is lowered during speech, and enable or disable music ducking. Preview the balance before saving it. Music ducking depends on the interfaces available on the particular MGU.
 
-| HUD | Приборная панель |
-|---|---|
-| ![Стрелка — приближение — HUD](docs/screenshots-0.9.86/displays/hud-strelka.png) | ![Стрелка — приближение — приборка](docs/screenshots-0.9.86/displays/kombi-strelka.png) |
+![Voice, beeper and music-ducking controls](docs/screenshots-0.9.100/mixer.png)
 
-### Стрелка — превышение на 30 км/ч
+### More room for offline maps
 
-| HUD | Приборная панель |
-|---|---|
-| ![Стрелка — превышение на 30 км/ч — HUD](docs/screenshots-0.9.86/displays/hud-speeding.png) | ![Стрелка — превышение на 30 км/ч — приборка](docs/screenshots-0.9.86/displays/kombi-speeding.png) |
+Download and manage regional road maps from **Settings → City maps**. Russia and Germany open into regional lists. The catalog can grow without a new app release, provided new maps remain compatible with the supported format.
 
-### Модель и ограничение неизвестны
+When a suitable HDD is found, SpeedCAM explains the transfer and offers **Continue / Later**. It verifies file size, SHA-256 and map structure before switching to the new copy, then reports completion. Successfully transferred maps are not copied again on every launch.
 
-| HUD | Приборная панель |
-|---|---|
-| ![Модель и ограничение неизвестны — HUD](docs/screenshots-0.9.86/displays/hud-unknown.png) | ![Модель и ограничение неизвестны — приборка](docs/screenshots-0.9.86/displays/kombi-unknown.png) |
+![HDD discovery and map-transfer dialog in English](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.100/hdd-found-en.png)
 
-### Автодория — средняя скорость выше ограничения
+Map storage is limited to **4 GiB on HDD**, or **128 MiB in the original location**; individual map files retain a **64 MiB limit**. If an HDD is unavailable during migration, local maps remain usable. Maps already moved to an HDD require that disk to be accessible. The camera database stays separate.
 
-| HUD | Приборная панель |
-|---|---|
-| ![Автодория — средняя скорость выше ограничения — HUD](docs/screenshots-0.9.86/displays/hud-average.png) | ![Автодория — средняя скорость выше ограничения — приборка](docs/screenshots-0.9.86/displays/kombi-average.png) |
+Road geometry © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL. SpeedCAM displays roads and camera points; it does not provide turn-by-turn route planning or road-network map matching.
 
-### Стационарный пост ДПС
+## Installation
 
-| HUD | Приборная панель |
-|---|---|
-| ![Стационарный пост ДПС — HUD](docs/screenshots-0.9.86/displays/hud-police.png) | ![Стационарный пост ДПС — приборка](docs/screenshots-0.9.86/displays/kombi-police.png) |
+1. Open **MGU Store** on a BMW with **MGU ID7**.
+2. Add `skalitov-bit/bmwcaminfo` and `cauliflowermossgrape/idrive7-apps` as repository sources and select the **Releases** channel.
+3. Check for updates, select **SpeedCAM**, then **Install / Update**. The store resolves the application's required components.
+4. If the store shows **Restart pending**, restart MGU after installation completes.
+5. Choose your language and displays, check audio playback, then update the camera database. Download regional road maps if desired.
 
-### Краткий расчётный резерв без GPS
+Version **0.9.100** requires **bmwcaminfo-voice ≥ 0.1.50**, **idrive7-renderd ≥ 2.1.18** and **mgu-inputgate ≥ 1.1.0**. The audio service also requires **mgu-deploy ≥ 0.7.0**. Installing only the `.mgu` file manually does not install these dependencies.
 
-| HUD | Приборная панель |
-|---|---|
-| ![Краткий расчётный резерв без GPS — HUD](docs/screenshots-0.9.86/displays/hud-reserve.png) | ![Краткий расчётный резерв без GPS — приборка](docs/screenshots-0.9.86/displays/kombi-reserve.png) |
+[Latest release and installation files](https://github.com/skalitov-bit/bmwcaminfo/releases/latest) · [Detailed MGU Store instructions (Russian)](bmw-speed-camera-warning/MGU_STORE_RU.txt)
 
-### Потеря GPS
+## Compatibility and current status
 
-| HUD | Приборная панель |
-|---|---|
-| ![Потеря GPS — HUD](docs/screenshots-0.9.86/displays/hud-gps-lost.png) | ![Потеря GPS — приборка](docs/screenshots-0.9.86/displays/kombi-gps-lost.png) |
+- **GPS test release.** The current version retains the `gps test version` label. Camera selection depends on position quality and the available vehicle-position interface; reduced accuracy and temporary estimated positioning are indicated on screen.
+- **Displays.** HUD, cluster output, controller input and recovery after sleep can vary by MGU configuration. There is no separate central-display popup over CarPlay; the central banner belongs to the app's Map tab.
+- **Audio.** PulseAudio + Overlay is the default for new settings. Existing saved choices are preserved, and M4A + Overlay remains selectable. Mixing, music ducking and interaction with the car's volume knob are vehicle-dependent.
+- **HDD migration.** Integrity checks and dialogs have been tested locally and in the emulator. Writable HDD availability on a real MGU depends on its firmware. Downgrading the app does not automatically move maps back.
+- **Road information.** Database records may be incomplete or out of date. Road signs and applicable traffic rules take precedence.
 
-<details>
-<summary><strong>ОАЭ: все варианты HUD из текущей базы</strong></summary>
+## Support SpeedCAM
 
-Примеры по записям ОАЭ; расстояние 300 м задано для демонстрации. Для телефона, ремня и части комбинированных комплексов используется категория «КОНТРОЛЬ ПДД».
+**SpeedCAM is free.** If it makes your journeys easier, a voluntary donation helps support development and testing.
 
-**Камера скорости**
+### [♥ Support SpeedCAM via CloudTips](https://pay.cloudtips.ru/p/93ccdd74)
 
-![Камера скорости](docs/screenshots-0.9.86/uae/speed.png)
+You can also use the **Sponsor** button at the top of this repository. Feedback, vehicle test reports and a GitHub star are appreciated too.
 
-**Превышение: 130 при ограничении 100 км/ч**
+## Source code and credits
 
-![Превышение: 130 при ограничении 100 км/ч](docs/screenshots-0.9.86/uae/speed-over.png)
+[Source archive](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.100/SpeedCAM_0.9.100_Source.zip) · [Build checks](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.100/TEST-RESULTS.json) · [PulseAudio corresponding source and licenses](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.100/PulseAudio_Corresponding_Source.zip)
 
-**Красный свет**
-
-![Красный свет](docs/screenshots-0.9.86/uae/type-3.png)
-
-**Контроль ПДД**
-
-![Контроль ПДД](docs/screenshots-0.9.86/uae/type-13.png)
-
-**Муляж**
-
-![Муляж](docs/screenshots-0.9.86/uae/type-155.png)
-
-**Ограничение неизвестно**
-
-![Ограничение неизвестно](docs/screenshots-0.9.86/uae/unknown-limit.png)
-
-</details>
-
-<details>
-<summary><strong>Полная галерея: настройки, состояния GPS и проверки звука — ещё 44 скриншота</strong></summary>
-
-Дополнительные кадры включают намеренно смоделированные ошибки, отсутствие сервиса и инженерные проверки. Успешная проба в эмуляторе не подтверждает работу аудиоканала на конкретной MGU.
-
-**Выбор дисплеев — тест без подключённого сервиса**
-
-![Выбор дисплеев — тест без подключённого сервиса](docs/screenshots-0.9.86/04-settings.png)
-
-**Уведомления: предупреждение о принудительном тестовом режиме**
-
-![Уведомления: предупреждение о принудительном тестовом режиме](docs/screenshots-0.9.86/05-warning-settings-force.png)
-
-**Настройка уведомлений**
-
-![Настройка уведомлений](docs/screenshots-0.9.86/05-warning-settings.png)
-
-**Пример события на карте**
-
-![Пример события на карте](docs/screenshots-0.9.86/06-warning-example.png)
-
-**Выделение выбранной камеры**
-
-![Выделение выбранной камеры](docs/screenshots-0.9.86/07-map-pulse.png)
-
-**Инженерное меню — диагностический сценарий**
-
-![Инженерное меню — диагностический сценарий](docs/screenshots-0.9.86/08-engineering.png)
-
-**Радар: ожидание GPS**
-
-![Радар: ожидание GPS](docs/screenshots-0.9.86/09-radar-no-gps.png)
-
-**Радар: ближайшая камера**
-
-![Радар: ближайшая камера](docs/screenshots-0.9.86/10-radar-camera.png)
-
-**Радар: рядом нет камеры**
-
-![Радар: рядом нет камеры](docs/screenshots-0.9.86/11-radar-empty.png)
-
-**Радар: недостоверные координаты**
-
-![Радар: недостоверные координаты](docs/screenshots-0.9.86/13-radar-poor-gps.png)
-
-**Регулировка громкости**
-
-![Регулировка громкости](docs/screenshots-0.9.86/14-volume-settings.png)
-
-**Обновление базы без связи с сервером**
-
-![Обновление базы без связи с сервером](docs/screenshots-0.9.86/15-database-offline.png)
-
-**Инженерная проверка: уведомления и бипер всегда**
-
-![Инженерная проверка: уведомления и бипер всегда](docs/screenshots-0.9.86/audio-always.png)
-
-**Аудиоканалы: сервис недоступен в тесте**
-
-![Аудиоканалы: сервис недоступен в тесте](docs/screenshots-0.9.86/audio-channels-empty.png)
-
-**Аудиоканалы: имитация доступного сервиса**
-
-![Аудиоканалы: имитация доступного сервиса](docs/screenshots-0.9.86/audio-channels-simulated.png)
-
-**Сохранённый аудиорежим**
-
-![Сохранённый аудиорежим](docs/screenshots-0.9.86/audio-mode-saved.png)
-
-**Подтверждение ALSA + Overlay**
-
-![Подтверждение ALSA + Overlay](docs/screenshots-0.9.86/audio-overlay-alsa-confirm.png)
-
-**ALSA + Overlay: сохранение**
-
-![ALSA + Overlay: сохранение](docs/screenshots-0.9.86/audio-overlay-alsa-saved.png)
-
-**Подтверждение ALSA Converter + Overlay**
-
-![Подтверждение ALSA Converter + Overlay](docs/screenshots-0.9.86/audio-overlay-converter-confirm.png)
-
-**ALSA Converter + Overlay: сохранение**
-
-![ALSA Converter + Overlay: сохранение](docs/screenshots-0.9.86/audio-overlay-converter-saved.png)
-
-**Галочка Overlay**
-
-![Галочка Overlay](docs/screenshots-0.9.86/audio-overlay-enabled.png)
-
-**Подтверждение M4A + Overlay**
-
-![Подтверждение M4A + Overlay](docs/screenshots-0.9.86/audio-overlay-file-confirm.png)
-
-**M4A + Overlay: сохранение**
-
-![M4A + Overlay: сохранение](docs/screenshots-0.9.86/audio-overlay-file-saved.png)
-
-**Подтверждение смены звукового режима**
-
-![Подтверждение смены звукового режима](docs/screenshots-0.9.86/audio-save-confirm.png)
-
-**Настройка бипера**
-
-![Настройка бипера](docs/screenshots-0.9.86/beeper-notification-settings.png)
-
-**Сохранение звука бипера**
-
-![Сохранение звука бипера](docs/screenshots-0.9.86/beeper-sounds-saved.png)
-
-**Тестовый профиль: непрерывный поток**
-
-![Тестовый профиль: непрерывный поток](docs/screenshots-0.9.86/converter-hold-saved.png)
-
-**Тестовый профиль: по готовности ALSA**
-
-![Тестовый профиль: по готовности ALSA](docs/screenshots-0.9.86/converter-period-saved.png)
-
-**Три тестовых профиля**
-
-![Три тестовых профиля](docs/screenshots-0.9.86/converter-profiles.png)
-
-**Тестовый профиль: полный перезапуск**
-
-![Тестовый профиль: полный перезапуск](docs/screenshots-0.9.86/converter-reset-saved.png)
-
-**Пост ДПС: баннер карты**
-
-![Пост ДПС: баннер карты](docs/screenshots-0.9.86/dps-post-map-banner.png)
-
-**Пост ДПС: радар**
-
-![Пост ДПС: радар](docs/screenshots-0.9.86/dps-post-radar.png)
-
-**Стационарный пост ДПС: баннер карты**
-
-![Стационарный пост ДПС: баннер карты](docs/screenshots-0.9.86/dps-stationary-map-banner.png)
-
-**Инженерное меню**
-
-![Инженерное меню](docs/screenshots-0.9.86/engineering-current.png)
-
-**Сниженная точность GPS: баннер карты**
-
-![Сниженная точность GPS: баннер карты](docs/screenshots-0.9.86/gps-moderate-map-banner.png)
-
-**Сниженная точность GPS: радар**
-
-![Сниженная точность GPS: радар](docs/screenshots-0.9.86/gps-moderate-radar.png)
-
-**Изменение положения HUD**
-
-![Изменение положения HUD](docs/screenshots-0.9.86/hud-position-adjusted.png)
-
-**Положение HUD по умолчанию**
-
-![Положение HUD по умолчанию](docs/screenshots-0.9.86/hud-position-default.png)
-
-**Микшер: прослушивание настроек**
-
-![Микшер: прослушивание настроек](docs/screenshots-0.9.86/mixer-draft.png)
-
-**Микшер: сохранённые настройки**
-
-![Микшер: сохранённые настройки](docs/screenshots-0.9.86/mixer-saved.png)
-
-**Диагностика движения**
-
-![Диагностика движения](docs/screenshots-0.9.86/motion-diagnostics.png)
-
-**Радар: расчётный резерв без GPS**
-
-![Радар: расчётный резерв без GPS](docs/screenshots-0.9.86/motion-reserve-radar.png)
-
-**Сохранение PulseAudio + Overlay**
-
-![Сохранение PulseAudio + Overlay](docs/screenshots-0.9.86/pulse-saved.png)
-
-**Приоритет камеры скорости**
-
-![Приоритет камеры скорости](docs/screenshots-0.9.86/speed-priority.png)
-
-</details>
-
-## База, которая обновляется отдельно
-
-Россия и зарубежные страны, включая ОАЭ и Грузию. Снимок от **18 ноября 2026 года** содержит **418 614 объектов**, из которых **240 909** относятся к объектам уведомлений; остальные — дополнительные дорожные точки. Покрытие различается по странам.
-
-В автомобиле откройте **КАРТА → ОБНОВИТЬ БД**. Приложение проверяет целостность загрузки и сохраняет действующую базу при ошибке обновления. Текущие данные и даты источников всегда доступны в [репозитории базы SpeedCAM](https://github.com/skalitov-bit/speedcam-db/releases/latest).
-
-## Установка
-
-1. Откройте **MGU Store** на BMW с **MGU ID7**.
-2. Добавьте источники `skalitov-bit/bmwcaminfo` и `cauliflowermossgrape/idrive7-apps`, выберите канал **Releases**.
-3. Нажмите **«Проверить обновления» → SpeedCAM → «Установить / Обновить»**. Магазин установит зависимости, включая звуковой сервис.
-4. Если магазин показывает **Restart pending**, перезапустите MGU после завершения установки.
-5. Выберите дисплеи, настройте звук и обновите базу из приложения.
-
-[Подробная инструкция MGU Store](bmw-speed-camera-warning/MGU_STORE_RU.txt) · [Последний выпуск и файлы](https://github.com/skalitov-bit/bmwcaminfo/releases/latest)
-
-Для версии 0.9.92 нужны **звуковой сервис ≥ 0.1.49**, **idrive7-renderd ≥ 2.1.18** и **mgu-inputgate ≥ 1.1.0**. Ручная установка одного `.mgu` не устанавливает зависимости.
-
-## Что учитывать
-
-- **GPS и траектория.** Условная дорога не заменяет навигацию. При плохих координатах возможен выбор камеры соседней дороги; краткий резерв отмечается как расчётный.
-- **Дисплеи.** Центральный баннер работает на вкладке «Карта»; отдельного системного окна поверх CarPlay нет. Совместный вывод HUD/приборки, восстановление после сна и управление зависят от конкретной MGU.
-- **Звук.** PulseAudio + Overlay — режим по умолчанию для новых настроек; сохранённый выбор не меняется. Чистый звук подтверждён пользователем в пробе на автомобиле. Приглушение музыки зависит от доступного интерфейса MGU и пока не подтверждено на всех конфигурациях. Независимость громкости уведомлений от штатной ручки не гарантируется.
-- **Данные.** Наличие точки, ограничения и модели зависит от исходной базы. Дорожные знаки и действующие правила имеют приоритет.
-
-## Поддержать разработку
-
-**SpeedCAM остаётся бесплатным.** Если приложение вам полезно, поддержите его развитие добровольным пожертвованием.
-
-### [♥ Поддержать SpeedCAM через CloudTips](https://pay.cloudtips.ru/p/93ccdd74)
-
-Ссылка также доступна через кнопку **Sponsor** вверху репозитория. Спасибо за обратную связь, тестирование и поддержку проекта. Звезда ⭐ помогает другим владельцам BMW найти SpeedCAM.
-
-## Исходники и права
-
-[Исходники 0.9.92](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.92/SpeedCAM_0.9.92_Source.zip) · [Проверки сборки](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.92/TEST-RESULTS.json) · [Исходники PulseAudio и библиотек](https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.92/PulseAudio_Corresponding_Source.zip)
-
-Проект основан на [bmwcaminfo](https://github.com/andrug05/bmwcaminfo) и использует графические компоненты [idrive7-apps](https://github.com/cauliflowermossgrape/idrive7-apps). Код проекта распространяется по [MIT License](LICENSE). Лицензии сторонних компонентов и права поставщиков данных сохраняются; данные базы не становятся частью MIT-лицензии кода. SpeedCAM — независимый проект, не официальный продукт BMW.
+Based on [bmwcaminfo](https://github.com/andrug05/bmwcaminfo), with graphics components from [idrive7-apps](https://github.com/cauliflowermossgrape/idrive7-apps). Project code is distributed under the [MIT License](LICENSE). Third-party component licenses and data rights remain applicable; camera and map data are not relicensed under the code's MIT license. SpeedCAM is an independent project and is not an official BMW product.
