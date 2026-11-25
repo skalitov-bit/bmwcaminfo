@@ -17,11 +17,11 @@ async function run(){
  for(let i=0;i<100;i++)telemetry.event(brokenProbe,'test','bounded');assert.equal(brokenProbe.events.length,12);
  const exec=(bin,args,options,cb)=>{assert(options.timeout<=3500);assert(['--check','--check-overlay'].includes(args[0]));setImmediate(()=>cb(args[0]==='--check-overlay'?{code:7,message:'missing overlay'}:null,JSON.stringify({library:true,overlay:false,outputs:['default','null','smartx'],reason:'no-advertised-output'}),''));};
  const o={reportDir,mountsFile:mounts,mediaRoot:root,serviceVersion:'test',exec};
- const reporter=new AudioReport(d,o),request={appVersion:'0.9.65',backend:'alsa',overlay:true,lastMessage:'Ошибка Overlay'};
+ const reporter=new AudioReport(d,o),request={appVersion:'0.9.65',backend:'alsa',overlay:true,lastMessage:'Ошибка Overlay',mapStorage:{schema:1,active:false,reason:'MAP_HDD_HELPER_UPDATE',attempts:[{path:'/mnt/share',directError:'EACCES'}]}};
  assert.deepStrictEqual(mountedUsb('/dev/sda1 /media/My\\040Stick vfat rw 0 0\n/dev/sdb1 /media/ReadOnly vfat ro 0 0\n/dev/sdc1 /mnt/no vfat rw 0 0\n'),['/media/My Stick']);
  fs.writeFileSync(mounts,'');let result=await reporter.run(request);assert(result.local&&!result.usb);assert(result.usbError.includes('Нет доступной'));let report=JSON.parse(fs.readFileSync(result.local));assert(report.overlay.result.outputs.length===3);assert(!report.overlay.ok);assert(report.readOnly);assert(!report.audibilityTested);assert(!JSON.stringify(report).includes('excluded'));assert(report.alsaFiles['/proc/asound/cards']);
  assert.equal(report.schema,2);assert.equal(report.bufferDiagnostics.lastRuntimeFailure.native.underruns,2);assert(!JSON.stringify(report.bufferDiagnostics).includes('not-copied'));assert.equal(report.bufferDiagnostics.streams.length,16);
- assert.deepStrictEqual(report.audioComparisons,s.audioComparisons);
+ assert.deepStrictEqual(report.audioComparisons,s.audioComparisons);assert.deepStrictEqual(report.mapStorage,request.mapStorage);
  const reportView=require('../apps/aurelm_speed_camera_warning/diagnostic-report-view');const screen=reportView.pages(reportView.audioReport(report)).map(p=>p.join('\n')).join('\n');assert(screen.includes('Буфер: 64 мс / underrun: 2'));assert(screen.includes('БУФЕР: ОШИБКА УВЕДОМЛЕНИЙ'));assert(screen.includes('probe failed'));
  fs.writeFileSync(mounts,'/dev/sda1 '+root+'/Stick vfat rw 0 0\n');
  const pending=reporter.run(request);let rejected=false;try{await reporter.run(request);}catch(e){rejected=true;}assert(rejected);result=await pending;assert(result.usb,result.usbError);assert(fs.readFileSync(result.local).equals(fs.readFileSync(result.usb)));assert.equal(result.sha256,crypto.createHash('sha256').update(fs.readFileSync(result.usb)).digest('hex'));

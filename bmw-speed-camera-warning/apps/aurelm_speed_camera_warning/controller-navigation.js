@@ -4,7 +4,7 @@
 const ORDER=['nav-MAP','nav-RADAR','nav-ADD','nav-MY','nav-SETTINGS',
  'action-BTN_CAM_PREV','action-BTN_CAM_NEXT','action-BTN_ZOOM',
  'action-BTN_REFRESH','action-BTN_VOICE_TEST','action-BTN_CAMERA_MENU',
- 'settings-close','settings-hud-position','hud-left','hud-right','hud-up','hud-down','hud-test','hud-stripe','hud-save','hud-reset','hud-back',
+ 'settings-close','settings-hud-position','hud-left','hud-right','hud-up','hud-down','hud-test','hud-stripe','hud-full','hud-short','hud-save','hud-reset','hud-back',
  'engineering-test','engineering-back','engineering-audio','audio-scan','audio-prev','audio-next','audio-voice','audio-beeper','audio-both','audio-heard','audio-independent','audio-mode','audio-save','audio-reset','audio-back'];
 function install(display){
  if(!display||typeof display._toward!=='function'||typeof display._ring!=='function'||display.cameraNavigationInstalled)return false;

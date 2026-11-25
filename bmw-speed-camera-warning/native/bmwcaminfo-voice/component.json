@@ -1,7 +1,7 @@
 {
   "id": "bmwcaminfo-voice",
   "kind": "tool",
-  "version": "0.1.50",
+  "version": "0.1.51",
   "license": "MIT AND GPL-2.0-or-later AND LGPL-2.1-or-later",
   "title": "BMW Camera Voice Service",
   "description": "ALSA voice and beeper mixer, M4A compatibility mode, experimental private PulseAudio + Overlay",
@@ -2895,6 +2895,16 @@
     {
       "path": "audio/volume-90/en-speed-bump-200.m4a",
       "from": "audio/volume-90/en-speed-bump-200.m4a",
+      "mode": "0644"
+    },
+    {
+      "path": "hdd-mounts.js",
+      "from": "hdd-mounts.js",
+      "mode": "0644"
+    },
+    {
+      "path": "map-storage-helper.js",
+      "from": "map-storage-helper.js",
       "mode": "0644"
     }
   ],

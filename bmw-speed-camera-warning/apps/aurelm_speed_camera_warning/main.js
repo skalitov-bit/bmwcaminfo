@@ -152,6 +152,7 @@ uplink.init(dataDir);log.info('UPLINK '+uplink.describe());uplink.checkInternet(
  const notificationSession=new NotificationSession(voice,mapcamOptions);
  const audioDiagnostics=new (require('./audio-diagnostics').AudioDiagnostics)(()=>renderSafe(),{dataDir,appVersion:APP_VERSION,moving:()=>!!(mapcamFreshFix(fix,Date.now())&&fix.speedKmh>3||vehicleSpeed.snapshot().valid&&vehicleSpeed.snapshot().speedKmh>3),
   gpsReport:()=>gps.diagnosticReport(Date.now(),fix),
+  storageReport:()=>cityMaps.storage.diagnostic(),
   testDisplays:()=>displayProbe.run(),stopDisplays:()=>displayProbe.stop(),closeDisplayReport:()=>{view='ENGINEERING';renderSafe();},back:()=>{view='ENGINEERING';renderSafe();},
   getVolume:()=>Number(settings.get('notification_volume')),getForceAudio:forceAudioEnabled,setForceAudio:enabled=>settings.set('audio_force_notifications',enabled?'on':'off'),
   displayReport:()=>require('./diagnostic-report-view').displayReport(clusterOutput.cr,{appVersion:APP_VERSION,outputMode:cameraDisplayMode,
@@ -851,7 +852,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  renderSafe();refresh();const refreshTimer=setInterval(refresh,REFRESH_INTERVAL_MS);ctx.loop('MAIN',10,()=>{if(fix&&Date.now()-fix.timeMs>3000)handleGpsLoss();
   // Keep a recovery repaint; static pages need neither 10 Hz drawing nor PNG work.
   if(displayedRenderMode!==currentRenderMode()||animatedScreen()||view==='ENGINEERING'||view==='MOTION_DIAGNOSTICS'||Date.now()-lastRenderAt>=5000)renderSafe();});
- log.info('SpeedCAM 0.9.100 started; camera sectors and control paths; GPS accuracy <=35 m; low-accuracy label >=15 m; KOMBI/HUD mode='+cameraDisplayMode);
+ log.info('SpeedCAM 0.9.101 started; camera sectors and control paths; GPS accuracy <=35 m; low-accuracy label >=15 m; KOMBI/HUD mode='+cameraDisplayMode);
 }}).catch(e=>{
  console.error('SPEEDCAM_START_FAILED '+String(e&&e.stack||e));
  // Only the isolated worker may exit: the MainApp-owned supervisor stays alive.

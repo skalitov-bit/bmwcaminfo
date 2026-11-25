@@ -13,6 +13,13 @@ def bake(font_path, output, weight=500):
     axes=font.get_variation_axes()
     font.set_variation_by_axes([weight if axis['name']==b'Weight' else axis['default'] for axis in axes])
     chars='ABCDEFGHIJKLMNOPQRSTUVWXYZАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ0123456789 /+.:-*?%!>мm'
+    # Road names retain their native spelling. The vehicle has no font fallback:
+    # bake Kyrgyz and neighbouring Cyrillic letters into both GPU/PNG atlases.
+    chars+='ҢӨҮңөүІЇЄҐЎӘҒҚҰҺӢӮҲҶієїґўәғқұһӣӯҳҷ'
+    chars+='(),;=\\\'"`№–—‘’«»ÖΑΜΤΚΠΡ\u0301'
+    # Belarus road package also contains Polish/Baltic names near its borders.
+    chars+='ʼČŲŪŚŠŽŻĖŁĀĪĻŅÓĘĶĄŃ'
+    chars=''.join(dict.fromkeys(chars))
     raw=bytearray();glyphs={}
     for char in chars:
         x0,y0,x1,y1=font.getbbox(char,anchor='ls')
@@ -22,6 +29,8 @@ def bake(font_path, output, weight=500):
         pixels=glyph.tobytes() if width and height else b''
         glyphs[char]=[len(raw),width,height,x0,y0,font.getlength(char)]
         raw.extend(pixels)
+    # Roboto lacks U+02BB used as an apostrophe in some local road names.
+    glyphs['ʻ']=glyphs['‘'][:]
     # Code-native satellite icon, baked into the same offline atlas as text.
     icon=Image.new('L',(192,160));draw=ImageDraw.Draw(icon)
     draw.rectangle((77,55,115,101),fill=255)

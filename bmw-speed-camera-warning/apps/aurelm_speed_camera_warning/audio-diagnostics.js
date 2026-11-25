@@ -27,7 +27,7 @@ class AudioDiagnostics {
   this.screen='share';this.busy=true;this.reporting=true;this.share=null;this.shareIndex=0;this.shareQr=null;this.shareStopError=false;
   this.shareMessage='СБОР ДИАГНОСТИКИ…';this.change();
   try{
-   const r=await this.request({action:'audio-report-share-start',appVersion:this.o.appVersion,backend:this.backend,overlay:this.overlay,lastMessage,gps:this.o.gpsReport?this.o.gpsReport():null});
+   const r=await this.request({action:'audio-report-share-start',appVersion:this.o.appVersion,backend:this.backend,overlay:this.overlay,lastMessage,gps:this.o.gpsReport?this.o.gpsReport():null,mapStorage:this.o.storageReport?this.o.storageReport():null});
    if(generation!==this.generation)return;
    if(r.reportShareProtocol!==1||!r.active||!r.urls||!r.urls.length)throw Error('Обновите звуковой компонент для передачи отчёта на телефон.');
    this.share=r;this.selectShareAddress(0);this.shareMessage='СЕРВЕР ВКЛЮЧЁН НА 10 МИНУТ';
@@ -73,7 +73,7 @@ class AudioDiagnostics {
     if(!this.o.displayReport)throw Error('Диагностика приборки недоступна в этой сборке.');
     data=await this.o.displayReport();
    }else{
-    const r=await this.request({action:'audio-report',screenOnly:true,appVersion:this.o.appVersion,backend:this.backend,overlay:this.overlay,lastMessage,gps:this.o.gpsReport?this.o.gpsReport():null});
+    const r=await this.request({action:'audio-report',screenOnly:true,appVersion:this.o.appVersion,backend:this.backend,overlay:this.overlay,lastMessage,gps:this.o.gpsReport?this.o.gpsReport():null,mapStorage:this.o.storageReport?this.o.storageReport():null});
     if(r.audioReportProtocol!==1||!r.report)throw Error('Для отчёта на экране обновите звуковой компонент. Эта версия поддерживает только файл.');
     data=r.report;
    }
@@ -91,7 +91,7 @@ class AudioDiagnostics {
   const generation=++this.generation,lastMessage=this.message;
   this.busy=true;this.reporting=true;this.message='СБОР АУДИООТЧЁТА… РЕЖИМ ЗВУКА НЕ МЕНЯЕТСЯ.';this.change();
   try{
-   const r=await this.request({action:'audio-report',appVersion:this.o.appVersion,backend:this.backend,overlay:this.overlay,lastMessage,gps:this.o.gpsReport?this.o.gpsReport():null});
+   const r=await this.request({action:'audio-report',appVersion:this.o.appVersion,backend:this.backend,overlay:this.overlay,lastMessage,gps:this.o.gpsReport?this.o.gpsReport():null,mapStorage:this.o.storageReport?this.o.storageReport():null});
    if(generation!==this.generation)return;
    if(r.audioReportProtocol!==1||!r.local)throw Error('Звуковой компонент не поддерживает сохранение отчёта. Требуется его обновление.');
    this.reportResult=r;

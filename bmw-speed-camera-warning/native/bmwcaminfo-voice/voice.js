@@ -8,7 +8,7 @@ const ROOT = '/var/opt/bmwcaminfo-voice/current';
 const SRC_ID = 1046;
 const SINK_ID = 1024;
 const LANG = 7695972;
-const SERVICE_VERSION='0.1.50';
+const SERVICE_VERSION='0.1.51';
 const ASSETS = require('./audio-manifest.json');
 const ALLOWED = Object.create(null);
 Object.keys(ASSETS).forEach(function (file) {
@@ -354,6 +354,10 @@ var server = net.createServer(function (socket) {
       var request;
       try { request = JSON.parse(line); } catch (e) {
         reply(socket, { ok: false, error: 'Invalid JSON' });
+        continue;
+      }
+      if(request.action==='map-storage-prepare'){
+        require('./map-storage-helper').prepareAsync(request).then(r=>reply(socket,r),e=>reply(socket,{ok:false,mapStorageProtocol:1,error:e.code||e.message}));
         continue;
       }
       require('./speech-language').set(request.language);

@@ -3,8 +3,9 @@ const fs=require('fs'),path=require('path');
 const DEFAULT={x:190,y:182},AREA={w:800,h:480},CARD={w:420,h:116};
 function normalize(p){
  p=p||{};
+ const card=p.banner==='short'?{w:244,h:300}:CARD;
  const axis=(v,fallback,max)=>typeof v==='number'&&Number.isFinite(v)?Math.max(0,Math.min(max,Math.round(v))):fallback;
- return {x:axis(p.x,DEFAULT.x,AREA.w-CARD.w),y:axis(p.y,DEFAULT.y,AREA.h-CARD.h),stripe:p.stripe!==false};
+ return {x:axis(p.x,DEFAULT.x,AREA.w-card.w),y:axis(p.y,Math.min(DEFAULT.y,AREA.h-card.h),AREA.h-card.h),stripe:p.stripe!==false,banner:p.banner==='short'?'short':'full'};
 }
 class HudPositionStore{
  constructor(dir){this.file=path.join(dir,'hud-position.json');}
@@ -37,6 +38,7 @@ class HudPositionEditor{
   if(this.busy){this.message='ТЕСТ HUD ОТПРАВЛЕН · 45 СЕК · БЕЗ ЗВУКА';this.o.change();}
  }
  move(dx,dy){this.draft=normalize(Object.assign({},this.draft,{x:this.draft.x+dx,y:this.draft.y+dy}));this.changed();}
+ setBanner(banner){this.draft=normalize(Object.assign({},this.draft,{banner}));this.changed();}
  toggleStripe(){this.draft.stripe=!this.draft.stripe;this.changed();}
  changed(){this.message='ИЗМЕНЕНИЯ НЕ СОХРАНЕНЫ';if(this.busy)this.output.setHudPosition(this.draft);this.o.change();}
  test(){
@@ -64,12 +66,14 @@ class HudPositionEditor{
  reset(){this.draft=normalize();if(this.busy)this.output.setHudPosition(this.draft);this.message='ПО УМОЛЧАНИЮ · НАЖМИТЕ СОХРАНИТЬ';this.o.change();}
  tick(){if(!this.busy)return;if(this.o.moving())this.finish('ТЕСТ ОСТАНОВЛЕН: АВТОМОБИЛЬ ДВИЖЕТСЯ');else if(this.now()>=this.deadline)this.finish(this.shown?'ТЕСТ HUD ЗАВЕРШЁН':'ОШИБКА: HUD НЕ ОТВЕТИЛ ЗА 3,5 СЕК');}
  buttons(){return [
-  {key:'hud-left',label:'ВЛЕВО',arrow:[-1,0],x:290,y:116,w:190,h:64,run:()=>this.move(-5,0)},
-  {key:'hud-right',label:'ВПРАВО',arrow:[1,0],x:500,y:116,w:190,h:64,run:()=>this.move(5,0)},
-  {key:'hud-up',label:'ВВЕРХ',arrow:[0,-1],x:290,y:198,w:190,h:64,run:()=>this.move(0,-5)},
-  {key:'hud-down',label:'ВНИЗ',arrow:[0,1],x:500,y:198,w:190,h:64,run:()=>this.move(0,5)},
-  {key:'hud-test',label:'ТЕСТ HUD',x:290,y:280,w:400,h:64,run:()=>this.test()},
-  {key:'hud-stripe',label:'ПОЛОСА НА БАННЕРЕ',checkbox:true,checked:this.draft.stripe,x:290,y:350,w:400,h:34,run:()=>this.toggleStripe()},
+  {key:'hud-left',label:'ВЛЕВО',arrow:[-1,0],x:290,y:116,w:190,h:50,run:()=>this.move(-5,0)},
+  {key:'hud-right',label:'ВПРАВО',arrow:[1,0],x:500,y:116,w:190,h:50,run:()=>this.move(5,0)},
+  {key:'hud-up',label:'ВВЕРХ',arrow:[0,-1],x:290,y:180,w:190,h:50,run:()=>this.move(0,-5)},
+  {key:'hud-down',label:'ВНИЗ',arrow:[0,1],x:500,y:180,w:190,h:50,run:()=>this.move(0,5)},
+  {key:'hud-test',label:'ТЕСТ HUD',x:290,y:244,w:400,h:50,run:()=>this.test()},
+  {key:'hud-stripe',label:'ПОЛОСА НА БАННЕРЕ',checkbox:true,checked:this.draft.stripe,x:290,y:302,w:400,h:34,run:()=>this.toggleStripe()},
+  {key:'hud-full',label:'ПОЛНЫЙ',selected:this.draft.banner==='full',x:290,y:346,w:190,h:44,run:()=>this.setBanner('full')},
+  {key:'hud-short',label:'СОКРАЩЁННЫЙ',selected:this.draft.banner==='short',x:500,y:346,w:190,h:44,run:()=>this.setBanner('short')},
   {key:'hud-save',label:'СОХРАНИТЬ',x:266,y:442,w:422,h:60,run:()=>this.save()},
   {key:'hud-reset',label:'СБРОСИТЬ',x:710,y:442,w:422,h:60,run:()=>this.reset()},
   {key:'hud-back',label:'НАЗАД',x:1154,y:442,w:426,h:60,run:()=>this.o.back()}
@@ -86,13 +90,25 @@ class HudPositionEditor{
   const scale=.52,px=842,py=128;
   cv.strokeRoundRect(px,py,AREA.w*scale,AREA.h*scale,0,1,C.muted);
   const bx=px+this.draft.x*scale,by=py+this.draft.y*scale;
-  if(this.draft.stripe)cv.fillRect(bx,by,CARD.w*scale,5*scale,C.yellow);
-  t('СКОРОСТЬ · ТЕСТ HUD',bx+10,by+22,13);t('300 М',bx+10,by+47,22);
-  style.speedSign(cv,60,bx+CARD.w*scale-32,by+30,24);
+  if(this.draft.banner==='short'){
+   const g=require('./hud-compact').GEOMETRY;
+   if(this.draft.stripe)cv.fillRect(bx+(g.cameraCenter-g.stripeWidth/2)*scale,by,g.stripeWidth*scale,5*scale,C.red);
+   t('СКОРОСТЬ',bx+g.cameraCenter*scale,by+46*scale,13,C.text,{align:'center'});
+   require('./point-kind').iconFor({}).drawCanvas(cv,bx+20*scale,by+65*scale,160*scale,132*scale,[245,249,252]);
+   // Preview is on opaque black; the actual HUD uses a transparent cutout.
+   cv.circle(bx+180*scale,by+120*scale,49*scale,'#000000');
+   style.speedSign(cv,60,bx+180*scale,by+120*scale,44*scale);
+   t('300 м',bx+100*scale,by+236*scale,20,C.yellow,{align:'center'});
+  }else{
+   if(this.draft.stripe)cv.fillRect(bx,by,CARD.w*scale,5*scale,C.yellow);
+   t('СКОРОСТЬ · ТЕСТ HUD',bx+10,by+22,13);t('300 М',bx+10,by+47,22);
+   style.speedSign(cv,60,bx+CARD.w*scale-32,by+30,24);
+  }
   t('ПРЕДПРОСМОТР ОБЛАСТИ HUD',1050,405,18,C.muted,{align:'center',maxWidth:620});
   t(this.message,290,416,18,C.yellow,{maxWidth:430});
   this.buttons().forEach(b=>{
    cv.fillRect(b.x,b.y,b.w,b.h,C.bg);cv.strokeRoundRect(b.x,b.y,b.w,b.h,0,1,C.muted);
+   if(b.selected){cv.fillRect(b.x,b.y,b.w,3,C.red);cv.fillRect(b.x,b.y+b.h-3,b.w,3,C.red);}
    if(b.checkbox){
     const x=b.x+12,y=b.y+7;cv.strokeRoundRect(x,y,20,20,0,2,b.checked?C.red:C.muted);
     if(b.checked){cv.line(x+3,y+10,x+8,y+16,2,C.red);cv.line(x+8,y+16,x+18,y+3,2,C.red);}

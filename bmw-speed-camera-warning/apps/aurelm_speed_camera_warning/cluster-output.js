@@ -34,6 +34,7 @@ const kombiBackplate=require('./kombi-backplate');
 const OUTPUT_RECT={map:{x:331,y:355},hud:{x:190,y:182}};
 const {normalize:normalizeHudPosition}=require('./hud-position');
 const clusterText=require('./cluster-text');
+const compactHud=require('./hud-compact');
 const {policeKind,iconFor}=require('./point-kind');
 const noLimit=c=>!!policeKind(c)||!!require('./notification-types').hazardKind(c);
 const {PULSE,pulseOpacity,monotonicMs}=require('./ring-pulse');
@@ -193,7 +194,8 @@ class CameraClusterOutput{
   targets.forEach(target=>{
    const backing=target==='map'?kombiBackplate.layout(this.cr.targets):null;
    const pos=target==='hud'?this.hudPosition:{x:backing.contentX,y:backing.contentY};
-   const card={W,H,IW,IH},ring={x:backing?KOMBI_ICONS.right-RING_SIZE/2:hudGeometry(this.current).signX-RING_SIZE/2,y:backing?KOMBI_ICONS.y-RING_SIZE/2:17,w:RING_SIZE,h:RING_SIZE};
+   const card=target==='hud'&&this.hudPosition.banner==='short'?compactHud.GEOMETRY:{W,H,IW,IH},ring={x:backing?KOMBI_ICONS.right-RING_SIZE/2:hudGeometry(this.current).signX-RING_SIZE/2,y:backing?KOMBI_ICONS.y-RING_SIZE/2:17,w:RING_SIZE,h:RING_SIZE};
+   if(target==='hud'&&this.hudPosition.banner==='short'){ring.x=compactHud.GEOMETRY.signX-56;ring.y=compactHud.GEOMETRY.signY-56;ring.w=112;ring.h=112;}
    if(backing&&!this.backplate){
     this.backplate=this.cr.image(Object.assign({},ALERT_LAYER,{target,x:backing.x,y:backing.y,w:backing.w,h:backing.h,iw:backing.iw,ih:backing.ih,sampling:'bilinear',visible:false,opacity:1}));
     if(this.backplate)this.cr.pixels(this.backplate,null,kombiBackplate.makePixels());
@@ -222,16 +224,17 @@ class CameraClusterOutput{
  _draw(e){
   if(!this.cr||!this.cr.ready)return;
   this._makeLayers();
-  const key=staticFrameKey(e),status=footer(e),statusKey=JSON.stringify(status);
+  const key=staticFrameKey(e)+this.hudPosition.banner,status=footer(e),statusKey=JSON.stringify(status);
   if(this.frameKey!==key){
    this.hudStripeWidth=Math.round(hudGeometry(e).stripeWidth);
    this.lastDistance=Math.max(0,Math.round(e.distanceM||0));
-   const frame=this.layers.hud?makeFrame(e):null;
-   if(this.rings.hud)this.cr.set(this.rings.hud,{x:this.hudPosition.x+hudGeometry(e).signX-RING_SIZE/2});
+   const frame=this.layers.hud?(this.hudPosition.banner==='short'?compactHud.frame(e,status,this.hudPosition.stripe):makeFrame(e)):null;
+   if(this.rings.hud)this.cr.set(this.rings.hud,{x:this.hudPosition.x+(this.hudPosition.banner==='short'?compactHud.GEOMETRY.signX-56:hudGeometry(e).signX-RING_SIZE/2)});
    this._sendFrames(frame,true,this.layers.map?makeFrame(e,true):null);
    this.frameKey=key;
   }else{
    if(this.footerKey!==statusKey)Object.keys(this.layers).forEach(target=>{
+    if(target==='hud'&&this.hudPosition.banner==='short'){this.compactFooterBuffer=compactHud.status(e,status,this.compactFooterBuffer);this.cr.pixels(this.layers.hud,[compactHud.FOOTER],this.compactFooterBuffer);return;}
     const bufferKey=target==='map'?'kombiFooterBuffer':'hudFooterBuffer';
     const r=target==='map'?FOOTER_RECT:HUD_FOOTER_RECT;
     if(!this[bufferKey])this[bufferKey]=Buffer.alloc(r.w*r.h*4);
@@ -249,7 +252,7 @@ class CameraClusterOutput{
   // GPS cards already have centred text, but their old stripe is omitted on KOMBI.
   let mapFrame=kombiFrame||frame;
   if(!kombiFrame&&frame&&this.layers.map){mapFrame=this.layers.hud?Buffer.from(frame):frame;mapFrame.fill(0,0,IW*5*S*4);}
-  if(frame&&this.layers.hud&&!this.hudPosition.stripe)frame.fill(0,0,IW*5*S*4);
+  if(frame&&this.layers.hud&&this.hudPosition.banner!=='short'&&!this.hudPosition.stripe)frame.fill(0,0,IW*5*S*4);
   Object.keys(this.layers).forEach(target=>{const ref=this.layers[target],px=target==='map'?mapFrame:frame;if(px)this.cr.pixels(ref,null,px);this.cr.set(ref,{visible:!!visible});});
  }
  setGpsStatus(status){
@@ -262,16 +265,21 @@ class CameraClusterOutput{
   if(this.closed||this.current||!this.cr||!this.cr.ready)return;
   this.frameKey=null;this.footerKey=null;
   this._makeLayers();this._stopBlink();
-  const frame=this.gpsStatus?makeGpsFrame(this.gpsStatus,false,this.hudStripeWidth):null;
+  const frame=this.gpsStatus?(this.hudPosition.banner==='short'?compactHud.gps(this.gpsStatus):makeGpsFrame(this.gpsStatus,false,this.hudStripeWidth)):null;
   const mapFrame=this.gpsStatus&&this.layers.map?makeGpsFrame(this.gpsStatus,true):null;
   this._sendFrames(frame,!!frame,mapFrame,true);
  }
  setHudPosition(position){
-  const previousStripe=this.hudPosition.stripe;
+  const previousStripe=this.hudPosition.stripe,previousBanner=this.hudPosition.banner;
   this.hudPosition=normalizeHudPosition(position);
   const p=this.hudPosition;
-  if(this.cr){if(this.layers.hud)this.cr.set(this.layers.hud,{x:p.x,y:p.y});if(this.rings.hud)this.cr.set(this.rings.hud,{x:p.x+hudGeometry(this.current).signX-RING_SIZE/2,y:p.y+17});}
-  if(previousStripe!==p.stripe){this.frameKey=null;if(this.current)this._draw(this.current);else this._drawGpsStatus();}
+  if(previousBanner!==p.banner&&this.cr){
+   // Image backing dimensions are immutable: replace only the HUD layers.
+   ['layers','rings'].forEach(group=>{if(this[group].hud){this.cr.drop(this[group].hud);delete this[group].hud;}});
+   this.frameKey=null;this.footerKey=null;this.distanceBuffer=null;this._makeLayers();
+  }
+  if(this.cr){if(this.layers.hud)this.cr.set(this.layers.hud,{x:p.x,y:p.y});if(this.rings.hud)this.cr.set(this.rings.hud,{x:p.x+(p.banner==='short'?compactHud.GEOMETRY.signX-56:hudGeometry(this.current).signX-RING_SIZE/2),y:p.y+(p.banner==='short'?compactHud.GEOMETRY.signY-56:17)});}
+  if(previousStripe!==p.stripe||previousBanner!==p.banner){this.frameKey=null;if(this.current)this._draw(this.current);else this._drawGpsStatus();}
  }
  updateDistance(distanceM,estimated){
   if(!this.current||!Number.isFinite(distanceM))return;
@@ -282,11 +290,12 @@ class CameraClusterOutput{
  }
  _uploadDistance(distance){
   if(!this.cr||!this.cr.ready||distance===this.lastDistance)return;
-  if(this.frameKey!==staticFrameKey(this.current)){this._draw(this.current);return;}
+  if(this.frameKey!==staticFrameKey(this.current)+this.hudPosition.banner){this._draw(this.current);return;}
   this.lastDistance=distance;
   // Update only each display's numeric rectangle, retaining its text alignment.
   // Transparent erasure reveals the separate static KOMBI backing layer.
   Object.keys(this.layers).forEach(target=>{
+   if(target==='hud'&&this.hudPosition.banner==='short'){this.distanceBuffer=compactHud.distance(this.current,this.distanceBuffer);this.cr.pixels(this.layers.hud,[compactHud.DISTANCE],this.distanceBuffer);return;}
    const centered=target==='map',r=centered?KOMBI_DISTANCE_RECT:hudGeometry(this.current).distanceRect,key=centered?'kombiDistanceBuffer':'distanceBuffer';
    if(!this[key]||this[key].length!==r.w*r.h*4)this[key]=Buffer.alloc(r.w*r.h*4);
    const px=distancePixels(this.current,this[key],centered);

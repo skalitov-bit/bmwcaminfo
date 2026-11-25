@@ -60,7 +60,7 @@ class CityMapStore extends EventEmitter{
      // Only a verified, durably committed copy may replace the original.
      if(this.storage.available(true)&&regular(target)){try{fs.unlinkSync(path.join(this.dir,e.file));}catch(err){}}
      moved++;this.progress=100;this.status='КАРТЫ ПЕРЕНЕСЕНЫ НА HDD';
-    }catch(err){this.lastError=String(err.code||err.message);this.status='ПЕРЕНОС НЕ ЗАВЕРШЁН. ПРЕЖНЯЯ КАРТА СОХРАНЕНА.';if(!this.storage.available()||/ENOSPC/.test(this.lastError))break;}
+    }catch(err){this.lastError=String(err.code||err.message);this.storage.lastOperationError=this.lastError;this.status='ПЕРЕНОС НЕ ЗАВЕРШЁН. ПРЕЖНЯЯ КАРТА СОХРАНЕНА.';if(!this.storage.available()||/ENOSPC/.test(this.lastError))break;}
    }
    if(!this.closed&&this.o.requireHddNotice&&(pending.length||!this.hddState.activated)&&(!this.notice||this.notice.kind!=='success')){
     const remaining=Object.keys(this.installed).filter(k=>this.installed[k]._storage!=='hdd').length;

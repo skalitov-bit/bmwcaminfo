@@ -11,7 +11,8 @@ class NotificationTypePanel{
   TYPES.forEach((t,i)=>{const x=276+Math.floor(i/11)*660,y=83+(i%11)*34,on=enabled(k=>this.settings.get(k),this.channel,t.id);
    cv.fillRect(x,y,644,31,C.panel);cv.strokeRoundRect(x+12,y+6,20,20,0,2,on?C.red:C.muted);
    if(on){cv.line(x+16,y+16,x+21,y+22,2,C.red);cv.line(x+21,y+22,x+29,y+10,2,C.red);}
-   txt(cv,t.label,x+46,y+24,21,C.text,{maxWidth:580});
+   const label=t.id==='platon'&&require('./i18n').language()==='en'?'PLATON (RUS MAP)':t.label;
+   txt(cv,label,x+46,y+24,21,C.text,{maxWidth:580});
    add(x,y,644,31,()=>{this.settings.set(key(this.channel,t.id),on?'off':'on');this.change();},'type-'+this.channel+'-'+t.id);
   });
   txt(cv,'Изменения сохраняются сразу. Снятая галочка запрещает этот тип даже в режиме тестирования.',288,477,18,C.muted,{maxWidth:1270});

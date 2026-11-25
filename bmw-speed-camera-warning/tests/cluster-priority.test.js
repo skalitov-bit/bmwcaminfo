@@ -108,7 +108,7 @@ kombi.close();assert.strictEqual(timers.size,0);
 console.log('PASS: KOMBI uses map, never panel; card/ring non-exclusive, guide_hold=0, alert z=1000, bounds, reconnect replay, both/kombi/hud/off modes and cleanup. No physical MGU assertion.');
 const {HudPositionEditor}=require(path.join(base,'hud-position'));
 const shared=new outputModule.exports.CameraClusterOutput({mode:'both'});sockets[sockets.length-1].hello();
-let saved={x:200,y:187,stripe:true},clock=0;
+let saved={x:200,y:187,stripe:true,banner:'full'},clock=0;
 const editor=new HudPositionEditor({store:{load:()=>saved,save:p=>(saved=p)},output:shared,now:()=>clock,moving:()=>false,change:()=>{},apply:p=>shared.setHudPosition(p)});
 editor.open();editor.test();assert(editor.busy);assert(!shared.current,'Wait for render service before sending the test');
 const testSocket=sockets[sockets.length-1];testSocket.hello();

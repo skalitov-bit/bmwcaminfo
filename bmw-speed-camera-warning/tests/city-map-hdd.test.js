@@ -19,6 +19,13 @@ async function test(name,fn){await fn();passed.push(name);console.log('PASS '+na
   const x=setup(),s=new CityMapStore(x.dir,x.options);await s.ready;assert.equal(s.installed.moscow._storage,'hdd',s.lastError+' '+s.storage.reason);assert(!exists(x.local,x.f.entry));await verify(path.join(s.storage.root,x.f.entry.file),x.f.entry);await s.ensure({lat:55.755,lon:37.615},1000);assert.equal(s.reader.rows.length,1);s.close();
   const again=new CityMapStore(x.dir,x.options);await again.ready;assert.equal(again.state('moscow'),'УСТАНОВЛЕНА');await again.ensure({lat:55.755,lon:37.615},1000);assert(again.reader.file.startsWith(again.storage.root));assert(await again.remove('moscow'));assert(!exists(again.storage.root,x.f.entry));assert.equal(fs.readFileSync(path.join(x.dir,'hybrid-records-v1.bin'),'utf8'),'unchanged camera database');again.close();
  });
+ await test('Second HDD path plus permission helper migrates real package and reopens after restart',async()=>{
+  const x=setup(),missing=path.join(x.dir,'missing'),{CityMapStorage}=require(app+'/city-map-storage'),original=CityMapStorage.prototype.probeWrite;let denied=true,calls=0;
+  x.options.storage={shares:[missing,x.share],mounted:p=>p===x.share,freeBytes:async()=>1e9,helper:async share=>{assert.equal(share,x.share);calls++;denied=false;return {mapStorageProtocol:1,uid:typeof process.getuid==='function'?process.getuid():0,root:path.join(x.share,'speedcam-city-maps-'+(typeof process.getuid==='function'?process.getuid():0))};}};
+  CityMapStorage.prototype.probeWrite=function(){if(denied)throw Object.assign(Error('permission'),{code:'EACCES'});return original.call(this);};let s;
+  try{s=new CityMapStore(x.dir,x.options);await s.ready;assert.equal(s.installed.moscow._storage,'hdd',s.storage.reason);assert.equal(calls,1);await verify(path.join(s.storage.root,x.f.entry.file),x.f.entry);assert(!exists(x.local,x.f.entry));s.close();s=new CityMapStore(x.dir,x.options);await s.ready;assert.equal(s.storage.share,x.share);assert.equal(calls,1);await s.ensure({lat:55.755,lon:37.615},1000);assert.equal(s.reader.rows.length,1);assert.equal(fs.readFileSync(path.join(x.dir,'hybrid-records-v1.bin'),'utf8'),'unchanged camera database');}
+  finally{CityMapStorage.prototype.probeWrite=original;if(s)s.close();}
+ });
  await test('Absent HDD uses local maps; mounted HDD is retried later',async()=>{
   let online=false;const x=setup({mounted:()=>online}),s=new CityMapStore(x.dir,x.options);await s.ready;assert(exists(x.local,x.f.entry));assert(!fs.existsSync(s.storage.root));await s.ensure({lat:55.755,lon:37.615},1000);assert.equal(s.reader.rows.length,1);online=true;await s.prepareStorage();assert.equal(s.installed.moscow._storage,'hdd');s.close();
  });

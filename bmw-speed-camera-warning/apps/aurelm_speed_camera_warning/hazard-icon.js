@@ -30,6 +30,6 @@ function drawPixels(target,width,height,x,y,w,h,color){
   target[dst+3]=Math.round(result*255);
  }
 }
-function drawCanvas(canvas,x,y,w,h,color){const fit=Math.min(w/spec.width,h/spec.height),nw=spec.width*fit,nh=spec.height*fit;x+=(w-nw)/2;y+=(h-nh)/2;w=nw;h=nh;if(canvas.recording===true)return require('./hud-canvas').mask(canvas,'hazard-'+kind,alpha,spec.width,spec.height,x,y,w,h,color||[245,249,252]);canvas.blit(image(w,h,color),x,y);}
+function drawCanvas(canvas,x,y,w,h,color){const fit=Math.min(w/spec.width,h/spec.height),nw=spec.width*fit,nh=spec.height*fit;x+=(w-nw)/2;y+=(h-nh)/2;w=nw;h=nh;if(canvas.recording===true)return require('./hud-canvas').mask(canvas,'hazard-'+kind+'-'+(spec.sha256||'legacy'),alpha,spec.width,spec.height,x,y,w,h,color||[245,249,252]);canvas.blit(image(w,h,color),x,y);}
 return {drawPixels,drawCanvas};}
 const icons={};module.exports={forKind:kind=>icons[kind]||(icons[kind]=make(kind))};
