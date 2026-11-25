@@ -85,6 +85,39 @@ vm.runInNewContext(fs.readFileSync(file,'utf8'),{require:n=>replacements[n]||app
 async function run(){
     await startPromise;await activeStore.pending;await new Promise(resolve=>setTimeout(resolve,30));
     assert(images>0,'Initial app screen must render: '+warnings.join('\n'));
+    if(process.env.BMW_HDD_DIALOG_TEST&&process.env.BMW_LANGUAGE_TEST){
+      const settle=()=>new Promise(r=>setTimeout(r,60));await hddFixture.ready;await settle();
+      if(wire)wire.ack();
+      assert.equal(hddFixture.notice.kind,'found');assert.equal(settings.ui_language,'ask');
+      assert(texts.includes('SET LANGUAGE'));assert(!texts.includes('HDD ОБНАРУЖЕН'),'HDD waits behind language');
+      const saveModal=name=>{if(previewDir&&!wire)fs.writeFileSync(path.join(previewDir,name+'.png'),lastCanvas.png());};saveModal('01-language-before-hdd');
+      let knob=200;if(wire)wire.ccu(knob);
+      const targets=()=>wire?wire.d.pageTargets:pageTargets;
+      const activate=async(key,x,y)=>{
+        if(wire&&process.env.BMW_MODAL_JOYSTICK==='1'){
+          const ring=wire.d._ring(),target=ring.findIndex(t=>t.k==='tgt:'+key);assert(target>=0,key);
+          let current=ring.findIndex(t=>t.k===wire.d.focusKey);if(current<0){wire.ccu(++knob);current=0;}
+          knob+=target-current;wire.ccu(knob);assert.equal(wire.d.focusKey,'tgt:'+key);
+          wire.ccu(knob,1);wire.ccu(knob,0);
+        }else tapHandler(x,y);
+        await settle();
+      };
+      const staleLanguage=targets().find(t=>t.key==='language-en');assert(staleLanguage);
+      await activate('language-ru',580,270);
+      assert.equal(settings.ui_language,'ru','Visible language action must not be blocked by pending HDD');
+      assert.equal(hddFixture.notice.kind,'found','Selection does not discard HDD consent');
+      assert(targets().some(t=>t.key==='hdd-transfer-start'),'HDD now visible');saveModal('02-hdd-after-language');
+      if(typeof staleLanguage.run==='function')staleLanguage.run();
+      assert.equal(settings.ui_language,'ru','Stale language input cannot bypass HDD dialog');
+      tapHandler(100,460);await settle();assert.equal(hddFixture.notice.kind,'found');
+      await activate('hdd-transfer-start',550,420);await hddFixture.ready;await settle();
+      assert.equal(hddFixture.notice.kind,'success');assert(hddFixture.hddState.accepted);saveModal('03-hdd-success');
+      await activate('hdd-transfer-ok',800,420);
+      assert.equal(hddFixture.notice,null);assert.equal(settings.ui_language,'ru');
+      assert(targets().some(t=>t.key==='settings-language'),'Return to normal settings');
+      assert(!warnings.some(w=>/UI_RENDER_FAILED|ReferenceError|TypeError/.test(w)),warnings.join('\n'));
+      hddFixture.close();console.log('PASS simultaneous language + HDD: select language, retain consent, transfer, success, return; '+(wire?(process.env.BMW_MODAL_JOYSTICK?'joystick':'GPU touch'):'PNG touch'));return;
+    }
     if(process.env.BMW_HDD_DIALOG_TEST){
       const settle=()=>new Promise(r=>setTimeout(r,100));await hddFixture.ready;await settle();
       assert(texts.includes('HDD ОБНАРУЖЕН'),warnings.join('\n'));assert.equal(hddFixture.hddState.accepted,false);
