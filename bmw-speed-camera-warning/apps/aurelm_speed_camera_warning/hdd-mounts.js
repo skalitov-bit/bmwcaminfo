@@ -8,7 +8,13 @@ function inspect(share,local,io){io=io||fs;const r={path:share,ok:false};try{
  const m=mountFor(io.readFileSync('/proc/self/mountinfo','utf8'),r.realPath);r.mount=m;
  if(!m||m.point==='/'||m.device.split(':')[0]==='0')throw Error('MAP_HDD_NOT_MOUNTED');
  if(m.options.indexOf('rw')<0||m.fsOptions.indexOf('ro')>=0)throw Error('MAP_HDD_READ_ONLY');
- r.device=st.dev;if(local&&st.dev===io.statSync(local).dev)throw Error('MAP_HDD_SAME_DEVICE');
+ r.device=st.dev;r.sameDevice=!!(local&&st.dev===io.statSync(local).dev);
+ // hdshare can share a block filesystem with /var/opt. That does not make
+ // the dedicated shared directory an app-private directory. The privileged
+ // helper sees the host mounts, whereas the app may see a private namespace.
+ // Keep the same-device guard for unexpected aliases outside the known share
+ // roots unless the destination itself is a separate mount point.
+ if(r.sameDevice&&SHARES.indexOf(r.realPath)<0&&m.point!==r.realPath)throw Error('MAP_HDD_SAME_DEVICE');
  r.ok=true;
  }catch(e){r.reason=e.code==='ENOENT'?'MAP_HDD_NOT_FOUND':e.code||e.message;}return r;
 }

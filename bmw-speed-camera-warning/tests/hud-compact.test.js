@@ -24,11 +24,18 @@ o.current.accuracyDegraded=true;o._draw(o.current);verify();
 const model=compact.frame(e,api.footer(e),true);
 // The sign must cut a transparent annulus into the camera, not hide it with
 // black pixels (which would obscure the real HUD background).
-for(let y=70*2;y<170*2;y++)for(let x=130*2;x<230*2;x++){
- const d=Math.hypot((x+.5)/2-180,(y+.5)/2-120);
- if(d>45&&d<48)assert.equal(model[(y*488+x)*4+3],0,'Transparent separation around speed sign');
+const g=compact.GEOMETRY;
+for(let y=(g.signY-35)*2;y<(g.signY+35)*2;y++)for(let x=(g.signX-35)*2;x<(g.signX+35)*2;x++){
+ const d=Math.hypot((x+.5)/2-g.signX,(y+.5)/2-g.signY);
+ if(d>32.5&&d<33.5)assert.equal(model[(y*g.IW+x)*4+3],0,'Transparent separation around speed sign');
 }
-assert.equal(model[(240*488+360)*4+3],255,'Speed sign remains opaque');
+assert.equal(model[((g.signY*2)*g.IW+g.signX*2)*4+3],255,'Speed sign remains opaque');
+// Compare actual pixels with the full HUD, including ring, digits and AA.
+const regular=api.makeFrame(e);
+for(let y=-63;y<64;y++)for(let x=-63;x<64;x++)if(Math.hypot(x+.5,y+.5)<63){
+ const shortAt=((g.signY*2+y)*g.IW+g.signX*2+x)*4,fullAt=((59*2+y)*840+284*2+x)*4;
+ assert(model.slice(shortAt,shortAt+4).equals(regular.slice(fullAt,fullAt+4)),'Same speed sign pixels in both HUD formats');
+}
 assert(model.equals(compact.frame(Object.assign({},e,{camera:Object.assign({},e.camera,{camera_model:'ДРУГАЯ МОДЕЛЬ'})}),api.footer(e),true)),'No model is drawn');
 const oldMap=o.layers.map;o.setHudPosition({x:190,y:160,stripe:false,banner:'full'});assert.equal(o.layers.map,oldMap);assert(o.cr.items[o.layers.hud].px.equals(api.makeFrame(o.current).fill(0,0,840*10*4)));
 o.setHudPosition({x:190,y:160,stripe:true,banner:'short'});verify();assert.equal(o.layers.map,oldMap);
@@ -36,10 +43,10 @@ for(const status of ['lost','searching','unreliable','degraded','reserve']){o.cl
 o.setHudPosition({x:190,y:160,banner:'full'});assert(o.cr.items[o.layers.hud].px.equals(api.makeGpsFrame('reserve',false,o.hudStripeWidth)));
 // Every source category, unknown limit, rear flag and both supported languages.
 const cameras=[...Array.from({length:22},(_,i)=>({mapcamTypeCode:i+1})),...[15,68,155,156,194,206,208,210,211,227].map(typeCode=>({typeNamespace:'estrelka',typeCode}))];
-for(const language of ['ru','en']){i18n.setLanguage(language);for(const c of cameras)for(const limit of [null,60,120]){const x=Object.assign({},e,{camera:Object.assign({},c,{limit,rearCapture:true})});assert.equal(compact.frame(x,api.footer(x),true).length,488*600*4);}}i18n.setLanguage('ru');
+for(const language of ['ru','en']){i18n.setLanguage(language);for(const c of cameras)for(const limit of [null,60,120]){const x=Object.assign({},e,{camera:Object.assign({},c,{limit,rearCapture:true})});assert.equal(compact.frame(x,api.footer(x),true).length,g.IW*g.IH*4);}}i18n.setLanguage('ru');
 const {HudPositionStore,HudPositionEditor,normalize}=require(path.join(base,'hud-position'));
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'hud-compact-'));try{
- const store=new HudPositionStore(dir);assert.equal(store.load().banner,'full');store.save({x:700,y:400,banner:'short',stripe:false});assert.deepEqual(store.load(),{x:556,y:180,banner:'short',stripe:false});assert.equal(normalize({banner:'bad'}).banner,'full');
+ const store=new HudPositionStore(dir);assert.equal(store.load().banner,'full');store.save({x:700,y:400,banner:'short',stripe:false});assert.deepEqual(store.load(),{x:556,y:253,banner:'short',stripe:false});assert.equal(normalize({banner:'bad'}).banner,'full');
  const ed=new HudPositionEditor({store,output:o,moving:()=>false,change:()=>{},apply:p=>o.setHudPosition(p),back:()=>{}});ed.open();ed.setBanner('full');ed.stop();ed.open();assert.equal(ed.draft.banner,'short');
  for(const key of ['hud-full','hud-short']){const b=ed.buttons().find(b=>b.key===key);ed.tap(b.x+1,b.y+1);assert.equal(ed.draft.banner,key==='hud-full'?'full':'short');}
  ed.save();assert.equal(store.load().banner,'short');ed.reset();assert.equal(ed.draft.banner,'full');

@@ -67,7 +67,7 @@ class CityMapPanel{
  drawStorage(cv,style,target){const s=this.store,C=style.colors,txt=style.text,d=s.storage.diagnostic(),tr=require('./i18n').t,why=require('./hdd-status').reason;
   style.heading(cv,'ДИАГНОСТИКА HDD','');cv.fillRect(266,74,1314,350,C.panel);
   const lines=[s.storageLabel(),d.root,d.active?'HDD ГОТОВ К ЗАПИСИ':why(d.reason||'MAP_HDD_UNAVAILABLE')];
-  d.attempts.forEach(r=>{lines.push(r.path+(r.realPath&&r.realPath!==r.path?' -> '+r.realPath:''));lines.push('  '+tr(why(r.reason||(r.access?'ГОТОВО':'ДИСК ОБНАРУЖЕН')))+(r.access==='helper'?' / '+tr('СИСТЕМНЫЙ ПОМОЩНИК'):''));if(r.directError)lines.push('  '+tr(why(r.directError)));});
+  d.attempts.forEach(r=>{lines.push(r.path+(r.realPath&&r.realPath!==r.path?' -> '+r.realPath:''));lines.push('  '+tr(why(r.reason||(r.access?'ГОТОВО':'ДИСК ОБНАРУЖЕН')))+(r.helper||r.access==='helper'?' / '+tr('СИСТЕМНЫЙ ПОМОЩНИК'):''));if(r.directError&&!r.aliasOf)lines.push('  '+tr(r.helper==='ready'||r.access==='helper'?'ДОСТУП ПРЕДОСТАВЛЕН ПОМОЩНИКОМ':'НЕТ ПРЯМОЙ ЗАПИСИ: '+r.directError));});
   if(d.operationError)lines.push(why(d.operationError));
   if(d.freeBytes!==null)lines.push(tr('СВОБОДНО НА HDD')+': '+mb(d.freeBytes));
   lines.slice(0,11).forEach((line,i)=>txt(cv,line,290,102+i*28,19,C.text,{maxWidth:1250}));

@@ -46,9 +46,9 @@ class CityMapStorage{
   if(fs.realpathSync(this.root)!==this.root||fs.statSync(this.root).dev!==fs.statSync(this.share).dev)throw Error('MAP_HDD_PATH');
   const probe=path.join(this.root,'.write-'+process.pid+'-'+crypto.randomBytes(6).toString('hex')),fd=fs.openSync(probe,'wx',0o600);try{fs.writeSync(fd,'ok');fs.fsyncSync(fd);}finally{fs.closeSync(fd);fs.unlinkSync(probe);}
  }
- async prepare(){this.active=false;this.checkedAt=0;this.reason='';this.attempts=this.shares.map(p=>this.inspect(p));const seen=new Set();
+ async prepare(){this.active=false;this.checkedAt=0;this.reason='';this.attempts=this.shares.map(p=>this.inspect(p));const seen=new Map();
   const candidates=this.attempts.slice().sort((a,b)=>(b.path===this.share?1:0)-(a.path===this.share?1:0));
-  for(const r of candidates){if(!r.ok)continue;if(this.pin&&(this.pin.realPath?r.realPath!==this.pin.realPath:r.path!==this.pin.share)){r.reason='MAP_HDD_OTHER_DISK';continue;}if(seen.has(r.realPath))continue;seen.add(r.realPath);
+  for(const r of candidates){if(!r.ok)continue;if(this.pin&&(this.pin.realPath?r.realPath!==this.pin.realPath:r.path!==this.pin.share)){r.reason='MAP_HDD_OTHER_DISK';continue;}if(seen.has(r.realPath)){const previous=seen.get(r.realPath);r.aliasOf=previous.path;r.ok=previous.ok;r.reason=previous.reason;r.helper=previous.helper;r.directError=previous.directError;continue;}seen.set(r.realPath,r);
    this.share=r.path;this.root=path.join(r.realPath,'speedcam-city-maps-'+this.uid);this.device=r.device;
    try{
     try{this.probeWrite();r.access='direct';}catch(e){if(!/^(EACCES|EPERM)$/.test(e.code||''))throw e;r.directError=e.code;r.helper='requested';
@@ -58,7 +58,7 @@ class CityMapStorage{
     }
     this.active=true;if(!this.available(true))throw Error('MAP_HDD_CHANGED');
     const pin={share:this.share,realPath:r.realPath};atomicJson(path.join(this.local,'hdd-location.json'),pin);this.pin=pin;this.reason='';this.lastOperationError='';return true;
-   }catch(e){r.reason=String(e.code||e.message);r.ok=false;this.reason=r.reason;this.active=false;this.checkedAt=0;}
+   }catch(e){r.reason=String(e.code||e.message);if(r.helper==='requested')r.helper='failed';r.ok=false;this.reason=r.reason;this.active=false;this.checkedAt=0;}
   }
   this.reason=this.reason||(this.attempts.find(r=>r.reason&&r.reason!=='MAP_HDD_NOT_FOUND')||this.attempts[0]||{}).reason||'MAP_HDD_NOT_FOUND';return false;
  }

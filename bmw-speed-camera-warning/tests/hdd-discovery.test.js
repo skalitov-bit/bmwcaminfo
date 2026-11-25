@@ -5,15 +5,31 @@ const mounts=require(a+'/hdd-mounts'),{CityMapStorage}=require(a+'/city-map-stor
 const passed=[];async function test(name,fn){await fn();passed.push(name);console.log('PASS '+name);}
 function environment(){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'hdd-discovery-')),local=path.join(dir,'local'),one=path.join(dir,'first'),two=path.join(dir,'second');[local,one,two].forEach(p=>fs.mkdirSync(p));return {dir,local,one,two};}
 (async()=>{
- await test('Both MGU mount paths, aliases, read-only/same-device/tmpfs rejection',()=>{
+ await test('Both MGU mount paths, same-volume shares, read-only/tmpfs rejection',()=>{
   let mount='28 1 8:3 / /mnt/share rw,relatime - ext4 /dev/sda3 rw',same=false;
   const io={realpathSync:p=>p==='/var/opt/hdshare'?'/mnt/share':p,statSync:p=>({dev:p==='/app'&&!same?1:3,isDirectory:()=>true}),readFileSync:()=>mount};
   for(const p of mounts.SHARES)assert(mounts.inspect(p,'/app',io).ok);
-  same=true;assert.equal(mounts.inspect('/mnt/share','/app',io).reason,'MAP_HDD_SAME_DEVICE');same=false;
+  same=true;assert(mounts.inspect('/mnt/share','/app',io).ok);assert(mounts.inspect('/mnt/share','/app',io).sameDevice);same=false;
   mount=mount.replace('rw,relatime','ro');assert.equal(mounts.inspect('/mnt/share','/app',io).reason,'MAP_HDD_READ_ONLY');
   mount='28 1 0:5 / /mnt/share rw - tmpfs tmpfs rw';assert.equal(mounts.inspect('/mnt/share','/app',io).reason,'MAP_HDD_NOT_MOUNTED');
   mount='28 1 8:3 / /mnt/share rw - ext4 /dev/sda3 ro';assert.equal(mounts.inspect('/mnt/share','/app',io).reason,'MAP_HDD_READ_ONLY');
   assert.equal(mounts.mountFor('28 1 8:3 / /mnt/share rw - ext4 /dev/sda3 rw','/mnt/shared'),null);
+ });
+ await test('Host helper accepts hdshare on /var/opt volume; unexpected aliases and root stay rejected',()=>{
+  let real='/var/opt/hdshare',mount='28 1 8:3 / /var/opt rw,relatime - ext4 /dev/sda3 rw';
+  const io={realpathSync:()=>real,statSync:()=>({dev:3,isDirectory:()=>true}),readFileSync:()=>mount};
+  const host=require(n+'/hdd-mounts');
+  for(const p of mounts.SHARES){const r=host.inspect(p,'/var/opt',io);assert(r.ok,r.reason);assert(r.sameDevice);assert.equal(r.mount.point,'/var/opt');assert.equal(r.realPath,'/var/opt/hdshare');}
+  real='/var/opt/unrelated';assert.equal(host.inspect('/mnt/share','/var/opt',io).reason,'MAP_HDD_SAME_DEVICE');
+  real='/var/opt/hdshare';mount='28 1 8:3 / / rw - ext4 /dev/sda3 rw';assert.equal(host.inspect('/mnt/share','/var/opt',io).reason,'MAP_HDD_NOT_MOUNTED');
+ });
+ await test('Aliases report the same helper refusal instead of an apparently usable second disk',async()=>{
+  const e=environment();let calls=0;
+  const s=new CityMapStorage(e.local,{shares:[e.one,e.two],inspect:p=>({path:p,ok:true,realPath:e.one,device:fs.statSync(e.one).dev}),helper:async()=>{calls++;throw Error('MAP_HDD_SAME_DEVICE');}});
+  s.probeWrite=()=>{throw Object.assign(Error('denied'),{code:'EACCES'});};
+  assert.equal(await s.prepare(),false);assert.equal(calls,1);
+  const attempts=s.diagnostic().attempts;assert.equal(attempts[1].aliasOf,e.one);
+  for(const r of attempts){assert.equal(r.reason,'MAP_HDD_SAME_DEVICE');assert.equal(r.ok,false);assert.equal(r.helper,'failed');}
  });
  await test('Second path succeeds; saved selection survives restart and never switches to another disk',async()=>{
   const e=environment();let first=false,second=true;const o={shares:[e.one,e.two],mounted:p=>p===e.one?first:second};let s=new CityMapStorage(e.local,o);

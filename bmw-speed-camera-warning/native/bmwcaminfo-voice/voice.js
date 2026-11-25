@@ -8,7 +8,7 @@ const ROOT = '/var/opt/bmwcaminfo-voice/current';
 const SRC_ID = 1046;
 const SINK_ID = 1024;
 const LANG = 7695972;
-const SERVICE_VERSION='0.1.51';
+const SERVICE_VERSION='0.1.52';
 const ASSETS = require('./audio-manifest.json');
 const ALLOWED = Object.create(null);
 Object.keys(ASSETS).forEach(function (file) {

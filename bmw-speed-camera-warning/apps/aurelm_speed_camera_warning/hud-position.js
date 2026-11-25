@@ -3,7 +3,8 @@ const fs=require('fs'),path=require('path');
 const DEFAULT={x:190,y:182},AREA={w:800,h:480},CARD={w:420,h:116};
 function normalize(p){
  p=p||{};
- const card=p.banner==='short'?{w:244,h:300}:CARD;
+ const short=require('./hud-compact').GEOMETRY;
+ const card=p.banner==='short'?{w:short.W,h:short.H}:CARD;
  const axis=(v,fallback,max)=>typeof v==='number'&&Number.isFinite(v)?Math.max(0,Math.min(max,Math.round(v))):fallback;
  return {x:axis(p.x,DEFAULT.x,AREA.w-card.w),y:axis(p.y,Math.min(DEFAULT.y,AREA.h-card.h),AREA.h-card.h),stripe:p.stripe!==false,banner:p.banner==='short'?'short':'full'};
 }

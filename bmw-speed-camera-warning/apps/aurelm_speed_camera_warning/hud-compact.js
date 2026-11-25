@@ -3,13 +3,14 @@
 const text=require('./cluster-text'),{hudLabels}=require('./camera-label');
 const {iconFor,policeKind}=require('./point-kind');
 const {gpsMessage}=require('./gps-message');
-const W=244,H=300,S=2,IW=W*S,IH=H*S;
+const W=244,H=227,S=2,IW=W*S,IH=H*S;
 const WHITE=[245,249,252,255],RED=[211,44,54,255],GOLD=[255,205,74,255];
-const DISTANCE={x:20*S,y:207*S,w:160*S,h:36*S};
-const FOOTER={x:0,y:246*S,w:224*S,h:54*S};
-// The 160 px camera mask has a ~5 px outer stroke. Clear that same width
+const DISTANCE={x:20*S,y:134*S,w:160*S,h:36*S};
+const FOOTER={x:0,y:173*S,w:224*S,h:54*S};
+// Match the full HUD: 60 x 49.5 px icon, 64 px speed sign, ~2 px stroke.
+// Clear that same stroke width
 // around the overlapping sign, retaining alpha rather than painting black.
-const GEOMETRY={W,H,IW,IH,signX:180,signY:120,signRadius:44,signGap:5,cameraCenter:100,stripeWidth:200};
+const GEOMETRY={W,H,IW,IH,signX:130,signY:90,signRadius:32,signGap:2,cameraCenter:100,cameraX:70,cameraY:65,cameraWidth:60,cameraHeight:49.5,stripeWidth:200};
 function label(px,iw,ih,value,x,y,size,color,options){return text.draw(px,iw,ih,S,value,x,y,size,color,options);}
 function distance(e,buffer){
  const r=DISTANCE,px=buffer&&buffer.length===r.w*r.h*4?buffer:Buffer.alloc(r.w*r.h*4);px.fill(0);
@@ -42,20 +43,21 @@ function frame(e,value,stripe){
  // Stationary is a control category, not a hardware model: retain it in title.
  const title=policeKind(c)==='stationary'?'СТАЦИОНАРНЫЙ ПОСТ ДПС':titles.control;
  label(px,IW,IH,title,GEOMETRY.cameraCenter,32,19,WHITE,{align:'center',maxWidth:196});
- iconFor(c).drawPixels(px,IW,IH,20*S,65*S,160*S,132*S,WHITE);
+ const g=GEOMETRY;
+ iconFor(c).drawPixels(px,IW,IH,g.cameraX*S,g.cameraY*S,g.cameraWidth*S,g.cameraHeight*S,WHITE);
  // A hazard's recorded limit may be displayed without treating it as a speed
  // camera or changing the voice/beeper rules. Never invent a missing limit.
  const hazard=!!require('./notification-types').hazardKind(c),noLimit=!!policeKind(c),limit=Number(c.limit);
  if(!noLimit&&Number.isFinite(limit)&&limit>0){
   clearSignGap(px);
-  circle(px,180,120,44,WHITE);circle(px,180,120,42,RED);circle(px,180,120,34,[255,255,255,255]);
-  const size=text.fittedSize(String(limit),42,58);label(px,IW,IH,String(limit),180,120-text.capHeight(size)/2,size,[20,29,38,255],{align:'center'});
+  circle(px,g.signX,g.signY,g.signRadius,RED);circle(px,g.signX,g.signY,26,[255,255,255,255]);
+  const size=text.fittedSize(String(limit),32,44);label(px,IW,IH,String(limit),g.signX,g.signY-text.capHeight(size)/2,size,[20,29,38,255],{align:'center'});
  }else if(!noLimit&&!hazard){
   // Clear only the unknown-limit label's backing where it overlaps the icon.
-  for(let y=107*S;y<133*S;y++)px.fill(0,(y*IW+136*S)*4,(y*IW+224*S)*4);
-  label(px,IW,IH,'ЛИМИТ Н/Д',180,114,12,WHITE,{align:'center',maxWidth:86});
+  for(let y=(g.signY-13)*S;y<(g.signY+13)*S;y++)px.fill(0,(y*IW+(g.signX-32)*S)*4,(y*IW+(g.signX+32)*S)*4);
+  label(px,IW,IH,'ЛИМИТ Н/Д',g.signX,g.signY-7,11,WHITE,{align:'center',maxWidth:64});
  }
  patch(px,DISTANCE,distance(e));patch(px,FOOTER,status(e,value));return px;
 }
-function gps(status){const px=Buffer.alloc(IW*IH*4);label(px,IW,IH,gpsMessage(status==='reserve'?'lost':status),GEOMETRY.cameraCenter,279,11,GOLD,{align:'center',maxWidth:196});return px;}
+function gps(status){const px=Buffer.alloc(IW*IH*4);label(px,IW,IH,gpsMessage(status==='reserve'?'lost':status),GEOMETRY.cameraCenter,H-21,11,GOLD,{align:'center',maxWidth:196});return px;}
 module.exports={GEOMETRY,DISTANCE,FOOTER,frame,distance,status,gps};

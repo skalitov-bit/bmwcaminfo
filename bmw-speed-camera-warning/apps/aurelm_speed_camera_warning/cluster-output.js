@@ -195,7 +195,7 @@ class CameraClusterOutput{
    const backing=target==='map'?kombiBackplate.layout(this.cr.targets):null;
    const pos=target==='hud'?this.hudPosition:{x:backing.contentX,y:backing.contentY};
    const card=target==='hud'&&this.hudPosition.banner==='short'?compactHud.GEOMETRY:{W,H,IW,IH},ring={x:backing?KOMBI_ICONS.right-RING_SIZE/2:hudGeometry(this.current).signX-RING_SIZE/2,y:backing?KOMBI_ICONS.y-RING_SIZE/2:17,w:RING_SIZE,h:RING_SIZE};
-   if(target==='hud'&&this.hudPosition.banner==='short'){ring.x=compactHud.GEOMETRY.signX-56;ring.y=compactHud.GEOMETRY.signY-56;ring.w=112;ring.h=112;}
+   if(target==='hud'&&this.hudPosition.banner==='short'){ring.x=compactHud.GEOMETRY.signX-RING_SIZE/2;ring.y=compactHud.GEOMETRY.signY-RING_SIZE/2;ring.w=RING_SIZE;ring.h=RING_SIZE;}
    if(backing&&!this.backplate){
     this.backplate=this.cr.image(Object.assign({},ALERT_LAYER,{target,x:backing.x,y:backing.y,w:backing.w,h:backing.h,iw:backing.iw,ih:backing.ih,sampling:'bilinear',visible:false,opacity:1}));
     if(this.backplate)this.cr.pixels(this.backplate,null,kombiBackplate.makePixels());

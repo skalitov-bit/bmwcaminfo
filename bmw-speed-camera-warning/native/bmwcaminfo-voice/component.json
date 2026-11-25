@@ -1,7 +1,7 @@
 {
   "id": "bmwcaminfo-voice",
   "kind": "tool",
-  "version": "0.1.51",
+  "version": "0.1.52",
   "license": "MIT AND GPL-2.0-or-later AND LGPL-2.1-or-later",
   "title": "BMW Camera Voice Service",
   "description": "ALSA voice and beeper mixer, M4A compatibility mode, experimental private PulseAudio + Overlay",
