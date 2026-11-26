@@ -85,6 +85,25 @@ vm.runInNewContext(fs.readFileSync(file,'utf8'),{require:n=>replacements[n]||app
 async function run(){
     await startPromise;await activeStore.pending;await new Promise(resolve=>setTimeout(resolve,30));
     assert(images>0,'Initial app screen must render: '+warnings.join('\n'));
+    if(process.env.BMW_SUPPORT_TEST){
+      const settle=()=>new Promise(r=>setTimeout(r,60)),targets=()=>wire?wire.d.pageTargets:pageTargets;
+      if(wire)wire.ack();
+      const tap=async(x,y)=>{if(wire)wire.tap(x,y);else tapHandler(x,y);await settle();};
+      await tap(100,470);assert(targets().some(t=>t.key==='settings-support'));
+      const staleClose=targets().find(t=>t.key==='settings-close');
+      await tap(1390,415);assert.deepStrictEqual(targets().map(t=>t.key),['support-close']);
+      if(staleClose&&staleClose.run)staleClose.run();assert.equal(manualCloses,0);
+      await tap(100,50);assert.deepStrictEqual(targets().map(t=>t.key),['support-close']);
+      await tap(802,453);assert(targets().some(t=>t.key==='settings-support'));
+      if(wire){
+        let knob=100;wire.ccu(knob);
+        const press=async key=>{const ring=wire.d._ring(),target=ring.findIndex(t=>t.k==='tgt:'+key);assert(target>=0,key);let current=ring.findIndex(t=>t.k===wire.d.focusKey);if(current<0){wire.ccu(++knob);current=0;}knob+=target-current;wire.ccu(knob);assert.equal(wire.d.focusKey,'tgt:'+key);wire.ccu(knob,1);wire.ccu(knob,0);await settle();};
+        await press('settings-support');assert.deepStrictEqual(targets().map(t=>t.key),['support-close']);
+        await press('support-close');assert(targets().some(t=>t.key==='settings-support'));
+      }
+      assert(!warnings.some(w=>/UI_RENDER_FAILED|ReferenceError|TypeError/.test(w)),warnings.join('\n'));
+      console.log('PASS support dialog: open, modal guard, stale action guard, close; '+(wire?'GPU touch and joystick':'PNG touch'));return;
+    }
     if(process.env.BMW_HDD_DIALOG_TEST&&process.env.BMW_LANGUAGE_TEST){
       const settle=()=>new Promise(r=>setTimeout(r,60));await hddFixture.ready;await settle();
       if(wire)wire.ack();

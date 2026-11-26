@@ -91,6 +91,9 @@ uplink.init(dataDir);log.info('UPLINK '+uplink.describe());uplink.checkInternet(
   else if(typeof clusterOutput._drawGpsStatus==='function')clusterOutput._drawGpsStatus();
   applyNativeLanguage();view=languageReturn;renderSafe();
  },()=>{if(!languageFirst){view=languageReturn;renderSafe();}});
+ const supportPanel=new (require('./support-panel').SupportPanel)(()=>{view='SETTINGS';renderSafe();});
+ function openSupport(){view='SUPPORT';renderSafe();}
+ function drawSupport(){const cv=ctx.canvas(W,H).clear(C.bg);supportPanel.draw(cv,style,pageTarget);return presentImage('MAIN_GFX',cv);}
  function openLanguage(){languageReturn='SETTINGS';view='LANGUAGE';renderSafe();}
  function drawLanguage(){const cv=ctx.canvas(W,H).clear(C.bg);languagePanel.draw(cv,style,pageTarget,languageFirst);return presentImage('MAIN_GFX',cv);}
  const actionHandlers=Object.create(null);let nativeButtonView=null;
@@ -99,11 +102,11 @@ uplink.init(dataDir);log.info('UPLINK '+uplink.describe());uplink.checkInternet(
  require('./display-recovery-menu').install(ctx);
  // Rendering and all input paths must agree on the topmost modal. HDD
  // discovery can complete while first-run language selection is still visible.
- function activeDialog(){return languageFirst||view==='LANGUAGE'?'language':cityMaps.notice?'hdd':null;}
+ function activeDialog(){return languageFirst||view==='LANGUAGE'?'language':cityMaps.notice?'hdd':view==='SUPPORT'?'support':null;}
  function bindAction(id,fn){const guarded=()=>{if(!activeDialog())return fn();};actionHandlers[id]=guarded;if(nativeActionIds.includes(id))ui.onClick(id,guarded);}
  function pageTarget(cv,x,y,w,h,run,key){if(cv.recording===true&&typeof cv.target==='function')cv.target(x,y,w,h,()=>{
-  const dialog=activeDialog(),languageKey=key.indexOf('language-')===0,hddKey=key.indexOf('hdd-transfer-')===0;
-  if(dialog==='language'?languageKey:dialog==='hdd'?hddKey:!languageKey&&!hddKey)return run();
+  const dialog=activeDialog(),languageKey=key.indexOf('language-')===0,hddKey=key.indexOf('hdd-transfer-')===0,supportKey=key.indexOf('support-')===0;
+  if(dialog==='language'?languageKey:dialog==='hdd'?hddKey:dialog==='support'?supportKey:!languageKey&&!hddKey&&!supportKey)return run();
  },key,0);}
  // Actions live on the page. MAIN has no native RHMI bar in app.json.
  // Only bind/hide controls actually declared by an older runtime, if present.
@@ -436,10 +439,11 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   txt(cv,'ТЕКУЩИЙ РЕЖИМ: '+displayModeLabel(cameraDisplayMode),290,296,25,C.text,{maxWidth:880});
   cv.strokeRoundRect(1220,270,340,50,0,1,C.muted);txt(cv,'КАРТЫ ГОРОДОВ',1390,302,22,C.text,{align:'center'});pageTarget(cv,1220,270,340,50,openCityMaps,'settings-city-maps');
   cv.strokeRoundRect(1220,330,340,50,0,1,C.muted);txt(cv,'SET LANGUAGE',1390,362,22,C.text,{align:'center'});pageTarget(cv,1220,330,340,50,openLanguage,'settings-language');
+  cv.strokeRoundRect(1220,390,340,50,0,1,C.muted);require('./support-panel').donut(cv,1248,415,19,C.panel);txt(cv,'ПОДДЕРЖАТЬ ПРОЕКТ',1408,422,21,C.text,{align:'center',maxWidth:288});pageTarget(cv,1220,390,340,50,openSupport,'settings-support');
   txt(cv,closeError||'ПОСЛЕ ЗАКРЫТИЯ: ЗАПУСК ТОЛЬКО ЧЕРЕЗ ЯРЛЫК SPEEDCAM',290,346,20,closeError?C.yellow:C.muted,{maxWidth:880});
   const audioLines=audioHealth.lines(voice.lastError,beeper.lastError);
-  txt(cv,audioLines[0],290,391,20,C.text,{maxWidth:1230});
-  txt(cv,audioLines[1],290,433,17,C.muted,{maxWidth:1230});
+  txt(cv,audioLines[0],290,391,20,C.text,{maxWidth:900});
+  txt(cv,audioLines[1],290,433,17,C.muted,{maxWidth:900});
   drawTabs(cv,'SETTINGS');drawActionLegend(cv,'SETTINGS');return ui.image('MAIN_GFX',cv);
  }
  let closeError='',closeRequested=false;
@@ -566,11 +570,11 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   const buttonView=cityMaps.notice?'HDD_DIALOG':view;if(buttonView===nativeButtonView)return;nativeButtonView=buttonView;
   for(const id of nativeActionIds)for(const method of ['visible','enabled']){
    const extra=['BTN_REFRESH','BTN_VOICE_TEST','BTN_CAMERA_MENU'].includes(id);
-   const hidden=!!cityMaps.notice||(view==='ENGINEERING'||view==='MOTION_DIAGNOSTICS'||view==='HUD_POSITION'||view==='NOTIFICATION_TYPES'||audioPage())||extra&&(view==='SETTINGS'&&id!=='BTN_REFRESH'||view==='MAP'&&id!=='BTN_REFRESH'||id==='BTN_CAMERA_MENU'&&(view==='ADD'||view==='MY'));
+   const hidden=!!activeDialog()||(view==='ENGINEERING'||view==='MOTION_DIAGNOSTICS'||view==='HUD_POSITION'||view==='NOTIFICATION_TYPES'||audioPage())||extra&&(view==='SETTINGS'&&id!=='BTN_REFRESH'||view==='MAP'&&id!=='BTN_REFRESH'||id==='BTN_CAMERA_MENU'&&(view==='ADD'||view==='MY'));
    if(typeof ui[method]==='function')Promise.resolve(ui[method](id,!hidden)).catch(e=>log.warn('BUTTON_STATE_FAILED '+id+' '+String(e)));
   }
  }
- function render(){syncBackgroundNotification();if(!mainScreenVisible)return;if(activeDialog()==='language')return drawLanguage();syncNativeButtons();if(activeDialog()==='hdd')return drawHddDialog();if(view==='NOTIFICATION_TYPES')return drawTypes();if(view==='CITY_MAPS')return drawCityMaps();if(view==='HUD_POSITION')return drawHudPosition();if(view==='MOTION_DIAGNOSTICS')return drawMotionDiagnostics();if(view==='AUDIO_WIZARD')return drawAudioWizard();if(view==='AUDIO_CHANNELS')return drawAudioChannels();if(view==='RADAR')return drawRadar();if(view==='ENGINEERING')return drawEngineering();if(view==='ADD')return drawAddCamera();if(view==='MY')return drawMyCameras();if(view==='SETTINGS')return drawSettings();return drawMainMap();}
+ function render(){syncBackgroundNotification();if(!mainScreenVisible)return;if(activeDialog()==='language')return drawLanguage();syncNativeButtons();if(activeDialog()==='hdd')return drawHddDialog();if(activeDialog()==='support')return drawSupport();if(view==='NOTIFICATION_TYPES')return drawTypes();if(view==='CITY_MAPS')return drawCityMaps();if(view==='HUD_POSITION')return drawHudPosition();if(view==='MOTION_DIAGNOSTICS')return drawMotionDiagnostics();if(view==='AUDIO_WIZARD')return drawAudioWizard();if(view==='AUDIO_CHANNELS')return drawAudioChannels();if(view==='RADAR')return drawRadar();if(view==='ENGINEERING')return drawEngineering();if(view==='ADD')return drawAddCamera();if(view==='MY')return drawMyCameras();if(view==='SETTINGS')return drawSettings();return drawMainMap();}
  let renderQueued=false,renderRunning=false,renderTimer=null,lastRenderAt=0,renderCount=0;
  function animatedScreen(){return mainScreenVisible&&((notificationPolicy.destination()==='canvas'&&activeAlert&&Date.now()<alertUntil)||view==='MAP'&&(mapPulseVisible||refreshBusy));}
  function softwareScreen(){return !!(ctx.display&&typeof ctx.display.active==='function'&&!ctx.display.active('MAIN'));}
@@ -725,6 +729,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   if(!Number.isFinite(x)||!Number.isFinite(y))return;
   if(activeDialog()==='language'){languagePanel.tap(x,y,languageFirst);return;}
   if(activeDialog()==='hdd'){hddDialog.tap(x,y);return;}
+  if(activeDialog()==='support'){supportPanel.tap(x,y);return;}
   const tab=style.tabAt(x,y);
   if(tab)require('./controller-navigation').focusTab(ctx.display,tab);
   if(tab==='SETTINGS'){
@@ -739,6 +744,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
   if(view==='HUD_POSITION'){hudEditor.tap(x,y);return;}
   if(view==='NOTIFICATION_TYPES'){typePanel.tap(x,y);return;}
   if(view==='CITY_MAPS'){cityMapPanel.tap(x,y);return;}
+  if(view==='SETTINGS'&&!warningSettings&&x>=1220&&x<1560&&y>=390&&y<440){openSupport();return;}
   if(view==='SETTINGS'&&!warningSettings&&x>=1220&&x<1560&&y>=330&&y<380){openLanguage();return;}
   if(view==='SETTINGS'&&!warningSettings&&x>=1220&&x<1560&&y>=270&&y<320){openCityMaps();return;}
   if(view==='SETTINGS'&&warningSettings&&x>=850&&x<1190&&y>=12&&y<56){openMixerSettings();return;}
@@ -858,7 +864,7 @@ function displayModeLabel(mode){return ({kombi:'KOMBI',hud:'HUD (экспери�
  renderSafe();refresh();const refreshTimer=setInterval(refresh,REFRESH_INTERVAL_MS);ctx.loop('MAIN',10,()=>{if(fix&&Date.now()-fix.timeMs>3000)handleGpsLoss();
   // Keep a recovery repaint; static pages need neither 10 Hz drawing nor PNG work.
   if(displayedRenderMode!==currentRenderMode()||animatedScreen()||view==='ENGINEERING'||view==='MOTION_DIAGNOSTICS'||Date.now()-lastRenderAt>=5000)renderSafe();});
- log.info('SpeedCAM 0.9.103 started; camera sectors and control paths; GPS accuracy <=35 m; low-accuracy label >=15 m; KOMBI/HUD mode='+cameraDisplayMode);
+ log.info('SpeedCAM 0.9.104 started; camera sectors and control paths; GPS accuracy <=35 m; low-accuracy label >=15 m; KOMBI/HUD mode='+cameraDisplayMode);
 }}).catch(e=>{
  console.error('SPEEDCAM_START_FAILED '+String(e&&e.stack||e));
  // Only the isolated worker may exit: the MainApp-owned supervisor stays alive.
