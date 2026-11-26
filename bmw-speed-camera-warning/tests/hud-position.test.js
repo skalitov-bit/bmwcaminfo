@@ -5,10 +5,10 @@ const base=path.resolve(process.argv[2]||path.join(__dirname,'../apps/aurelm_spe
 const {normalize,HudPositionStore,HudPositionEditor}=require(path.join(base,'hud-position'));
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'speedcam-hud-'));
 try{
- const store=new HudPositionStore(dir);assert.deepStrictEqual(store.load(),{x:190,y:182,stripe:true,banner:'full'});
- assert.deepStrictEqual(normalize({x:-200,y:1000}),{x:0,y:364,stripe:true,banner:'full'});
- assert.deepStrictEqual(normalize({x:NaN,y:'50'}),{x:190,y:182,stripe:true,banner:'full'});
- store.save({x:215,y:162,stripe:true,banner:'full'});assert.deepStrictEqual(new HudPositionStore(dir).load(),{x:215,y:162,stripe:true,banner:'full'});
+ const store=new HudPositionStore(dir);assert.deepStrictEqual(store.load(),{x:190,y:182,stripe:true,banner:'full',scale:100});
+ assert.deepStrictEqual(normalize({x:-200,y:1000}),{x:0,y:364,stripe:true,banner:'full',scale:100});
+ assert.deepStrictEqual(normalize({x:NaN,y:'50'}),{x:190,y:182,stripe:true,banner:'full',scale:100});
+ store.save({x:215,y:162,stripe:true,banner:'full',scale:100});assert.deepStrictEqual(new HudPositionStore(dir).load(),{x:215,y:162,stripe:true,banner:'full',scale:100});
  // Old saved positions retain the visible stripe; explicit false survives reload.
  fs.writeFileSync(store.file,JSON.stringify({schema:1,hud:{x:215,y:162}}));assert.equal(store.load().stripe,true);
  let apply=null,moving=false,shows=0,changes=0,now=0;
@@ -16,13 +16,13 @@ try{
  const output={mode:'both',gpsStatus:'lost',cr:client,layers:{hud:'hud-card'},current:null,
  setMode(mode){this.mode=mode;this.current=null;},setGpsStatus(s){this.gpsStatus=s;},clear(){this.current=null;},setHudPosition(p){this.position=p;},show(e){this.current=e;shows++;}};
  const editor=new HudPositionEditor({store,output,now:()=>now,change:()=>changes++,apply:p=>apply=p,moving:()=>moving,back:()=>editor.stop()});
- editor.open();editor.move(5,-5);assert.deepStrictEqual(store.load(),{x:215,y:162,stripe:true,banner:'full'},'Draft must not overwrite persistent preferences');
+ editor.open();editor.move(5,-5);assert.deepStrictEqual(store.load(),{x:215,y:162,stripe:true,banner:'full',scale:100},'Draft must not overwrite persistent preferences');
  editor.test();assert.strictEqual(output.mode,'hud');assert.strictEqual(shows,1);assert.strictEqual(output.current.camera.id,'hud-position-test');
- editor.move(5,0);assert.deepStrictEqual(output.position,{x:225,y:157,stripe:true,banner:'full'});
+ editor.move(5,0);assert.deepStrictEqual(output.position,{x:225,y:157,stripe:true,banner:'full',scale:100});
  moving=true;editor.tick();assert.strictEqual(output.mode,'both');editor.test();assert.strictEqual(shows,1,'Moving vehicle cannot start the test');
- moving=false;editor.save();assert.deepStrictEqual(apply,{x:225,y:157,stripe:true,banner:'full'});assert.deepStrictEqual(store.load(),apply);
- editor.reset();assert.deepStrictEqual(editor.draft,{x:190,y:182,stripe:true,banner:'full'});editor.stop();editor.open();assert.deepStrictEqual(editor.draft,apply,'Back discards an unsaved reset');
- editor.reset();editor.save();assert.deepStrictEqual(store.load(),{x:190,y:182,stripe:true,banner:'full'});
+ moving=false;editor.save();assert.deepStrictEqual(apply,{x:225,y:157,stripe:true,banner:'full',scale:100});assert.deepStrictEqual(store.load(),apply);
+ editor.reset();assert.deepStrictEqual(editor.draft,{x:190,y:182,stripe:true,banner:'full',scale:100});editor.stop();editor.open();assert.deepStrictEqual(editor.draft,apply,'Back discards an unsaved reset');
+ editor.reset();editor.save();assert.deepStrictEqual(store.load(),{x:190,y:182,stripe:true,banner:'full',scale:100});
  editor.test();editor.stop();assert.strictEqual(output.mode,'both','Leaving restores the normal output mode');assert.equal(output.gpsStatus,'lost');assert.deepStrictEqual(output.position,store.load());
 
  // Ready, refusal, timeout and cancellation all release the single production client.
@@ -42,7 +42,7 @@ try{
  editor.test();assert.equal(output.position.stripe,false);editor.toggleStripe();assert.equal(output.position.stripe,true);editor.toggleStripe();
  editor.save();editor.stop();editor.open();assert.equal(editor.draft.stripe,false);assert.equal(new HudPositionStore(dir).load().stripe,false);
  editor.toggleStripe();editor.stop();editor.open();assert.equal(editor.draft.stripe,false,'Unsaved stripe change is discarded');editor.reset();assert.equal(editor.draft.stripe,true);
- fs.writeFileSync(store.file,'broken');assert.deepStrictEqual(store.load(),{x:190,y:182,stripe:true,banner:'full'});
+ fs.writeFileSync(store.file,'broken');assert.deepStrictEqual(store.load(),{x:190,y:182,stripe:true,banner:'full',scale:100});
  const save=store.save;store.save=()=>{throw Error('disk full');};editor.save();assert(editor.message.includes('ОШИБКА'));store.save=save;
  console.log('PASS HUD position: clamping, corrupt config, atomic overwrite, reopen persistence, draft/save/reset, save failure, live test movement and stop');
 }finally{for(const f of fs.readdirSync(dir))fs.unlinkSync(path.join(dir,f));fs.rmdirSync(dir);}

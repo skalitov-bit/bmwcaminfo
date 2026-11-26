@@ -38,6 +38,19 @@ const compactHud=require('./hud-compact');
 const {policeKind,iconFor}=require('./point-kind');
 const noLimit=c=>!!policeKind(c)||!!require('./notification-types').hazardKind(c);
 const {PULSE,pulseOpacity,monotonicMs}=require('./ring-pulse');
+// Use the same sign centre on creation, redraw and position/format changes.
+function ringGeometry(target,banner,e){
+ const short=target==='hud'&&banner==='short';
+ const cx=target==='map'?KOMBI_ICONS.right:short?compactHud.GEOMETRY.signX:hudGeometry(e).signX;
+ const cy=target==='map'?KOMBI_ICONS.y:short?compactHud.GEOMETRY.signY:59;
+ return {x:cx-RING_SIZE/2,y:cy-RING_SIZE/2,w:RING_SIZE,h:RING_SIZE};
+}
+function hudLayerGeometry(position,e){
+ const card=position.banner==='short'?compactHud.GEOMETRY:{W,H,IW,IH},k=position.scale/100;
+ const ring=ringGeometry('hud',position.banner,e);
+ return {card:{x:position.x,y:position.y,w:card.W*k,h:card.H*k},
+  ring:{x:position.x+ring.x*k,y:position.y+ring.y*k,w:ring.w*k,h:ring.h*k}};
+}
 function shouldBlink(e){
  if(e&&e.estimated)return false;
  const c=e&&e.camera||{},limit=c.limit;
@@ -194,19 +207,19 @@ class CameraClusterOutput{
   targets.forEach(target=>{
    const backing=target==='map'?kombiBackplate.layout(this.cr.targets):null;
    const pos=target==='hud'?this.hudPosition:{x:backing.contentX,y:backing.contentY};
-   const card=target==='hud'&&this.hudPosition.banner==='short'?compactHud.GEOMETRY:{W,H,IW,IH},ring={x:backing?KOMBI_ICONS.right-RING_SIZE/2:hudGeometry(this.current).signX-RING_SIZE/2,y:backing?KOMBI_ICONS.y-RING_SIZE/2:17,w:RING_SIZE,h:RING_SIZE};
-   if(target==='hud'&&this.hudPosition.banner==='short'){ring.x=compactHud.GEOMETRY.signX-RING_SIZE/2;ring.y=compactHud.GEOMETRY.signY-RING_SIZE/2;ring.w=RING_SIZE;ring.h=RING_SIZE;}
+   const card=target==='hud'&&this.hudPosition.banner==='short'?compactHud.GEOMETRY:{W,H,IW,IH},ring=ringGeometry(target,this.hudPosition.banner,this.current);
+   const hud=target==='hud'?hudLayerGeometry(this.hudPosition,this.current):null;
    if(backing&&!this.backplate){
     this.backplate=this.cr.image(Object.assign({},ALERT_LAYER,{target,x:backing.x,y:backing.y,w:backing.w,h:backing.h,iw:backing.iw,ih:backing.ih,sampling:'bilinear',visible:false,opacity:1}));
     if(this.backplate)this.cr.pixels(this.backplate,null,kombiBackplate.makePixels());
    }
    if(!this.layers[target]){
    this.frameKey=null;
-   const ref=this.cr.image(Object.assign({},ALERT_LAYER,{target,x:pos.x,y:pos.y,w:card.W,h:card.H,iw:card.IW,ih:card.IH,sampling:'bilinear',visible:false,opacity:1}));
+   const ref=this.cr.image(Object.assign({},ALERT_LAYER,{target,x:pos.x,y:pos.y,w:card.W,h:card.H,iw:card.IW,ih:card.IH,sampling:'bilinear',visible:false,opacity:1},hud?hud.card:{}));
    if(ref){this.layers[target]=ref;this.log('CLUSTER_RENDER_LAYER_CREATED target='+target+' ref='+ref+' x='+pos.x+' y='+pos.y+' size='+card.W+'x'+card.H+' class=alert z=1000 exclusive=0 contend=1 yield=0 guide_hold=0');}else this.log('CLUSTER_RENDER_LAYER_CREATE_FAILED target='+target);
    }
    if(this.layers[target]&&!this.rings[target]){
-    const ref=this.cr.image(Object.assign({},ALERT_LAYER,{target,x:pos.x+ring.x,y:pos.y+ring.y,w:ring.w,h:ring.h,iw:RING_PIXELS,ih:RING_PIXELS,sampling:'bilinear',visible:false,opacity:0}));
+    const ref=this.cr.image(Object.assign({},ALERT_LAYER,{target,x:pos.x+ring.x,y:pos.y+ring.y,w:ring.w,h:ring.h,iw:RING_PIXELS,ih:RING_PIXELS,sampling:'bilinear',visible:false,opacity:0},hud?hud.ring:{}));
     if(ref){this.rings[target]=ref;this.cr.pixels(ref,null,makeRing());}
    }
    if(backing){
@@ -229,7 +242,7 @@ class CameraClusterOutput{
    this.hudStripeWidth=Math.round(hudGeometry(e).stripeWidth);
    this.lastDistance=Math.max(0,Math.round(e.distanceM||0));
    const frame=this.layers.hud?(this.hudPosition.banner==='short'?compactHud.frame(e,status,this.hudPosition.stripe):makeFrame(e)):null;
-   if(this.rings.hud)this.cr.set(this.rings.hud,{x:this.hudPosition.x+(this.hudPosition.banner==='short'?compactHud.GEOMETRY.signX-56:hudGeometry(e).signX-RING_SIZE/2)});
+   if(this.rings.hud)this.cr.set(this.rings.hud,hudLayerGeometry(this.hudPosition,e).ring);
    this._sendFrames(frame,true,this.layers.map?makeFrame(e,true):null);
    this.frameKey=key;
   }else{
@@ -278,7 +291,7 @@ class CameraClusterOutput{
    ['layers','rings'].forEach(group=>{if(this[group].hud){this.cr.drop(this[group].hud);delete this[group].hud;}});
    this.frameKey=null;this.footerKey=null;this.distanceBuffer=null;this._makeLayers();
   }
-  if(this.cr){if(this.layers.hud)this.cr.set(this.layers.hud,{x:p.x,y:p.y});if(this.rings.hud)this.cr.set(this.rings.hud,{x:p.x+(p.banner==='short'?compactHud.GEOMETRY.signX-56:hudGeometry(this.current).signX-RING_SIZE/2),y:p.y+(p.banner==='short'?compactHud.GEOMETRY.signY-56:17)});}
+  if(this.cr){const layout=hudLayerGeometry(p,this.current);if(this.layers.hud)this.cr.set(this.layers.hud,layout.card);if(this.rings.hud)this.cr.set(this.rings.hud,layout.ring);}
   if(previousStripe!==p.stripe||previousBanner!==p.banner){this.frameKey=null;if(this.current)this._draw(this.current);else this._drawGpsStatus();}
  }
  updateDistance(distanceM,estimated){

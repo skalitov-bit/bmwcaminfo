@@ -464,14 +464,17 @@ async function run(){
       await press('motion-diagnostics');assert(texts.includes('GPS / СКОРОСТЬ'),'Joystick opens the motion diagnostics page');
       await press('motion-back');assert(texts.includes('ИНЖЕНЕРНОЕ МЕНЮ'),'Joystick returns from motion diagnostics');
       await press('engineering-back');await press('settings-hud-position');assert(texts.includes('ПОЛОЖЕНИЕ HUD'));
-      const hudKeys=['hud-left','hud-right','hud-up','hud-down','hud-test','hud-stripe','hud-full','hud-short','hud-save','hud-reset','hud-back'];
+      const hudKeys=['hud-left','hud-right','hud-up','hud-down','hud-test','hud-stripe','hud-full','hud-short','hud-smaller','hud-larger','hud-save','hud-reset','hud-back'];
       for(const key of hudKeys)assert(pageTargets.some(t=>t.key===key),'Focusable HUD control: '+key);
       focus('hud-left');for(const key of hudKeys.slice(1)){input(0,7);assert.equal(controller.focusKey,'tgt:'+key);input();}
       for(const key of hudKeys.slice(0,-1).reverse()){input(0,1);assert.equal(controller.focusKey,'tgt:'+key);input();}
       await press('hud-right');await press('hud-right');await press('hud-down');await press('hud-test');assert.equal(clusterFixture.current.camera.id,'hud-position-test');backgroundTick();motionTick();assert.equal(clusterFixture.current.camera.id,'hud-position-test','GPS loss/background timers must not erase the HUD position test');save('hud-position-adjusted');
       await press('hud-stripe');assert.equal(clusterFixture.position.stripe,false,'Joystick hides stripe in active test');
-      await press('hud-save');assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(tmp,'hud-position.json'),'utf8')).hud,{x:200,y:187,stripe:false,banner:'full'});
-      await press('hud-back');await press('settings-hud-position');assert(texts.includes('ГОРИЗОНТАЛЬ: 10 / ВЕРТИКАЛЬ: 5'));
+      await press('hud-smaller');assert.equal(clusterFixture.position.scale,95,'Joystick scales active test');
+      await press('hud-larger');assert.equal(clusterFixture.position.scale,100);
+      await press('hud-smaller');
+      await press('hud-save');assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(tmp,'hud-position.json'),'utf8')).hud,{x:200,y:187,stripe:false,banner:'full',scale:95});
+      await press('hud-back');await press('settings-hud-position');assert(texts.some(t=>t.includes('ГОРИЗОНТАЛЬ: 10 / ВЕРТИКАЛЬ: 5')&&t.includes('95%')));
       await press('hud-reset');await press('hud-save');save('hud-position-default');await press('hud-back');
       for(let i=0;i<10;i++)await press('nav-SETTINGS');
       await press('engineering-audio');assert(texts.includes('ПРОВЕРКА АУДИОКАНАЛОВ'));save('audio-channels-empty');

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "appVersion": "0.9.104",
+  "appVersion": "0.9.105",
   "voiceVersion": "0.1.52",
   "source": {
     "url": "https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.93/SpeedCAM_0.9.93_Source.zip",
@@ -8,7 +8,7 @@
     "sha256": "b80b2e4b14de89c80a1bbd1b1ec9cabc5033f33683470f0c0456402b0b4c01fc"
   },
   "voice": {
-    "url": "https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.103/bmwcaminfo-voice%400.1.52.tgz",
+    "url": "https://github.com/skalitov-bit/bmwcaminfo/releases/download/aurelm_speed_camera_warning%400.9.104/bmwcaminfo-voice%400.1.52.tgz",
     "bytes": 21087054,
     "sha256": "9a908843a2006c77ec708729427613cbe2c73ef654445e2aa597fa636a7744a1"
   },
